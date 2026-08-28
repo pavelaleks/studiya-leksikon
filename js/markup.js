@@ -8,12 +8,14 @@ const KIND = {
   e: "e",
   x: "x",
   z: "z",
+  m: "m",
+  f: "f",
 };
 
 export function mark(text) {
   if (text == null || text === "") return "";
   const escaped = escapeHtml(String(text));
-  return escaped.replace(/\{([^{}|]+)(?:\|([prseoxz]))?\}/g, (_, inner, type) => {
+  return escaped.replace(/\{([^{}|]+)(?:\|([prseoxzmf]))?\}/g, (_, inner, type) => {
     const kind = KIND[type] || "o";
     return `<span class="lg lg-${kind}">${inner}</span>`;
   });

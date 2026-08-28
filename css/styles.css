@@ -394,6 +394,18 @@ h1 {
   padding: 0 4px;
 }
 
+.lg-m {
+  font-weight: 700;
+  font-style: italic;
+}
+
+.lg-f {
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
 .lg-x {
   color: #8a4b12;
   background: #f7e6d4;
@@ -714,11 +726,48 @@ textarea {
   line-height: 1.55;
 }
 
-.ege-lines {
+.ege-lines,
+.ege-words,
+.ege-match-left,
+.ege-match-right {
+  list-style: none;
+}
+
+.ege-lines li,
+.ege-words li,
+.ege-match-left li,
+.ege-match-right li {
+  list-style: none;
+}
+
+.ege-lines li::marker,
+.ege-words li::marker,
+.ege-match-left li::marker,
+.ege-match-right li::marker {
+  content: none;
+  display: none;
+}
+
+.ege-lines,
+.ege-words {
   font-family: var(--serif);
   font-size: 18px;
   line-height: 1.6;
-  padding-left: 1.4em;
+  margin: 12px 0 18px;
+  padding: 14px 16px 14px 18px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.ege-lines li {
+  padding-left: 1.8em;
+  position: relative;
+  margin: 0.35em 0;
+}
+
+.ege-words li {
+  margin: 0.35em 0;
 }
 
 .ege-text,
@@ -740,13 +789,15 @@ textarea {
   margin: 12px 0 18px;
 }
 
+.ege-match-22 {
+  grid-template-columns: 1.35fr 0.85fr;
+}
+
 .ege-match-left,
 .ege-match-right {
   font-family: var(--serif);
   font-size: 16px;
   line-height: 1.5;
-  list-style: none;
-  padding-left: 0;
   margin: 0;
   background: var(--paper);
   border: 1px solid var(--line);
@@ -756,7 +807,17 @@ textarea {
 
 .ege-match-left li,
 .ege-match-right li {
-  margin: 0.35em 0;
+  margin: 0.45em 0;
+  padding-left: 1.7em;
+  position: relative;
+}
+
+.ege-idx {
+  position: absolute;
+  left: 0;
+  font-weight: 700;
+  font-family: var(--sans);
+  font-size: 13px;
 }
 
 .ege-answer.ok {
@@ -775,9 +836,23 @@ textarea {
 }
 
 @media (max-width: 860px) {
-  .ege-match {
+  .ege-match,
+  .ege-match-22 {
     grid-template-columns: 1fr;
   }
+}
+
+.ege-missing {
+  margin: 0 0 24px;
+}
+
+.ege-missing ul {
+  margin: 8px 0 0;
+  padding-left: 1.2em;
+}
+
+.ege-missing li {
+  margin: 0.35em 0;
 }
 
 @media (max-width: 860px) {

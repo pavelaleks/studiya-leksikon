@@ -3,7 +3,7 @@ import { legend, mark } from "./markup.js";
 import { EGE_TITLES, egeByNumber, egeTasks } from "./ege.js";
 
 function plainText(value) {
-  return String(value ?? "").replace(/\{([^{}|]+)(?:\|[prseoxz])?\}/g, "$1");
+  return String(value ?? "").replace(/\{([^{}|]+)(?:\|[prseoxzmf])?\}/g, "$1");
 }
 
 function renderTable(table) {
@@ -156,7 +156,7 @@ export function homePage(content) {
     <a class="card home-ege" href="#/ege">
       <p class="kicker">Тренажёр экзамена</p>
       <h2>ЕГЭ по русскому</h2>
-      <p>Задания 4–22 в форме КИМ: слово или цифры, как в бланке. Задания 1–3, 23–26 и сочинение пока не включены.</p>
+      <p>Задания 4–22 в форме КИМ: слово или цифры, как в бланке. Нет заданий 1–3, 23–26 и сочинения (27).</p>
     </a>
   `;
 }
@@ -321,7 +321,16 @@ export function egeIndex(content, taskNum = "") {
     return `
       <p class="eyebrow">Тренажёр ЕГЭ</p>
       <h1>ЕГЭ по русскому</h1>
-      <p class="lede">Форма как на экзамене: вы записываете слово или последовательность цифр. Задания 1–3, 23–26 и сочинение (27) не включены.</p>
+      <p class="lede">Форма как на экзамене: вы записываете слово или последовательность цифр.</p>
+      <div class="card ege-missing">
+        <h3>Каких заданий нет</h3>
+        <ul>
+          <li><strong>1, 2, 3</strong> — микротекст: информация, средства связи, лексический анализ абзаца.</li>
+          <li><strong>23–26</strong> — связный текст: содержание, тип речи, лексика, связь предложений.</li>
+          <li><strong>27</strong> — сочинение.</li>
+        </ul>
+        <p class="muted">В тренажёре сейчас задания <strong>4–22</strong>.</p>
+      </div>
       <div class="grid-3">
         ${numbers
           .map(

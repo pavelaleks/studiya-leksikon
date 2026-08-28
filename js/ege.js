@@ -1,4 +1,5 @@
 import { escapeHtml } from "./ui.js";
+import { mark } from "./markup.js";
 
 const VOWELS = "аеёиоуыэюя";
 
@@ -85,22 +86,40 @@ export function checkEgeAnswer(input, ex) {
   return keys.some((k) => normWord(k) === normWord(raw));
 }
 
+function stripEnum(s) {
+  return String(s ?? "").replace(/^\s*(?:\d+|[А-ДA-Ea-e])[).]\s*/, "");
+}
+
 function stimulusHtml(ex) {
   if (ex.text) {
-    return `<div class="ege-text">${escapeHtml(ex.text).replaceAll("\n", "<br>")}</div>`;
+    return `<div class="ege-text">${mark(ex.text).replaceAll("\n", "<br>")}</div>`;
   }
   const lines = ex.lines || [];
-  if (!lines.length) return ex.stimulus ? `<div class="ege-stimulus">${escapeHtml(ex.stimulus).replaceAll("\n", "<br>")}</div>` : "";
-  return `<ol class="ege-lines">${lines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ol>`;
+  if (!lines.length) {
+    return ex.stimulus ? `<div class="ege-stimulus">${mark(ex.stimulus).replaceAll("\n", "<br>")}</div>` : "";
+  }
+  const n = Number(ex.egeTask);
+  if (n >= 9 && n <= 16) {
+    return `<ul class="ege-lines">${lines
+      .map((line, i) => `<li><span class="ege-idx">${i + 1})</span> ${mark(stripEnum(line))}</li>`)
+      .join("")}</ul>`;
+  }
+  return `<ul class="ege-words">${lines.map((line) => `<li>${mark(stripEnum(line))}</li>`).join("")}</ul>`;
 }
 
 function matchHtml(ex) {
   const left = ex.left || [];
   const right = ex.right || [];
+  const letters = ["А", "Б", "В", "Г", "Д"];
+  const kind = ex.egeTask === 22 ? "ege-match ege-match-22" : "ege-match";
   return `
-    <div class="ege-match">
-      <ul class="ege-match-left">${left.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>
-      <ul class="ege-match-right">${right.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>
+    <div class="${kind}">
+      <ul class="ege-match-left">${left
+        .map((x, i) => `<li><span class="ege-idx">${letters[i] || i + 1})</span> ${mark(stripEnum(x))}</li>`)
+        .join("")}</ul>
+      <ul class="ege-match-right">${right
+        .map((x, i) => `<li><span class="ege-idx">${i + 1})</span> ${mark(stripEnum(x))}</li>`)
+        .join("")}</ul>
     </div>
   `;
 }
@@ -120,6 +139,11 @@ export function renderEgeExercise(ex) {
     <h2>${escapeHtml(ex.title || "Задание " + ex.egeTask)}</h2>
     <p class="ege-instruction">${escapeHtml(ex.instruction || "")}</p>
     ${ex.type === "ege-match" ? matchHtml(ex) : stimulusHtml(ex)}
+    ${
+      ex.egeTask === 22
+        ? `<p class="muted">Выделенный фрагмент — то, что нужно квалифицировать. Аллитерация, ассонанс и метонимия на экзамене всегда маркируются.</p>`
+        : ""
+    }
     <label class="home-search-label" for="ege-answer">Ответ</label>
     <p class="muted">${hint}</p>
     <input class="search ege-answer" id="ege-answer" autocomplete="off" spellcheck="false" />

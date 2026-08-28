@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -37,6 +38,16 @@ def main() -> None:
                     problems.append(f"{it['id']}: соответствие не 5 цифр ({ans})")
                 if n in (8, 22) and len(set(digits)) != 5:
                     problems.append(f"{it['id']}: повтор цифр в соответствии ({ans})")
+                if n == 22:
+                    if len(it.get("left") or []) != 5 or len(it.get("right") or []) != 9:
+                        problems.append(f"{it['id']}: форма 22 не 5+9")
+            expl = str(it.get("explanation") or "")
+            if re.search(r"[A-Za-z]{3,}", expl):
+                problems.append(f"{it['id']}: латиница в пояснении")
+            if n == 15:
+                blob = " ".join(it.get("lines") or [])
+                if re.search(r"(?:^|,\s)(?:ю|зеле|си|бара|воро|пря|румя)\.\.", blob):
+                    problems.append(f"{it['id']}: дыра Н/НН похожа на пропуск гласной")
             if mode == "stress":
                 if not any(ch in VOWELS and ch == ch.upper() and ch != ch.lower() for ch in ans):
                     problems.append(f"{it['id']}: нет заглавной гласной ({ans})")
