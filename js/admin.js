@@ -35,7 +35,7 @@ export function adminPage(content) {
           <label>Название правила<input name="title" required placeholder="Приставки пре- и при-" /></label>
           <label>Кратко для карточки<textarea name="summary" required></textarea></label>
           <label>Объяснение<textarea name="body" required></textarea></label>
-          <label>Примеры через запятую<input name="examples" placeholder="приехать, прервать" /></label>
+          <label>Примеры через запятую (орфограмма в фигурных скобках: соб{и}рать, {при-|p}ехать)<input name="examples" placeholder="соб{и}рать, {при-|p}ехать" /></label>
           <label>Исключения<input name="exceptions" /></label>
           <button class="btn" type="submit">Сохранить черновик правила</button>
         </form>

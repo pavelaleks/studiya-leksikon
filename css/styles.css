@@ -76,7 +76,7 @@ a:hover {
   text-decoration: none;
 }
 
-.mark {
+.brand-mark {
   width: 42px;
   height: 42px;
   border-radius: 12px;
@@ -302,9 +302,125 @@ h1 {
   margin: 0 0 22px;
 }
 
-.theory-block h3 {
-  font-size: 22px;
+.theory-block p,
+.rule-article p,
+.exceptions,
+.mistakes,
+.note {
+  font-family: var(--serif);
+  font-size: 18px;
+  line-height: 1.65;
 }
+
+.ex-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.ex-line {
+  font-family: var(--serif);
+  font-size: 20px;
+  line-height: 1.55;
+  padding: 10px 14px;
+  background: var(--paper);
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 22px;
+}
+
+.lg {
+  font-weight: 700;
+  font-style: normal;
+  padding: 0 1px;
+  border-radius: 3px;
+}
+
+.lg-o {
+  color: var(--accent);
+  background: var(--accent-soft);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.lg-p {
+  color: #1f4d7a;
+  background: #e7f0f8;
+}
+
+.lg-r {
+  color: var(--forest);
+  background: #e4efe8;
+}
+
+.lg-s {
+  color: #6b4a16;
+  background: #f4ead6;
+}
+
+.lg-e {
+  color: #4a3d73;
+  background: #ece8f6;
+}
+
+.lg-z {
+  color: var(--accent);
+  background: #fff;
+  border-bottom: 2px solid var(--gold);
+  padding: 0 4px;
+}
+
+.lg-x {
+  color: #8a4b12;
+  background: #f7e6d4;
+}
+
+.rule-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--serif);
+  font-size: 17px;
+  margin: 12px 0 4px;
+}
+
+.rule-table th,
+.rule-table td {
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.rule-table th {
+  background: var(--paper-deep);
+  font-family: var(--sans);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.pager a {
+  text-decoration: none;
+}
+
 
 .examples {
   display: flex;
@@ -450,9 +566,10 @@ h1 {
   color: var(--ok);
 }
 
-.gap.bad {
-  border-color: var(--bad);
-  color: var(--bad);
+.gap-hint {
+  font-size: 14px;
+  color: var(--ok);
+  margin-right: 6px;
 }
 
 .result {

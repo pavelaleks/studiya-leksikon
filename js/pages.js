@@ -1,20 +1,34 @@
 import { escapeHtml } from "./ui.js";
+import { legend, mark } from "./markup.js";
+
+function renderTable(table) {
+  if (!table?.headers || !table?.rows) return "";
+  return `
+    <table class="rule-table">
+      <thead><tr>${table.headers.map((h) => `<th>${mark(h)}</th>`).join("")}</tr></thead>
+      <tbody>
+        ${table.rows.map((row) => `<tr>${row.map((cell) => `<td>${mark(cell)}</td>`).join("")}</tr>`).join("")}
+      </tbody>
+    </table>
+  `;
+}
 
 function renderTheory(rule) {
   return (rule.theory || [])
     .map(
       (block) => `
       <section class="theory-block">
-        ${block.heading ? `<h3>${escapeHtml(block.heading)}</h3>` : ""}
-        ${block.body ? `<p>${escapeHtml(block.body)}</p>` : ""}
+        ${block.heading ? `<h3>${mark(block.heading)}</h3>` : ""}
+        ${block.body ? `<p>${mark(block.body)}</p>` : ""}
+        ${renderTable(block.table)}
         ${
           block.examples?.length
-            ? `<div class="examples">${block.examples
-                .map((ex) => `<span class="chip">${escapeHtml(ex)}</span>`)
-                .join("")}</div>`
+            ? `<ul class="ex-list">${block.examples
+                .map((ex) => `<li class="ex-line">${mark(ex)}</li>`)
+                .join("")}</ul>`
             : ""
         }
-        ${block.note ? `<div class="note">${escapeHtml(block.note)}</div>` : ""}
+        ${block.note ? `<div class="note">${mark(block.note)}</div>` : ""}
       </section>`
     )
     .join("");
@@ -30,7 +44,7 @@ export function homePage(content) {
       <div>
         <p class="eyebrow">Русский язык · 8–11 кл.</p>
         <h1>Студия Лексикон</h1>
-        <p class="lede">Орфография, пунктуация и стилистика русского языка для 8–11 кл. Откройте правило, выучите его и сразу закрепите тестом или списыванием — на занятии и дома.</p>
+        <p class="lede">Орфография, пунктуация и стилистика русского языка для 8–11 кл. Правило на одной странице: условие, таблица, примеры с выделенной орфограммой — затем закрепление.</p>
         <div class="actions">
           <a class="btn" href="#/rules">К правилам</a>
           <a class="btn secondary" href="#/practice">К заданиям</a>
@@ -40,8 +54,8 @@ export function homePage(content) {
         <h3>Как пользоваться</h3>
         <ol>
           <li>Педагог даёт ссылку на конкретное правило.</li>
-          <li>Ученик читает короткое объяснение, примеры и исключения.</li>
-          <li>Сразу проходит тест или списывание с пропусками орфограмм.</li>
+          <li>Ученик читает условие и смотрит выделенные буквы и морфемы.</li>
+          <li>Сразу проходит тест или списывание.</li>
         </ol>
       </div>
     </section>
@@ -91,7 +105,7 @@ export function rulesIndex(content, sectionId = "", q = "") {
           if (query && !rules.length) return "";
           if (!all.length && query) return "";
           return `
-            <details class="card chapter" open>
+            <details class="card chapter" ${query ? "open" : ""}>
               <summary><span>${escapeHtml(chapter.roman ? chapter.roman + ". " : "")}${escapeHtml(chapter.title)}</span><span class="muted">${rules.length || "скоро"}</span></summary>
               ${
                 rules.length
@@ -118,19 +132,17 @@ export function rulesIndex(content, sectionId = "", q = "") {
   return `
     <p class="eyebrow">Справочник студии</p>
     <h1>Правила</h1>
-    <p class="lede">Каждое правило — отдельная страница со своей ссылкой. Можно открыть на уроке или отправить ученику домой.</p>
+    <p class="lede">Откройте главу, затем карточку. Орфограмма в примерах выделена цветом — так удобнее объяснять у доски и читать дома.</p>
     ${filters}
     ${chapters || `<div class="empty">Ничего не найдено.</div>`}
   `;
 }
 
-export function rulePage(rule) {
+export function rulePage(rule, neighbors = {}) {
   if (!rule) {
     return `<div class="empty">Правило не найдено. <a href="#/rules">Ко всем правилам</a></div>`;
   }
-  const source = rule.rosenthal?.url
-    ? `<a class="btn secondary" href="${escapeHtml(rule.rosenthal.url)}" target="_blank" rel="noopener">Параграф в справочнике Розенталя</a>`
-    : "";
+  const hasPractice = (neighbors.exerciseCount || 0) > 0;
   return `
     <div class="crumbs">
       <a href="#/rules">Правила</a>
@@ -142,21 +154,37 @@ export function rulePage(rule) {
     <article class="rule-article">
       <p class="kicker">${escapeHtml(rule.chapter.title)}${rule.rosenthal?.paragraph ? " · § " + rule.rosenthal.paragraph : ""}</p>
       <h1>${escapeHtml(rule.title)}</h1>
-      <div class="summary-box">${escapeHtml(rule.summary)}</div>
+      <div class="summary-box">${mark(rule.summary)}</div>
+      ${legend()}
       ${renderTheory(rule)}
       ${
         rule.exceptions?.length
-          ? `<div class="exceptions"><strong>Исключения.</strong> ${rule.exceptions.map(escapeHtml).join("; ")}</div>`
+          ? `<div class="exceptions"><strong>Исключения.</strong> ${rule.exceptions.map((x) => mark(x)).join("; ")}</div>`
           : ""
       }
       ${
         rule.typicalMistakes?.length
-          ? `<div class="mistakes"><strong>Типичные ошибки.</strong> ${rule.typicalMistakes.map(escapeHtml).join("; ")}</div>`
+          ? `<div class="mistakes"><strong>Типичные ошибки.</strong> ${rule.typicalMistakes.map((x) => mark(x)).join("; ")}</div>`
           : ""
       }
       <div class="actions">
-        <a class="btn" href="#/practice/${encodeURIComponent(rule.slug || rule.id)}">Закрепить заданиями</a>
-        ${source}
+        ${
+          hasPractice
+            ? `<a class="btn" href="#/practice/${encodeURIComponent(rule.slug || rule.id)}">Закрепить заданиями</a>`
+            : `<span class="muted">Заданий к этому правилу пока нет — можно разобрать примеры на уроке.</span>`
+        }
+      </div>
+      <div class="pager">
+        ${
+          neighbors.prev
+            ? `<a href="#/rule/${encodeURIComponent(neighbors.prev.slug || neighbors.prev.id)}">← ${escapeHtml(neighbors.prev.title)}</a>`
+            : "<span></span>"
+        }
+        ${
+          neighbors.next
+            ? `<a href="#/rule/${encodeURIComponent(neighbors.next.slug || neighbors.next.id)}">${escapeHtml(neighbors.next.title)} →</a>`
+            : "<span></span>"
+        }
       </div>
     </article>
   `;
@@ -172,7 +200,7 @@ export function practiceIndex(content, filterId = "") {
   return `
     <p class="eyebrow">Тренировка</p>
     <h1>Задания</h1>
-    <p class="lede">Можно идти отдельно от теории: выберите раздел или правило и решайте тесты и списывание.</p>
+    <p class="lede">Можно идти отдельно от теории: выберите раздел и решайте тесты и списывание.</p>
     <div class="filter-bar">
       <a class="pill ${!filterId ? "active" : ""}" href="#/practice">Все</a>
       ${content.sections.map((s) => `<a class="pill ${filterId === s.id ? "active" : ""}" href="#/practice/${s.id}">${escapeHtml(s.title)}</a>`).join("")}

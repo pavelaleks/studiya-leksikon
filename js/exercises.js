@@ -1,10 +1,10 @@
 import { escapeHtml } from "./ui.js";
 
-function normalize(s) {
-  return String(s || "")
-    .trim()
-    .toLowerCase()
-    .replaceAll("ё", "е");
+function sameGap(input, answer) {
+  const dash = /[\u2014\u2013\u2212\u2012\u2010-]/g;
+  const a = String(input ?? "").trim().replace(dash, "—");
+  const b = String(answer ?? "").trim().replace(dash, "—");
+  return a === b || a.toLowerCase() === b.toLowerCase();
 }
 
 function scoreBox(ok, total) {
@@ -95,10 +95,16 @@ function renderGaps(ex, variant) {
     const inputs = [...root.querySelectorAll(".gap")];
     let ok = 0;
     inputs.forEach((input, i) => {
-      const good = normalize(input.value) === normalize(gaps[i]);
+      const good = sameGap(input.value, gaps[i]);
       input.classList.toggle("ok", good);
       input.classList.toggle("bad", !good);
-      if (!good) input.title = `Верно: ${gaps[i]}`;
+      let hint = input.nextElementSibling;
+      if (!hint || !hint.classList.contains("gap-hint")) {
+        hint = document.createElement("span");
+        hint.className = "gap-hint";
+        input.after(hint);
+      }
+      hint.textContent = good ? "" : `верно: ${gaps[i]}`;
       if (good) ok += 1;
     });
     root.querySelector(".result").textContent = `Верно ${ok} из ${gaps.length}`;

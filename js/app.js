@@ -1,6 +1,6 @@
 import { layout } from "./ui.js";
-import { loadContent, findRule, exercisesFor } from "./content.js";
-import { homePage, rulesIndex, rulePage, practiceIndex } from "./pages.js";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js";
+import { homePage, practiceIndex, rulePage, rulesIndex } from "./pages.js";
 import { renderExercise } from "./exercises.js";
 import { adminPage, bindAdmin } from "./admin.js";
 
@@ -55,7 +55,17 @@ async function render() {
   }
 
   if (a === "rule") {
-    mountHtml(rulePage(findRule(content, b)), "rules");
+    const rule = findRule(content, b);
+    const list = allRules(content);
+    const i = list.findIndex((r) => r.id === rule?.id);
+    const neighbors = rule
+      ? {
+          prev: i > 0 ? list[i - 1] : null,
+          next: i >= 0 && i < list.length - 1 ? list[i + 1] : null,
+          exerciseCount: exercisesFor(content, rule.id).length,
+        }
+      : {};
+    mountHtml(rulePage(rule, neighbors), "rules");
     return;
   }
 

@@ -17,7 +17,7 @@ export function layout(content, active = "") {
     <header class="site-header">
       <div class="wrap header-inner">
         <a class="brand" href="#/">
-          <span class="mark">Л</span>
+          <span class="brand-mark">Л</span>
           <span class="brand-text">
             <strong>Студия Лексикон</strong>
             <span>8–11 классы</span>
@@ -32,7 +32,7 @@ export function layout(content, active = "") {
     </header>
     <main><div class="wrap">${content}</div></main>
     <footer class="site-footer">
-      <div class="wrap">Студия Лексикон · открытый учебный сайт по русскому языку. Теория написана для занятий в студии; ссылки на справочник Розенталя даны как внешний источник для углубления.</div>
+      <div class="wrap">Студия Лексикон · орфография, пунктуация и стилистика для занятий в студии и дома.</div>
     </footer>
   `;
 }
