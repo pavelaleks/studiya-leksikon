@@ -1,0 +1,60 @@
+"""Проверка банка ЕГЭ: 40×23, ключи, форма ответа."""
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+sys.stdout.reconfigure(encoding="utf-8")
+ROOT = Path(__file__).resolve().parents[1] / "data" / "ege"
+VOWELS = set("аеёиоуыэюяАЕЁИОУЫЭЮЯ")
+
+
+def main() -> None:
+    files = sorted(ROOT.glob("task-*.json"))
+    if len(files) != 23:
+        raise SystemExit(f"файлов {len(files)}, нужно 23")
+    ids: list[str] = []
+    problems: list[str] = []
+    for path in files:
+        items = json.loads(path.read_text(encoding="utf-8"))
+        n = int(path.stem.split("-")[1])
+        if len(items) != 40:
+            problems.append(f"{path.name}: {len(items)} шт.")
+        for it in items:
+            ids.append(it["id"])
+            if it.get("egeTask") != n:
+                problems.append(f"{it['id']}: egeTask")
+            ans = str(it.get("answer", "")).strip()
+            if not ans:
+                problems.append(f"{it['id']}: пустой ключ")
+            mode = it.get("answerMode")
+            if mode in ("digits-any", "digits-fixed"):
+                digits = "".join(ch for ch in ans if ch.isdigit())
+                if digits != ans.replace(" ", ""):
+                    problems.append(f"{it['id']}: в ключе не только цифры ({ans})")
+                if n in (8, 22) and len(digits) != 5:
+                    problems.append(f"{it['id']}: соответствие не 5 цифр ({ans})")
+                if n in (8, 22) and len(set(digits)) != 5:
+                    problems.append(f"{it['id']}: повтор цифр в соответствии ({ans})")
+            if mode == "stress":
+                if not any(ch in VOWELS and ch == ch.upper() and ch != ch.lower() for ch in ans):
+                    problems.append(f"{it['id']}: нет заглавной гласной ({ans})")
+            if n == 25:
+                text = it.get("text") or ""
+                if ans.lower().replace("ё", "е") not in text.lower().replace("ё", "е"):
+                    problems.append(f"{it['id']}: ключ «{ans}» не найден в тексте")
+            if it["type"] not in ("ege-short", "ege-match"):
+                problems.append(f"{it['id']}: тип {it['type']}")
+    if len(ids) != len(set(ids)):
+        problems.append("повтор id")
+    if len(ids) != 920:
+        problems.append(f"всего {len(ids)}, нужно 920")
+    if problems:
+        print("\n".join(problems[:40]))
+        raise SystemExit(f"ошибок: {len(problems)}")
+    print("ok: 23 файла, 920 заданий, ключи на месте")
+
+
+if __name__ == "__main__":
+    main()

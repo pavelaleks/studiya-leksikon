@@ -1,6 +1,6 @@
 import { layout } from "./ui.js";
 import { allRules, exercisesFor, findRule, loadContent } from "./content.js";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex } from "./pages.js";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex } from "./pages.js";
 import { renderExercise } from "./exercises.js";
 import { adminPage, bindAdmin } from "./admin.js";
 import { applyBoard, keepBoardOnHash, parseRoute, setBoard } from "./route.js";
@@ -110,6 +110,24 @@ async function render() {
       return;
     }
     mountHtml(practiceIndex(content, filter), "practice");
+    return;
+  }
+
+  if (a === "ege") {
+    mountHtml(egeIndex(content, b || ""), "ege");
+    return;
+  }
+
+  if (a === "ege-item") {
+    const ex = (content.ege || []).find((e) => e.id === b);
+    if (!ex) {
+      mountHtml(`<div class="empty">Задание не найдено. <a href="#/ege">К тренажёру ЕГЭ</a></div>`, "ege");
+      return;
+    }
+    mountHtml("", "ege");
+    const wrap = app.querySelector("main .wrap");
+    wrap.innerHTML = `<div class="crumbs"><a href="#/ege/${ex.egeTask}">← Задание ${ex.egeTask}</a></div>`;
+    wrap.appendChild(renderExercise(ex));
     return;
   }
 

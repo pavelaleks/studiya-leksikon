@@ -1,4 +1,5 @@
 import { escapeHtml } from "./ui.js";
+import { renderEgeExercise } from "./ege.js";
 
 function sameGap(input, answer) {
   const dash = /[\u2014\u2013\u2212\u2012\u2010-]/g;
@@ -15,6 +16,7 @@ export function renderExercise(ex, onDone) {
   if (ex.type === "choice") return renderChoice(ex, onDone);
   if (ex.type === "insert") return renderInsert(ex, onDone);
   if (ex.type === "copy") return renderCopy(ex, onDone);
+  if (ex.type === "ege-short" || ex.type === "ege-match") return renderEgeExercise(ex);
   return `<div class="empty">Неизвестный тип задания.</div>`;
 }
 

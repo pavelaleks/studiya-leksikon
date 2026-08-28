@@ -1,5 +1,6 @@
 import { escapeHtml } from "./ui.js";
 import { legend, mark } from "./markup.js";
+import { EGE_TITLES, egeByNumber, egeTasks } from "./ege.js";
 
 function plainText(value) {
   return String(value ?? "").replace(/\{([^{}|]+)(?:\|[prseoxz])?\}/g, "$1");
@@ -126,6 +127,7 @@ export function homePage(content) {
         <div class="home-actions">
           <a class="btn btn-lg" href="#/rules">Правила</a>
           <a class="btn btn-lg secondary" href="#/practice">Задания</a>
+          <a class="btn btn-lg secondary" href="#/ege">ЕГЭ</a>
         </div>
         <label class="home-search-label" for="home-search">Найти правило</label>
         <input class="search" id="home-search" placeholder="чередование, тире, НН…" autocomplete="off" enterkeyhint="search" />
@@ -151,6 +153,11 @@ export function homePage(content) {
         )
         .join("")}
     </section>
+    <a class="card home-ege" href="#/ege">
+      <p class="kicker">Тренажёр экзамена</p>
+      <h2>ЕГЭ по русскому</h2>
+      <p>Задания 4–26 в форме КИМ: слово или цифры, как в бланке. Задания 1–3 и сочинение пока не включены.</p>
+    </a>
   `;
 }
 
@@ -274,10 +281,11 @@ export function practiceIndex(content, filterId = "") {
   return `
     <p class="eyebrow">Тренировка</p>
     <h1>Задания</h1>
-    <p class="lede">Можно идти отдельно от теории: выберите раздел и решайте тесты и списывание.</p>
+    <p class="lede">Можно идти отдельно от теории: выберите раздел и решайте тесты и списывание. Тренажёр ЕГЭ (задания 4–26) — отдельным пунктом.</p>
     <div class="filter-bar">
       <a class="pill ${!filterId ? "active" : ""}" href="#/practice">Все</a>
       ${content.sections.map((s) => `<a class="pill ${filterId === s.id ? "active" : ""}" href="#/practice/${s.id}">${escapeHtml(s.title)}</a>`).join("")}
+      <a class="pill" href="#/ege">ЕГЭ</a>
     </div>
     <div class="grid-2">
       <div>
@@ -300,5 +308,50 @@ export function practiceIndex(content, filterId = "") {
         <p>Откройте задание на проекторе или скиньте ссылку в чат. Для крупного шрифта нажмите «Режим доски» в шапке. Дома ученик проходит тот же вариант — без регистрации.</p>
       </div>
     </div>
+  `;
+}
+
+export function egeIndex(content, taskNum = "") {
+  const n = Number(taskNum);
+  const all = egeTasks(content);
+  const counts = {};
+  for (const ex of all) counts[ex.egeTask] = (counts[ex.egeTask] || 0) + 1;
+  const numbers = Object.keys(EGE_TITLES).map(Number);
+  if (!n) {
+    return `
+      <p class="eyebrow">Тренажёр ЕГЭ</p>
+      <h1>ЕГЭ по русскому</h1>
+      <p class="lede">Форма как на экзамене: вы записываете слово или последовательность цифр. Задания 1–3 и сочинение (27) не включены.</p>
+      <div class="grid-3">
+        ${numbers
+          .map(
+            (num) => `
+          <a class="card home-section" href="#/ege/${num}">
+            <p class="kicker">Задание ${num}</p>
+            <h2>${escapeHtml(EGE_TITLES[num])}</h2>
+            <p>${counts[num] || 0} вариантов</p>
+          </a>`
+          )
+          .join("")}
+      </div>
+    `;
+  }
+  const list = egeByNumber(content, n);
+  return `
+    <div class="crumbs"><a href="#/ege">ЕГЭ</a><span>/</span><span>задание ${n}</span></div>
+    <p class="eyebrow">ЕГЭ · задание ${n}</p>
+    <h1>${escapeHtml(EGE_TITLES[n] || "Задание")}</h1>
+    <p class="lede">${list.length} вариантов. Ответ вписывается так же, как в бланк № 1.</p>
+    ${
+      list
+        .map(
+          (ex, i) => `
+      <a class="card" href="#/ege-item/${encodeURIComponent(ex.id)}" style="margin-bottom:12px">
+        <div class="kicker">Вариант ${i + 1}</div>
+        <h3>${escapeHtml(ex.title)}</h3>
+      </a>`
+        )
+        .join("") || `<div class="empty">Этот номер ещё наполняется.</div>`
+    }
   `;
 }

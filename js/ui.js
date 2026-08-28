@@ -26,6 +26,7 @@ export function layout(content, active = "", board = false) {
         <nav class="nav">
           <a href="#/rules" class="${active === "rules" ? "active" : ""}">Правила</a>
           <a href="#/practice" class="${active === "practice" ? "active" : ""}">Задания</a>
+          <a href="#/ege" class="${active === "ege" ? "active" : ""}">ЕГЭ</a>
           <button type="button" class="nav-board class-only ${board ? "active" : ""}" id="board-toggle" aria-pressed="${board ? "true" : "false"}">Режим доски</button>
         </nav>
       </div>

@@ -25,12 +25,18 @@ async function loadJson(path) {
   return res.json();
 }
 
+const EGE_NUMBERS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26];
+
 export async function loadContent() {
-  const [orthography, punctuation, stylistics, exercises] = await Promise.all([
+  const egeLoads = EGE_NUMBERS.map((n) =>
+    loadJson(`data/ege/task-${String(n).padStart(2, "0")}.json`).catch(() => [])
+  );
+  const [orthography, punctuation, stylistics, exercises, ...egeParts] = await Promise.all([
     loadJson("data/orthography.json"),
     loadJson("data/punctuation.json"),
     loadJson("data/stylistics.json"),
     loadJson("data/exercises.json"),
+    ...egeLoads,
   ]);
 
   const extra = overlay();
@@ -62,7 +68,7 @@ export async function loadContent() {
     }
   }
 
-  return { sections, exercises: allExercises, site: SITE };
+  return { sections, exercises: allExercises, ege: egeParts.flat(), site: SITE };
 }
 
 export function allRules(content) {
