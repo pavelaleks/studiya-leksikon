@@ -2,11 +2,11 @@
   "id": "stylistics",
   "title": "Стилистика",
   "status": "ready",
-  "lead": "Выбор слова и формы, порядок слов, согласование, управление, однородные члены и сложное предложение. Карточки по главам XXXV–XLVIII: норма выделена цветом, типичная ошибка — отдельно.",
+  "lead": "Выбор слова и формы, порядок слов, согласование, управление, однородные члены и сложное предложение. Карточки по главам XXXVII–L: норма выделена цветом, типичная ошибка — отдельно.",
   "chapters": [
     {
       "id": "stil-xxxv",
-      "roman": "XXXV",
+      "roman": "XXXVII",
       "title": "Выбор слова",
       "rules": [
         {
@@ -218,7 +218,7 @@
     },
     {
       "id": "stil-xxxvi",
-      "roman": "XXXVI",
+      "roman": "XXXVIII",
       "title": "Формы имён существительных",
       "rules": [
         {
@@ -697,7 +697,7 @@
     },
     {
       "id": "stil-xxxvii",
-      "roman": "XXXVII",
+      "roman": "XXXIX",
       "title": "Формы имён прилагательных",
       "rules": [
         {
@@ -852,7 +852,7 @@
     },
     {
       "id": "stil-xxxviii",
-      "roman": "XXXVIII",
+      "roman": "XL",
       "title": "Формы имён числительных",
       "rules": [
         {
@@ -950,7 +950,7 @@
     },
     {
       "id": "stil-xxxix",
-      "roman": "XXXIX",
+      "roman": "XLI",
       "title": "Употребление местоимений",
       "rules": [
         {
@@ -1077,7 +1077,7 @@
     },
     {
       "id": "stil-xl",
-      "roman": "XL",
+      "roman": "XLII",
       "title": "Употребление форм глагола",
       "rules": [
         {
@@ -1235,7 +1235,7 @@
     },
     {
       "id": "stil-xli",
-      "roman": "XLI",
+      "roman": "XLIII",
       "title": "Строй простого предложения",
       "rules": [
         {
@@ -1301,7 +1301,7 @@
     },
     {
       "id": "stil-xlii",
-      "roman": "XLII",
+      "roman": "XLIV",
       "title": "Порядок слов в предложении",
       "rules": [
         {
@@ -1454,7 +1454,7 @@
     },
     {
       "id": "stil-xliii",
-      "roman": "XLIII",
+      "roman": "XLV",
       "title": "Согласование сказуемого с подлежащим",
       "rules": [
         {
@@ -1695,7 +1695,7 @@
     },
     {
       "id": "stil-xliv",
-      "roman": "XLIV",
+      "roman": "XLVI",
       "title": "Согласование определений и приложений",
       "rules": [
         {
@@ -1907,7 +1907,7 @@
     },
     {
       "id": "stil-xlv",
-      "roman": "XLV",
+      "roman": "XLVII",
       "title": "Управление",
       "rules": [
         {
@@ -2168,7 +2168,7 @@
     },
     {
       "id": "stil-xlvi",
-      "roman": "XLVI",
+      "roman": "XLVIII",
       "title": "Предложения с однородными членами",
       "rules": [
         {
@@ -2264,7 +2264,7 @@
     },
     {
       "id": "stil-xlvii",
-      "roman": "XLVII",
+      "roman": "XLIX",
       "title": "Сложное предложение",
       "rules": [
         {
@@ -2331,7 +2331,7 @@
     },
     {
       "id": "stil-xlviii",
-      "roman": "XLVIII",
+      "roman": "L",
       "title": "Параллельные синтаксические конструкции",
       "rules": [
         {
