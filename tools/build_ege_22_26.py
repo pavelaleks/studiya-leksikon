@@ -665,11 +665,6 @@ def build_23_26():
 
 def main():
     dump_task(22, build_22())
-    a, b, c, d = build_23_26()
-    dump_task(23, a)
-    dump_task(24, b)
-    dump_task(25, c)
-    dump_task(26, d)
 
 
 if __name__ == "__main__":

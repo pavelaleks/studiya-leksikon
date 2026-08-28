@@ -25,7 +25,7 @@ async function loadJson(path) {
   return res.json();
 }
 
-const EGE_NUMBERS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26];
+const EGE_NUMBERS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
 
 export async function loadContent() {
   const egeLoads = EGE_NUMBERS.map((n) =>

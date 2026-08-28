@@ -1,4 +1,4 @@
-"""Проверка банка ЕГЭ: 40×23, ключи, форма ответа."""
+"""Проверка банка ЕГЭ: 40×19 (задания 4–22), ключи, форма ответа."""
 from __future__ import annotations
 
 import json
@@ -12,8 +12,8 @@ VOWELS = set("аеёиоуыэюяАЕЁИОУЫЭЮЯ")
 
 def main() -> None:
     files = sorted(ROOT.glob("task-*.json"))
-    if len(files) != 23:
-        raise SystemExit(f"файлов {len(files)}, нужно 23")
+    if len(files) != 19:
+        raise SystemExit(f"файлов {len(files)}, нужно 19")
     ids: list[str] = []
     problems: list[str] = []
     for path in files:
@@ -40,20 +40,16 @@ def main() -> None:
             if mode == "stress":
                 if not any(ch in VOWELS and ch == ch.upper() and ch != ch.lower() for ch in ans):
                     problems.append(f"{it['id']}: нет заглавной гласной ({ans})")
-            if n == 25:
-                text = it.get("text") or ""
-                if ans.lower().replace("ё", "е") not in text.lower().replace("ё", "е"):
-                    problems.append(f"{it['id']}: ключ «{ans}» не найден в тексте")
             if it["type"] not in ("ege-short", "ege-match"):
                 problems.append(f"{it['id']}: тип {it['type']}")
     if len(ids) != len(set(ids)):
         problems.append("повтор id")
-    if len(ids) != 920:
-        problems.append(f"всего {len(ids)}, нужно 920")
+    if len(ids) != 760:
+        problems.append(f"всего {len(ids)}, нужно 760")
     if problems:
         print("\n".join(problems[:40]))
         raise SystemExit(f"ошибок: {len(problems)}")
-    print("ok: 23 файла, 920 заданий, ключи на месте")
+    print("ok: 19 файлов, 760 заданий, ключи на месте")
 
 
 if __name__ == "__main__":
