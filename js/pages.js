@@ -104,7 +104,7 @@ export function rulesIndex(content, sectionId = "", q = "") {
                 </a>`
                       )
                       .join("")
-                  : `<div class="rule-row"><span class="muted">Правила этого блока скоро появятся — пока открыта орфография.</span></div>`
+                  : `<div class="rule-row"><span class="muted">Этот блок ещё наполняется.</span></div>`
               }
             </details>`;
         })
