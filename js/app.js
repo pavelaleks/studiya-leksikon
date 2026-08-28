@@ -1,14 +1,28 @@
 import { layout } from "./ui.js";
 import { allRules, exercisesFor, findRule, loadContent } from "./content.js";
-import { homePage, practiceIndex, rulePage, rulesIndex } from "./pages.js";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex } from "./pages.js";
 import { renderExercise } from "./exercises.js";
 import { adminPage, bindAdmin } from "./admin.js";
+import { applyBoard, keepBoardOnHash, parseRoute, setBoard } from "./route.js";
 
 const app = document.getElementById("app");
 let content = null;
 
 function mountHtml(html, active) {
-  app.innerHTML = layout(html, active);
+  app.innerHTML = layout(html, active, parseRoute().board);
+  applyBoard();
+  bindBoardToggle();
+}
+
+function bindBoardToggle() {
+  const btn = app.querySelector("#board-toggle");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    const on = !parseRoute().board;
+    setBoard(on);
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-pressed", String(on));
+  });
 }
 
 function bindSearch(sectionId, q) {
@@ -25,6 +39,21 @@ function bindSearch(sectionId, q) {
   });
 }
 
+function bindHomeSearch() {
+  const input = app.querySelector("#home-search");
+  const box = app.querySelector("#home-hits");
+  if (!input || !box) return;
+  input.addEventListener("input", () => {
+    box.innerHTML = homeHitsHtml(content, input.value);
+  });
+  input.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const q = input.value.trim();
+    location.hash = q ? `#/rules?q=${encodeURIComponent(q)}` : "#/rules";
+  });
+}
+
 async function render() {
   if (!content) {
     mountHtml(`<div class="empty">Загружаем материалы студии…</div>`);
@@ -38,19 +67,18 @@ async function render() {
     }
   }
 
-  const parts = decodeURIComponent(location.hash.replace(/^#/, "") || "/")
-    .split("/")
-    .filter(Boolean);
+  const { parts, q } = parseRoute();
   const [a, b] = parts;
 
   if (!a) {
     mountHtml(homePage(content), "home");
+    bindHomeSearch();
     return;
   }
 
   if (a === "rules") {
-    mountHtml(rulesIndex(content, b || "", ""), "rules");
-    bindSearch(b || "", "");
+    mountHtml(rulesIndex(content, b || "", q), "rules");
+    bindSearch(b || "", q);
     return;
   }
 
@@ -106,6 +134,15 @@ async function render() {
 
   mountHtml(`<div class="empty">Страница не найдена. <a href="#/">На главную</a></div>`);
 }
+
+app.addEventListener("click", (e) => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a || a.target === "_blank") return;
+  const next = keepBoardOnHash(a.getAttribute("href") || "");
+  if (next === (a.getAttribute("href") || "")) return;
+  e.preventDefault();
+  location.hash = next;
+});
 
 window.addEventListener("hashchange", render);
 render();

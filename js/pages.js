@@ -1,15 +1,32 @@
 import { escapeHtml } from "./ui.js";
 import { legend, mark } from "./markup.js";
 
+function plainText(value) {
+  return String(value ?? "").replace(/\{([^{}|]+)(?:\|[prseoxz])?\}/g, "$1");
+}
+
 function renderTable(table) {
   if (!table?.headers || !table?.rows) return "";
+  const headers = table.headers;
   return `
-    <table class="rule-table">
-      <thead><tr>${table.headers.map((h) => `<th>${mark(h)}</th>`).join("")}</tr></thead>
-      <tbody>
-        ${table.rows.map((row) => `<tr>${row.map((cell) => `<td>${mark(cell)}</td>`).join("")}</tr>`).join("")}
-      </tbody>
-    </table>
+    <div class="table-scroll">
+      <table class="rule-table">
+        <thead><tr>${headers.map((h) => `<th>${mark(h)}</th>`).join("")}</tr></thead>
+        <tbody>
+          ${table.rows
+            .map(
+              (row) =>
+                `<tr>${row
+                  .map((cell, i) => {
+                    const label = escapeHtml(plainText(headers[i] || ""));
+                    return `<td data-label="${label}">${mark(cell)}</td>`;
+                  })
+                  .join("")}</tr>`
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>
   `;
 }
 
@@ -34,6 +51,67 @@ function renderTheory(rule) {
     .join("");
 }
 
+function ruleMatches(rule, query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  const blob = [
+    rule.title,
+    rule.summary,
+    ...(rule.theory || []).flatMap((t) => [
+      t.heading,
+      t.body,
+      ...(t.examples || []),
+      ...(t.table?.headers || []),
+      ...(t.table?.rows || []).flat(),
+    ]),
+  ]
+    .join(" ")
+    .toLowerCase();
+  return blob.includes(q);
+}
+
+function ruleWord(n) {
+  const n10 = n % 10;
+  const n100 = n % 100;
+  if (n10 === 1 && n100 !== 11) return "правило";
+  if (n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20)) return "правила";
+  return "правил";
+}
+
+export function homeHitsHtml(content, raw) {
+  const query = raw.trim();
+  if (query.length < 2) return "";
+  const hits = [];
+  for (const section of content.sections) {
+    for (const chapter of section.chapters) {
+      for (const rule of chapter.rules) {
+        if (!ruleMatches(rule, query)) continue;
+        hits.push(rule);
+        if (hits.length >= 8) break;
+      }
+      if (hits.length >= 8) break;
+    }
+    if (hits.length >= 8) break;
+  }
+  if (!hits.length) {
+    return `<p class="muted">Ничего не найдено. Попробуйте другое слово.</p>`;
+  }
+  return `
+    <div class="card home-hits-list">
+      ${hits
+        .map(
+          (r) => `
+        <a class="rule-row" href="#/rule/${encodeURIComponent(r.slug || r.id)}">
+          <span>${escapeHtml(r.title)}</span>
+          <small>${r.rosenthal?.paragraph ? "§ " + r.rosenthal.paragraph : ""}</small>
+        </a>`
+        )
+        .join("")}
+      <a class="rule-row" href="#/rules?q=${encodeURIComponent(query)}">Все результаты в каталоге</a>
+    </div>
+  `;
+}
+
 export function homePage(content) {
   const counts = content.sections.map((s) => ({
     ...s,
@@ -44,29 +122,31 @@ export function homePage(content) {
       <div>
         <p class="eyebrow">Русский язык · 8–11 кл.</p>
         <h1>Студия Лексикон</h1>
-        <p class="lede">Орфография, пунктуация и стилистика русского языка для 8–11 кл. Правило на одной странице: условие, таблица, примеры с выделенной орфограммой — затем закрепление.</p>
-        <div class="actions">
-          <a class="btn" href="#/rules">К правилам</a>
-          <a class="btn secondary" href="#/practice">К заданиям</a>
+        <p class="lede">Правило на одной странице: условие, примеры с выделенной орфограммой — затем закрепление.</p>
+        <div class="home-actions">
+          <a class="btn btn-lg" href="#/rules">Правила</a>
+          <a class="btn btn-lg secondary" href="#/practice">Задания</a>
         </div>
+        <label class="home-search-label" for="home-search">Найти правило</label>
+        <input class="search" id="home-search" placeholder="чередование, тире, НН…" autocomplete="off" enterkeyhint="search" />
+        <div id="home-hits" class="home-hits" aria-live="polite"></div>
       </div>
-      <div class="hero-card">
-        <h3>Как пользоваться</h3>
+      <aside class="hero-card class-only">
+        <h3>На занятии</h3>
         <ol>
-          <li>Педагог даёт ссылку на конкретное правило.</li>
-          <li>Ученик читает условие и смотрит выделенные буквы и морфемы.</li>
-          <li>Сразу проходит тест или списывание.</li>
+          <li>Откройте карточку на компьютере. Для проектора нажмите «Режим доски» в шапке — шрифт станет крупнее.</li>
+          <li>Ученик читает то же правило по ссылке на телефоне.</li>
+          <li>Сразу закрепляете тестом или списыванием.</li>
         </ol>
-      </div>
+      </aside>
     </section>
     <section class="grid-3">
       ${counts
         .map(
           (s) => `
-        <a class="card" href="#/rules/${s.id}">
-          <div class="kicker">${s.status === "ready" ? `${s.n} правил` : "Каталог глав готов"}</div>
+        <a class="card home-section" href="#/rules/${s.id}">
           <h2>${escapeHtml(s.title)}</h2>
-          <p>${escapeHtml(s.lead)}</p>
+          <p>${s.n} ${ruleWord(s.n)}</p>
         </a>`
         )
         .join("")}
@@ -95,23 +175,7 @@ export function rulesIndex(content, sectionId = "", q = "") {
       const ch = section.chapters
         .map((chapter) => {
           const all = chapter.rules;
-          const rules = all.filter((r) => {
-            if (!query) return true;
-            const blob = [
-              r.title,
-              r.summary,
-              ...(r.theory || []).flatMap((t) => [
-                t.heading,
-                t.body,
-                ...(t.examples || []),
-                ...(t.table?.headers || []),
-                ...(t.table?.rows || []).flat(),
-              ]),
-            ]
-              .join(" ")
-              .toLowerCase();
-            return blob.includes(query);
-          });
+          const rules = all.filter((r) => ruleMatches(r, query));
           if (query && !rules.length) return "";
           if (!all.length && query) return "";
           return `
@@ -231,9 +295,9 @@ export function practiceIndex(content, filterId = "") {
             .join("") || `<div class="empty">Заданий в этом разделе пока нет.</div>`
         }
       </div>
-      <div class="card">
+      <div class="card class-only">
         <h3>На занятии</h3>
-        <p>Откройте задание на проекторе или скиньте ссылку в чат. Дома ученик проходит тот же вариант — без регистрации.</p>
+        <p>Откройте задание на проекторе или скиньте ссылку в чат. Для крупного шрифта нажмите «Режим доски» в шапке. Дома ученик проходит тот же вариант — без регистрации.</p>
       </div>
     </div>
   `;
