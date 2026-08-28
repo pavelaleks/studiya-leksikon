@@ -54,7 +54,7 @@ export function adminPage(content) {
           </label>
           <label>Название<input name="title" required /></label>
           <label>Для теста: вопросы в формате Вопрос | верный вариант | другой | другой (каждый вопрос с новой строки)<textarea name="choiceText" placeholder="В каком слове пишется А? | касаться | косаться | коссаться"></textarea></label>
-          <label>Для вставки и списывания: текст, пропуски в двойных фигурных скобках — {{о}}<textarea name="template" placeholder="На закате небо {{о}}зарилось."></textarea></label>
+          <label>Для вставки и списывания: текст, пропуски в двойных фигурных скобках — {{а}}<textarea name="template" placeholder="На рассвете небо оз{{а}}рилось."></textarea></label>
           <button class="btn" type="submit">Сохранить черновик задания</button>
         </form>
       </div>
