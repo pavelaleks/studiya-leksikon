@@ -97,7 +97,17 @@ export function rulesIndex(content, sectionId = "", q = "") {
           const all = chapter.rules;
           const rules = all.filter((r) => {
             if (!query) return true;
-            const blob = [r.title, r.summary, ...(r.theory || []).flatMap((t) => [t.heading, t.body, ...(t.examples || [])])]
+            const blob = [
+              r.title,
+              r.summary,
+              ...(r.theory || []).flatMap((t) => [
+                t.heading,
+                t.body,
+                ...(t.examples || []),
+                ...(t.table?.headers || []),
+                ...(t.table?.rows || []).flat(),
+              ]),
+            ]
               .join(" ")
               .toLowerCase();
             return blob.includes(query);
@@ -155,7 +165,7 @@ export function rulePage(rule, neighbors = {}) {
       <p class="kicker">${escapeHtml(rule.chapter.title)}${rule.rosenthal?.paragraph ? " · § " + rule.rosenthal.paragraph : ""}</p>
       <h1>${escapeHtml(rule.title)}</h1>
       <div class="summary-box">${mark(rule.summary)}</div>
-      ${legend()}
+      ${legend(rule.section?.id)}
       ${renderTheory(rule)}
       ${
         rule.exceptions?.length

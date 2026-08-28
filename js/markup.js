@@ -19,7 +19,17 @@ export function mark(text) {
   });
 }
 
-export function legend() {
+export function legend(sectionId = "") {
+  if (sectionId === "stylistics") {
+    return `
+    <div class="legend" aria-label="Обозначения">
+      <span><span class="lg lg-o">норма</span> рекомендуемая форма</span>
+      <span><span class="lg lg-x">ошибка</span> так лучше не говорить</span>
+      <span><span class="lg lg-s">-ся</span> суффикс / частица</span>
+      <span><span class="lg lg-e">ок</span> окончание</span>
+    </div>
+  `;
+  }
   return `
     <div class="legend" aria-label="Обозначения">
       <span><span class="lg lg-o">а</span> орфограмма</span>
