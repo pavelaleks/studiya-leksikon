@@ -1,0 +1,22 @@
+{
+  "id": "stylistics",
+  "title": "Стилистика",
+  "status": "soon",
+  "lead": "Третий слой базы: выбор слова, формы, порядок слов, согласование, управление, сложное предложение. Откроем после пунктуации.",
+  "chapters": [
+    { "id": "stil-xxxv", "roman": "XXXV", "title": "Выбор слова", "rules": [] },
+    { "id": "stil-xxxvi", "roman": "XXXVI", "title": "Формы имён существительных", "rules": [] },
+    { "id": "stil-xxxvii", "roman": "XXXVII", "title": "Формы имён прилагательных", "rules": [] },
+    { "id": "stil-xxxviii", "roman": "XXXVIII", "title": "Формы имён числительных", "rules": [] },
+    { "id": "stil-xxxix", "roman": "XXXIX", "title": "Употребление местоимений", "rules": [] },
+    { "id": "stil-xl", "roman": "XL", "title": "Употребление форм глагола", "rules": [] },
+    { "id": "stil-xli", "roman": "XLI", "title": "Строй простого предложения", "rules": [] },
+    { "id": "stil-xlii", "roman": "XLII", "title": "Порядок слов в предложении", "rules": [] },
+    { "id": "stil-xliii", "roman": "XLIII", "title": "Согласование сказуемого с подлежащим", "rules": [] },
+    { "id": "stil-xliv", "roman": "XLIV", "title": "Согласование определений и приложений", "rules": [] },
+    { "id": "stil-xlv", "roman": "XLV", "title": "Управление", "rules": [] },
+    { "id": "stil-xlvi", "roman": "XLVI", "title": "Предложения с однородными членами", "rules": [] },
+    { "id": "stil-xlvii", "roman": "XLVII", "title": "Сложное предложение", "rules": [] },
+    { "id": "stil-xlviii", "roman": "XLVIII", "title": "Параллельные синтаксические конструкции", "rules": [] }
+  ]
+}
