@@ -12,11 +12,11 @@ function scoreBox(ok, total) {
   return `<div class="result">Результат: ${ok} из ${total}</div>`;
 }
 
-export function renderExercise(ex, onDone) {
+export function renderExercise(ex, onDone, ctx) {
   if (ex.type === "choice") return renderChoice(ex, onDone);
   if (ex.type === "insert") return renderInsert(ex, onDone);
   if (ex.type === "copy") return renderCopy(ex, onDone);
-  if (ex.type === "ege-short" || ex.type === "ege-match") return renderEgeExercise(ex);
+  if (ex.type === "ege-short" || ex.type === "ege-match") return renderEgeExercise(ex, ctx);
   return `<div class="empty">Неизвестный тип задания.</div>`;
 }
 

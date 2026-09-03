@@ -1,5 +1,6 @@
 import { escapeHtml } from "./ui.js";
 import { mark } from "./markup.js";
+import { markEgeDone } from "./progress.js";
 
 const VOWELS = "аеёиоуыэюя";
 
@@ -90,6 +91,10 @@ function stripEnum(s) {
   return String(s ?? "").replace(/^\s*(?:\d+|[А-ДA-Ea-e])[).]\s*/, "");
 }
 
+function plainLine(s) {
+  return stripEnum(s).replace(/\{([^{}|]+)(?:\|[prseoxzmf])?\}/g, "$1");
+}
+
 function stimulusHtml(ex) {
   if (ex.text) {
     return `<div class="ege-text">${mark(ex.text).replaceAll("\n", "<br>")}</div>`;
@@ -101,10 +106,18 @@ function stimulusHtml(ex) {
   const n = Number(ex.egeTask);
   if (n >= 9 && n <= 16) {
     return `<ul class="ege-lines">${lines
-      .map((line, i) => `<li><span class="ege-idx">${i + 1})</span> ${mark(stripEnum(line))}</li>`)
+      .map(
+        (line, i) =>
+          `<li><button type="button" class="ege-line-btn" data-digit="${i + 1}"><span class="ege-idx">${i + 1})</span> ${mark(stripEnum(line))}</button></li>`
+      )
       .join("")}</ul>`;
   }
-  return `<ul class="ege-words">${lines.map((line) => `<li>${mark(stripEnum(line))}</li>`).join("")}</ul>`;
+  return `<ul class="ege-words">${lines
+    .map((line) => {
+      const raw = stripEnum(line);
+      return `<li><button type="button" class="ege-word-btn" data-insert="${escapeHtml(plainLine(line))}">${mark(raw)}</button></li>`;
+    })
+    .join("")}</ul>`;
 }
 
 function matchHtml(ex) {
@@ -118,25 +131,133 @@ function matchHtml(ex) {
         .map((x, i) => `<li><span class="ege-idx">${letters[i] || i + 1})</span> ${mark(stripEnum(x))}</li>`)
         .join("")}</ul>
       <ul class="ege-match-right">${right
-        .map((x, i) => `<li><span class="ege-idx">${i + 1})</span> ${mark(stripEnum(x))}</li>`)
+        .map(
+          (x, i) =>
+            `<li><button type="button" class="ege-line-btn" data-digit="${i + 1}"><span class="ege-idx">${i + 1})</span> ${mark(stripEnum(x))}</button></li>`
+        )
         .join("")}</ul>
     </div>
   `;
 }
 
-export function renderEgeExercise(ex) {
+function answerFieldHtml(mode) {
+  if (mode === "digits-fixed") {
+    const letters = ["А", "Б", "В", "Г", "Д"];
+    return `
+      <div class="ege-slots" id="ege-slots">
+        ${letters
+          .map(
+            (L, i) => `
+          <label class="ege-slot">
+            <span>${L}</span>
+            <input inputmode="numeric" maxlength="1" data-slot="${i}" class="ege-answer-slot" autocomplete="off" aria-label="Ответ ${L}">
+          </label>`
+          )
+          .join("")}
+      </div>
+      ${digitPadHtml()}
+    `;
+  }
+  if (mode === "digits-any") {
+    return `
+      <input class="ege-answer ege-answer-digits" id="ege-answer" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Ответ" />
+      ${digitPadHtml()}
+    `;
+  }
+  const extra = mode === "stress" ? "ege-answer-stress" : "";
+  return `<input class="ege-answer ege-answer-word ${extra}" id="ege-answer" autocomplete="off" spellcheck="false" aria-label="Ответ" />`;
+}
+
+function digitPadHtml() {
+  const keys = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  return `
+    <div class="ege-pad" role="group" aria-label="Цифры">
+      ${keys.map((d) => `<button type="button" data-pad="${d}">${d}</button>`).join("")}
+      <button type="button" data-pad="bs">Стереть</button>
+    </div>
+  `;
+}
+
+function readAnswer(root) {
+  const slots = [...root.querySelectorAll("[data-slot]")];
+  if (slots.length) return slots.map((s) => s.value).join("");
+  return root.querySelector("#ege-answer")?.value || "";
+}
+
+function markAnswerFields(root, ok) {
+  const slots = [...root.querySelectorAll("[data-slot]")];
+  const input = root.querySelector("#ege-answer");
+  const nodes = slots.length ? slots : input ? [input] : [];
+  nodes.forEach((node) => {
+    node.classList.toggle("ok", ok);
+    node.classList.toggle("bad", !ok);
+  });
+}
+
+function fillSlots(root, digit) {
+  const slots = [...root.querySelectorAll("[data-slot]")];
+  if (!slots.length) return;
+  const active = slots.find((s) => s === document.activeElement);
+  const target = (active && !active.value ? active : null) || slots.find((s) => !s.value) || active || slots[slots.length - 1];
+  target.value = digit;
+  const i = slots.indexOf(target);
+  slots[Math.min(i + 1, slots.length - 1)].focus();
+}
+
+function toggleDigitInput(input, digit) {
+  const set = new Set([...digitsOnly(input.value)]);
+  const s = String(digit);
+  if (set.has(s)) set.delete(s);
+  else set.add(s);
+  input.value = [...set].sort().join("");
+  input.focus();
+}
+
+function applyDigit(root, mode, digit) {
+  if (mode === "digits-fixed") fillSlots(root, digit);
+  else {
+    const input = root.querySelector("#ege-answer");
+    if (input) toggleDigitInput(input, digit);
+  }
+}
+
+function backspaceAnswer(root, mode) {
+  if (mode === "digits-fixed") {
+    const slots = [...root.querySelectorAll("[data-slot]")];
+    const filled = [...slots].reverse().find((s) => s.value);
+    if (filled) {
+      filled.value = "";
+      filled.focus();
+    }
+    return;
+  }
+  const input = root.querySelector("#ege-answer");
+  if (input) input.value = digitsOnly(input.value).slice(0, -1);
+}
+
+export function renderEgeExercise(ex, ctx = {}) {
   const root = document.createElement("div");
   root.className = "card ex-card ege-card";
   const mode = ex.answerMode || "word";
   const hint =
-    mode === "digits-any" || mode === "digits-fixed"
-      ? "Ответ — цифры, без пробелов и запятых."
-      : mode === "stress"
-        ? "Выпишите слово, ударный гласный — заглавной буквой: звонИт."
-        : "Выпишите слово или форму без кавычек.";
+    mode === "digits-any"
+      ? "Нажмите номер ряда — или цифры внизу. Порядок не важен."
+      : mode === "digits-fixed"
+        ? "Пять цифр по порядку А–Д. Можно нажать номер в правом столбце."
+        : mode === "stress"
+          ? "Нажмите слово, затем поправьте ударную гласную на заглавную: звонИт."
+          : "Нажмите слово в списке или впишите форму без кавычек.";
+  const index = Number.isInteger(ctx.index) ? ctx.index : 0;
+  const total = ctx.total || 0;
+  const counter = total ? ` · вариант ${index + 1} из ${total}` : "";
+  const title = EGE_TITLES[ex.egeTask] || ex.title || "Задание " + ex.egeTask;
+  const nextHref = ctx.nextId ? `#/ege-item/${encodeURIComponent(ctx.nextId)}` : "";
+  const ruleLinks = (ctx.rules || [])
+    .map((r) => `<a href="#/rule/${encodeURIComponent(r.slug || r.id)}">${escapeHtml(r.title)}</a>`)
+    .join(" · ");
   root.innerHTML = `
-    <p class="kicker">ЕГЭ · задание ${ex.egeTask}</p>
-    <h2>${escapeHtml(ex.title || "Задание " + ex.egeTask)}</h2>
+    <p class="kicker">ЕГЭ · задание ${ex.egeTask}${counter}</p>
+    <h2>${escapeHtml(title)}</h2>
     <p class="ege-instruction">${escapeHtml(ex.instruction || "")}</p>
     ${ex.type === "ege-match" ? matchHtml(ex) : stimulusHtml(ex)}
     ${
@@ -144,29 +265,89 @@ export function renderEgeExercise(ex) {
         ? `<p class="muted">Выделенный фрагмент — то, что нужно квалифицировать. Аллитерация, ассонанс и метонимия на экзамене всегда маркируются.</p>`
         : ""
     }
-    <label class="home-search-label" for="ege-answer">Ответ</label>
+    <p class="home-search-label" id="ege-answer-label">Ответ</p>
     <p class="muted">${hint}</p>
-    <input class="search ege-answer" id="ege-answer" autocomplete="off" spellcheck="false" />
-    <div class="actions"><button class="btn" data-check type="button">Проверить</button></div>
-    <div class="result"></div>
-    <p class="muted explain" hidden></p>
+    ${answerFieldHtml(mode)}
+    <div class="actions">
+      <button class="btn" data-check type="button">Проверить</button>
+    </div>
+    <div class="explain-box" data-explain hidden>
+      <p class="result"></p>
+      <p class="explain-text"></p>
+      ${ruleLinks ? `<p class="explain-rules">К правилам: ${ruleLinks}</p>` : ""}
+    </div>
   `;
   const input = root.querySelector("#ege-answer");
+  const slots = [...root.querySelectorAll("[data-slot]")];
+  const explain = root.querySelector("[data-explain]");
   const result = root.querySelector(".result");
-  const explain = root.querySelector(".explain");
+  const explainText = root.querySelector(".explain-text");
   const finish = () => {
-    const ok = checkEgeAnswer(input.value, ex);
-    input.classList.toggle("ok", ok);
-    input.classList.toggle("bad", !ok);
-    result.textContent = ok ? "Верно." : "Пока неверно. Посмотрите пояснение и правило.";
+    const ok = checkEgeAnswer(readAnswer(root), ex);
+    markAnswerFields(root, ok);
+    if (ok) markEgeDone(ex);
     explain.hidden = false;
-    explain.textContent = ex.explanation || "";
+    explain.classList.toggle("ok", ok);
+    explain.classList.toggle("bad", !ok);
+    result.textContent = ok ? "Верно." : "Пока неверно.";
+    explainText.textContent = ex.explanation || "";
+    const actions = root.querySelector(".actions");
+    if (nextHref && !root.querySelector("[data-next]")) {
+      const a = document.createElement("a");
+      a.className = ok ? "btn" : "btn secondary";
+      a.setAttribute("data-next", "");
+      a.href = nextHref;
+      a.textContent = "Следующий вариант";
+      actions.appendChild(a);
+    } else if (ok) {
+      root.querySelector("[data-next]")?.classList.remove("secondary");
+    }
   };
   root.querySelector("[data-check]").onclick = finish;
-  input.addEventListener("keydown", (e) => {
+  const onEnter = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       finish();
+    }
+  };
+  input?.addEventListener("keydown", onEnter);
+  slots.forEach((slot) => {
+    slot.addEventListener("keydown", onEnter);
+    slot.addEventListener("input", () => {
+      slot.value = digitsOnly(slot.value).slice(-1);
+      if (slot.value) {
+        const i = Number(slot.dataset.slot);
+        slots[Math.min(i + 1, slots.length - 1)]?.focus();
+      }
+    });
+  });
+  if (slots[0]) {
+    slots[0].addEventListener("paste", (e) => {
+      const t = digitsOnly(e.clipboardData.getData("text"));
+      if (t.length < 2) return;
+      e.preventDefault();
+      slots.forEach((s, i) => {
+        s.value = t[i] || "";
+      });
+    });
+  }
+  root.addEventListener("click", (e) => {
+    const pad = e.target.closest("[data-pad]");
+    if (pad) {
+      const key = pad.getAttribute("data-pad");
+      if (key === "bs") backspaceAnswer(root, mode);
+      else applyDigit(root, mode, key);
+      return;
+    }
+    const digitBtn = e.target.closest("[data-digit]");
+    if (digitBtn && (mode === "digits-any" || mode === "digits-fixed")) {
+      applyDigit(root, mode, digitBtn.getAttribute("data-digit"));
+      return;
+    }
+    const wordBtn = e.target.closest("[data-insert]");
+    if (wordBtn && input) {
+      input.value = wordBtn.getAttribute("data-insert") || "";
+      input.focus();
     }
   });
   return root;

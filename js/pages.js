@@ -1,6 +1,7 @@
 import { escapeHtml } from "./ui.js";
 import { legend, mark } from "./markup.js";
 import { EGE_TITLES, egeByNumber, egeTasks } from "./ege.js";
+import { doneIds, readProgress } from "./progress.js";
 
 function plainText(value) {
   return String(value ?? "").replace(/\{([^{}|]+)(?:\|[prseoxzmf])?\}/g, "$1");
@@ -34,9 +35,9 @@ function renderTable(table) {
 function renderTheory(rule) {
   return (rule.theory || [])
     .map(
-      (block) => `
+      (block, i) => `
       <section class="theory-block">
-        ${block.heading ? `<h3>${mark(block.heading)}</h3>` : ""}
+        ${block.heading ? `<h3 id="t-${i}">${mark(block.heading)}</h3>` : ""}
         ${block.body ? `<p>${mark(block.body)}</p>` : ""}
         ${renderTable(block.table)}
         ${
@@ -79,36 +80,76 @@ function ruleWord(n) {
   return "правил";
 }
 
+function continueHtml() {
+  const p = readProgress();
+  if (!p.lastId || !p.lastTask) return "";
+  const variant = p.lastIndex ? ` · вариант ${p.lastIndex}` : "";
+  return `
+    <a class="card home-continue" href="#/ege-item/${encodeURIComponent(p.lastId)}">
+      <p class="kicker">Продолжить</p>
+      <h2>Задание ${p.lastTask}${variant}</h2>
+      <p>Вернуться к последнему бланку</p>
+    </a>`;
+}
+
 export function homeHitsHtml(content, raw) {
   const query = raw.trim();
-  if (query.length < 2) return "";
-  const hits = [];
-  for (const section of content.sections) {
-    for (const chapter of section.chapters) {
-      for (const rule of chapter.rules) {
-        if (!ruleMatches(rule, query)) continue;
-        hits.push(rule);
-        if (hits.length >= 8) break;
-      }
-      if (hits.length >= 8) break;
-    }
-    if (hits.length >= 8) break;
+  const q = query.toLowerCase();
+  if (!q) return "";
+  const rows = [];
+  const num = Number(query);
+  if (Number.isInteger(num) && EGE_TITLES[num]) {
+    rows.push({
+      href: `#/ege/${num}`,
+      title: `ЕГЭ · задание ${num}. ${EGE_TITLES[num]}`,
+      meta: "тренажёр",
+    });
   }
-  if (!hits.length) {
+  for (const [n, title] of Object.entries(EGE_TITLES)) {
+    if (q.length < 2) break;
+    if (title.toLowerCase().includes(q) || `задание ${n}`.includes(q)) {
+      if (Number(n) === num) continue;
+      rows.push({
+        href: `#/ege/${n}`,
+        title: `ЕГЭ · задание ${n}. ${title}`,
+        meta: "тренажёр",
+      });
+    }
+  }
+  if (q.length >= 2) {
+    for (const section of content.sections) {
+      for (const chapter of section.chapters) {
+        for (const rule of chapter.rules) {
+          if (!ruleMatches(rule, query)) continue;
+          rows.push({
+            href: `#/rule/${encodeURIComponent(rule.slug || rule.id)}`,
+            title: rule.title,
+            meta: rule.rosenthal?.paragraph ? "§ " + rule.rosenthal.paragraph : "",
+          });
+          if (rows.length >= 10) break;
+        }
+        if (rows.length >= 10) break;
+      }
+      if (rows.length >= 10) break;
+    }
+  }
+  if (!rows.length) {
+    if (q.length < 2) return "";
     return `<p class="muted">Ничего не найдено. Попробуйте другое слово.</p>`;
   }
   return `
     <div class="card home-hits-list">
-      ${hits
+      ${rows
+        .slice(0, 10)
         .map(
           (r) => `
-        <a class="rule-row" href="#/rule/${encodeURIComponent(r.slug || r.id)}">
+        <a class="rule-row" href="${r.href}">
           <span>${escapeHtml(r.title)}</span>
-          <small>${r.rosenthal?.paragraph ? "§ " + r.rosenthal.paragraph : ""}</small>
+          <small>${escapeHtml(r.meta || "")}</small>
         </a>`
         )
         .join("")}
-      <a class="rule-row" href="#/rules?q=${encodeURIComponent(query)}">Все результаты в каталоге</a>
+      ${q.length >= 2 ? `<a class="rule-row" href="#/rules?q=${encodeURIComponent(query)}">Все правила в каталоге</a>` : ""}
     </div>
   `;
 }
@@ -125,12 +166,12 @@ export function homePage(content) {
         <h1>Студия Лексикон</h1>
         <p class="lede">Правило на одной странице: условие, примеры с выделенной орфограммой — затем закрепление.</p>
         <div class="home-actions">
-          <a class="btn btn-lg" href="#/rules">Правила</a>
-          <a class="btn btn-lg secondary" href="#/practice">Задания</a>
-          <a class="btn btn-lg secondary" href="#/ege">ЕГЭ</a>
+          <a class="btn btn-lg" href="#/ege/4/random">Решать ЕГЭ</a>
+          <a class="btn btn-lg secondary" href="#/rules">Правила</a>
+          <a class="btn btn-lg ghost" href="#/ege">Все задания 4–22</a>
         </div>
-        <label class="home-search-label" for="home-search">Найти правило</label>
-        <input class="search" id="home-search" placeholder="чередование, тире, НН…" autocomplete="off" enterkeyhint="search" />
+        <label class="home-search-label" for="home-search">Найти правило или задание</label>
+        <input class="search" id="home-search" placeholder="НН, ударение, 15, тире…" autocomplete="off" enterkeyhint="search" />
         <div id="home-hits" class="home-hits" aria-live="polite"></div>
       </div>
       <aside class="hero-card class-only">
@@ -142,6 +183,7 @@ export function homePage(content) {
         </ol>
       </aside>
     </section>
+    ${continueHtml()}
     <section class="grid-3">
       ${counts
         .map(
@@ -153,11 +195,6 @@ export function homePage(content) {
         )
         .join("")}
     </section>
-    <a class="card home-ege" href="#/ege">
-      <p class="kicker">Тренажёр экзамена</p>
-      <h2>ЕГЭ по русскому</h2>
-      <p>Задания 4–22 в форме КИМ: слово или цифры, как в бланке. Нет заданий 1–3, 23–26 и сочинения (27).</p>
-    </a>
   `;
 }
 
@@ -180,13 +217,14 @@ export function rulesIndex(content, sectionId = "", q = "") {
   const chapters = sections
     .map((section) => {
       const ch = section.chapters
-        .map((chapter) => {
+        .map((chapter, ci) => {
           const all = chapter.rules;
           const rules = all.filter((r) => ruleMatches(r, query));
           if (query && !rules.length) return "";
           if (!all.length && query) return "";
+          const open = query || (ci === 0 && section === sections[0]);
           return `
-            <details class="card chapter" ${query ? "open" : ""}>
+            <details class="card chapter" ${open ? "open" : ""}>
               <summary><span>${escapeHtml(chapter.roman ? chapter.roman + ". " : "")}${escapeHtml(chapter.title)}</span><span class="muted">${rules.length || "скоро"}</span></summary>
               ${
                 rules.length
@@ -224,6 +262,15 @@ export function rulePage(rule, neighbors = {}) {
     return `<div class="empty">Правило не найдено. <a href="#/rules">Ко всем правилам</a></div>`;
   }
   const hasPractice = (neighbors.exerciseCount || 0) > 0;
+  const tocItems = (rule.theory || [])
+    .map((b, i) => ({ heading: b.heading, i }))
+    .filter((b) => b.heading);
+  const toc =
+    tocItems.length >= 4
+      ? `<nav class="rule-toc" aria-label="Содержание карточки">${tocItems
+          .map((b) => `<a href="#t-${b.i}">${escapeHtml(plainText(b.heading))}</a>`)
+          .join("")}</nav>`
+      : "";
   return `
     <div class="crumbs">
       <a href="#/rules">Правила</a>
@@ -237,6 +284,7 @@ export function rulePage(rule, neighbors = {}) {
       <h1>${escapeHtml(rule.title)}</h1>
       <div class="summary-box">${mark(rule.summary)}</div>
       ${legend(rule.section?.id)}
+      ${toc}
       ${renderTheory(rule)}
       ${
         rule.exceptions?.length
@@ -252,7 +300,7 @@ export function rulePage(rule, neighbors = {}) {
         ${
           hasPractice
             ? `<a class="btn" href="#/practice/${encodeURIComponent(rule.slug || rule.id)}">Закрепить заданиями</a>`
-            : `<span class="muted">Заданий к этому правилу пока нет — можно разобрать примеры на уроке.</span>`
+            : ""
         }
       </div>
       <div class="pager">
@@ -321,46 +369,51 @@ export function egeIndex(content, taskNum = "") {
     return `
       <p class="eyebrow">Тренажёр ЕГЭ</p>
       <h1>ЕГЭ по русскому</h1>
-      <p class="lede">Форма как на экзамене: вы записываете слово или последовательность цифр.</p>
-      <div class="card ege-missing">
-        <h3>Каких заданий нет</h3>
+      <p class="lede">Форма как на экзамене: слово или последовательность цифр. Задания 4–22.</p>
+      ${continueHtml()}
+      <div class="ege-task-list">
+        ${numbers
+          .map(
+            (num) => `
+          <a class="card ege-task-row" href="#/ege/${num}">
+            <span class="ege-num">${num}</span>
+            <span>
+              <strong>${escapeHtml(EGE_TITLES[num])}</strong>
+              <span class="muted">${counts[num] || 0} вариантов</span>
+            </span>
+          </a>`
+          )
+          .join("")}
+      </div>
+      <details class="card ege-missing">
+        <summary>Каких заданий нет</summary>
         <ul>
           <li><strong>1, 2, 3</strong> — микротекст: информация, средства связи, лексический анализ абзаца.</li>
           <li><strong>23–26</strong> — связный текст: содержание, тип речи, лексика, связь предложений.</li>
           <li><strong>27</strong> — сочинение.</li>
         </ul>
-        <p class="muted">В тренажёре сейчас задания <strong>4–22</strong>.</p>
-      </div>
-      <div class="grid-3">
-        ${numbers
-          .map(
-            (num) => `
-          <a class="card home-section" href="#/ege/${num}">
-            <p class="kicker">Задание ${num}</p>
-            <h2>${escapeHtml(EGE_TITLES[num])}</h2>
-            <p>${counts[num] || 0} вариантов</p>
-          </a>`
-          )
-          .join("")}
-      </div>
+      </details>
     `;
   }
   const list = egeByNumber(content, n);
+  const done = doneIds(n);
   return `
     <div class="crumbs"><a href="#/ege">ЕГЭ</a><span>/</span><span>задание ${n}</span></div>
     <p class="eyebrow">ЕГЭ · задание ${n}</p>
     <h1>${escapeHtml(EGE_TITLES[n] || "Задание")}</h1>
     <p class="lede">${list.length} вариантов. Ответ вписывается так же, как в бланк № 1.</p>
+    <div class="home-actions">
+      <a class="btn btn-lg" href="#/ege/${n}/random">Случайный вариант</a>
+    </div>
     ${
-      list
-        .map(
-          (ex, i) => `
-      <a class="card" href="#/ege-item/${encodeURIComponent(ex.id)}" style="margin-bottom:12px">
-        <div class="kicker">Вариант ${i + 1}</div>
-        <h3>${escapeHtml(ex.title)}</h3>
-      </a>`
-        )
-        .join("") || `<div class="empty">Этот номер ещё наполняется.</div>`
+      list.length
+        ? `<div class="ege-var-grid">${list
+            .map(
+              (ex, i) => `
+          <a class="ege-var${done.has(ex.id) ? " done" : ""}" href="#/ege-item/${encodeURIComponent(ex.id)}" aria-label="Вариант ${i + 1}">${i + 1}</a>`
+            )
+            .join("")}</div>`
+        : `<div class="empty">Этот номер ещё наполняется.</div>`
     }
   `;
 }
