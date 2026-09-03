@@ -22,9 +22,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Unlock exercise bank
+        env:
+          LEKSIKON_BANK_KEY: ${{ secrets.LEKSIKON_BANK_KEY }}
+        run: python tools/bank.py unlock
+      - name: Collect site files
+        run: |
+          mkdir -p _site/css _site/js _site/data/ege
+          cp index.html 404.html favicon.svg _site/
+          cp -r css/. _site/css/
+          cp -r js/. _site/js/
+          cp data/orthography.json data/punctuation.json data/stylistics.json data/exercises.json _site/data/
+          cp data/ege/*.json _site/data/ege/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

@@ -5,6 +5,15 @@ node_modules/
 .idea/
 .vscode/
 leksikon-drafts.json
+.leksikon-bank-key
+data/bank.tar.gz
+data/ege/*.json
+data/exercises.json
+tools/build_ege_*.py
+tools/sanitize_ege_bank.py
+tools/check_ege_bank.py
+tools/ege_dump.py
+tools/ege_texts.py
 tools/__pycache__/
 *.doc
 tools/spravochnik.txt
