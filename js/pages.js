@@ -207,7 +207,7 @@ export function homePage(content) {
           />
           <span class="landing-teacher-hero-copy">
             <strong>Павел Викторович Алексеев</strong>
-            <small>Доктор филологических наук · ведёт все занятия</small>
+            <small>Основатель и ведущий преподаватель студии</small>
           </span>
         </a>
         <p class="landing-exams landing-exams-hero" aria-label="К чему готовим">
@@ -240,7 +240,7 @@ export function homePage(content) {
     </section>
 
     <section class="landing-about" id="teacher" aria-labelledby="teacher-title">
-      <p class="eyebrow">Преподаватель</p>
+      <p class="eyebrow">Команда</p>
       <h2 id="teacher-title">${escapeHtml(STUDIO.teacherFull)}</h2>
       <div class="landing-teacher-card">
         <img
@@ -252,8 +252,8 @@ export function homePage(content) {
           decoding="async"
         />
         <div>
-          <p>Доктор филологических наук, профессор.</p>
-          <p>Открыл студию в 2024 году. Все занятия, очные и онлайн, ведёт сам.</p>
+          <p>Доктор филологических наук, профессор. Основатель, руководитель и ведущий преподаватель студии.</p>
+          <p>Открыл студию в 2024 году и ведёт большую часть занятий. Вместе с ним работает команда опытных филологов.</p>
           <p><a href="${escapeHtml(STUDIO.teacherSite)}" target="_blank" rel="noopener noreferrer">Личный сайт</a></p>
         </div>
       </div>
@@ -309,7 +309,7 @@ export function homePage(content) {
       <div class="landing-faq-list">
         <details class="landing-faq-item" open>
           <summary>Кто ведёт занятия?</summary>
-          <p>Павел Викторович Алексеев. Он ведёт все занятия, и очные, и онлайн.</p>
+          <p>Большую часть занятий ведёт Павел Викторович Алексеев, основатель студии. Остальные ведут филологи из нашей команды с большим опытом преподавания.</p>
         </details>
         <details class="landing-faq-item">
           <summary>Как проходит онлайн?</summary>

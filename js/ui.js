@@ -20,7 +20,7 @@ export function layout(content, active = "", board = false, { hideFooter = false
   const nav = isHome
     ? `
           <a href="#about">Программы</a>
-          <a href="#teacher">Преподаватель</a>
+          <a href="#teacher">Команда</a>
           <a href="#apply">Запись</a>
           <a href="#learn">Материалы</a>`
     : `
@@ -53,7 +53,7 @@ export function layout(content, active = "", board = false, { hideFooter = false
         : `<footer class="site-footer">
       <div class="wrap footer-inner">
         <p class="footer-name">Студия Лексикон</p>
-        <p>Руководитель — П. В. Алексеев · <a href="https://palekseev.ru/" target="_blank" rel="noopener noreferrer">личный сайт</a></p>
+        <p>Основатель и руководитель — П. В. Алексеев · <a href="https://palekseev.ru/" target="_blank" rel="noopener noreferrer">личный сайт</a></p>
         <p>
           <a href="https://go.2gis.com/lknNX" target="_blank" rel="noopener noreferrer">г. Горно-Алтайск, пр. Коммунистический, 47</a>
           <span> (вход со стороны ул. Головина)</span>
