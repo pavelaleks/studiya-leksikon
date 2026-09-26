@@ -1,11 +1,12 @@
-import { layout } from "./ui.js";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex } from "./pages.js";
-import { EGE_TITLES, egeByNumber } from "./ege.js";
-import { renderExercise } from "./exercises.js";
-import { adminPage, bindAdmin } from "./admin.js";
-import { applyBoard, keepBoardOnHash, parseRoute, setBoard } from "./route.js";
-import { pickEgeVariant, touchEge } from "./progress.js";
+import { layout } from "./ui.js?v=land14";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land14";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex, ogePage, thanksPage, literaturePage } from "./pages.js?v=land14";
+import { bindApplyForm } from "./apply.js?v=land14";
+import { EGE_TITLES, egeByNumber } from "./ege.js?v=land14";
+import { renderExercise } from "./exercises.js?v=land14";
+import { adminPage, bindAdmin } from "./admin.js?v=land14";
+import { applyBoard, keepBoardOnHash, parseRoute, setBoard } from "./route.js?v=land14";
+import { pickEgeVariant, touchEge } from "./progress.js?v=land14";
 
 const app = document.getElementById("app");
 let content = null;
@@ -48,6 +49,10 @@ function bindSkip() {
   });
 }
 
+function bindRulePrint() {
+  app.querySelector("#rule-print")?.addEventListener("click", () => window.print());
+}
+
 function bindBoardToggle() {
   const btn = app.querySelector("#board-toggle");
   if (!btn) return;
@@ -56,6 +61,15 @@ function bindBoardToggle() {
     setBoard(on);
     btn.classList.toggle("active", on);
     btn.setAttribute("aria-pressed", String(on));
+    const header = app.querySelector(".site-header");
+    header?.querySelector(".board-banner")?.remove();
+    if (on && header) {
+      const banner = document.createElement("p");
+      banner.className = "board-banner";
+      banner.setAttribute("role", "status");
+      banner.textContent = "Крупный шрифт для проектора. Нажмите ещё раз в шапке, чтобы выключить.";
+      header.appendChild(banner);
+    }
   });
 }
 
@@ -114,10 +128,25 @@ async function render() {
   const { parts, q } = parseRoute();
   const [a, b] = parts;
 
-  if (!a) {
+  const homeAnchors = new Set(["formats", "apply", "learn", "contact", "materials", "about"]);
+  if (!a || homeAnchors.has(a)) {
+    document.body.classList.add("is-landing");
     mountHtml(homePage(content), "home");
-    bindHomeSearch();
+    bindApplyForm(app);
     setTitle("");
+    if (homeAnchors.has(a)) {
+      requestAnimationFrame(() => {
+        document.getElementById(a)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+    return;
+  }
+
+  document.body.classList.remove("is-landing");
+
+  if (a === "thanks") {
+    mountHtml(thanksPage(), "home");
+    setTitle("Заявка отправлена");
     return;
   }
 
@@ -140,6 +169,7 @@ async function render() {
         }
       : {};
     mountHtml(rulePage(rule, neighbors), "rules");
+    bindRulePrint();
     setTitle(rule?.title || "Правило");
     return;
   }
@@ -159,6 +189,18 @@ async function render() {
     }
     mountHtml(practiceIndex(content, filter), "practice");
     setTitle("Задания");
+    return;
+  }
+
+  if (a === "oge") {
+    mountHtml(ogePage(), "oge");
+    setTitle("ОГЭ по русскому");
+    return;
+  }
+
+  if (a === "literature") {
+    mountHtml(literaturePage(), "literature");
+    setTitle("Литература");
     return;
   }
 

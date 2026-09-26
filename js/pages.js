@@ -2,6 +2,18 @@ import { escapeHtml } from "./ui.js";
 import { legend, mark } from "./markup.js";
 import { EGE_TITLES, egeByNumber, egeTasks } from "./ege.js";
 import { doneIds, readProgress } from "./progress.js";
+import { STUDIO } from "./config.js";
+
+function contactsBlock(extraClass = "") {
+  const tg = STUDIO.telegram;
+  const mail = STUDIO.applyEmail;
+  return `
+    <div class="landing-contacts ${extraClass}">
+      <button type="button" class="btn btn-lg secondary" data-reveal-phone>Позвонить</button>
+      <a class="btn btn-lg secondary" href="https://t.me/${escapeHtml(tg)}" target="_blank" rel="noopener noreferrer">Telegram</a>
+      <a class="btn btn-lg secondary" href="mailto:${escapeHtml(mail)}">Почта</a>
+    </div>`;
+}
 
 function plainText(value) {
   return String(value ?? "").replace(/\{([^{}|]+)(?:\|[prseoxzmf])?\}/g, "$1");
@@ -155,46 +167,262 @@ export function homeHitsHtml(content, raw) {
 }
 
 export function homePage(content) {
-  const counts = content.sections.map((s) => ({
-    ...s,
-    n: s.chapters.reduce((a, c) => a + c.rules.length, 0),
-  }));
+  const ruleCount = content.sections.reduce(
+    (a, s) => a + s.chapters.reduce((b, c) => b + c.rules.length, 0),
+    0
+  );
   return `
-    <section class="hero">
-      <div>
-        <p class="eyebrow">Русский язык · 8–11 кл.</p>
-        <h1>Студия Лексикон</h1>
-        <p class="lede">Правило на одной странице: условие, примеры с выделенной орфограммой — затем закрепление.</p>
-        <div class="home-actions">
-          <a class="btn btn-lg" href="#/ege/4/random">Решать ЕГЭ</a>
-          <a class="btn btn-lg secondary" href="#/rules">Правила</a>
-          <a class="btn btn-lg ghost" href="#/ege">Все задания 4–22</a>
+    <section class="landing-hero" aria-label="Студия Лексикон">
+      <div class="landing-hero-copy">
+        <p class="landing-exams landing-exams-hero" aria-label="К чему готовим">
+          <span class="exam-vpr">ВПР</span><span class="exam-oge">ОГЭ</span><span class="exam-ege">ЕГЭ</span>
+        </p>
+        <p class="eyebrow">Горно-Алтайск · русский язык и литература</p>
+        <p class="landing-brand">Студия Лексикон</p>
+        <h1 class="landing-title">Подготовка к экзаменам и развитие интеллекта</h1>
+        <p class="lede landing-lede">База заданий ФИПИ и наши тренажёры. Очно и онлайн, один на один или в группе до четырёх.</p>
+        <div class="landing-cta home-actions">
+          <a class="btn btn-lg" href="#apply">Записаться</a>
+          <button type="button" class="btn btn-lg secondary" data-reveal-phone>Позвонить</button>
+          <a class="btn btn-lg secondary" href="https://t.me/${escapeHtml(STUDIO.telegram)}" target="_blank" rel="noopener noreferrer">Telegram</a>
         </div>
-        <label class="home-search-label" for="home-search">Найти правило или задание</label>
-        <input class="search" id="home-search" placeholder="НН, ударение, 15, тире…" autocomplete="off" enterkeyhint="search" />
-        <div id="home-hits" class="home-hits" aria-live="polite"></div>
+        <p class="landing-hero-more"><a href="#learn">Материалы на сайте</a></p>
       </div>
-      <aside class="hero-card class-only">
-        <h3>На занятии</h3>
-        <ol>
-          <li>Откройте карточку на компьютере. Для проектора нажмите «Режим доски» в шапке — шрифт станет крупнее.</li>
-          <li>Ученик читает то же правило по ссылке на телефоне.</li>
-          <li>Сразу закрепляете тестом или списыванием.</li>
-        </ol>
-      </aside>
+      <figure class="landing-hero-art">
+        <div class="landing-hero-frame">
+          <picture>
+            <source media="(max-width: 720px)" srcset="./assets/art/sarbinaz-hero-sm.jpg" />
+            <img
+              src="./assets/art/sarbinaz-hero.jpg"
+              alt="Рисунок Сарбиназ Алексеевой: манулы в горах"
+              width="1500"
+              height="2000"
+              decoding="async"
+              fetchpriority="high"
+            />
+          </picture>
+        </div>
+        <figcaption>Рисунок Сарбиназ Алексеевой</figcaption>
+      </figure>
     </section>
+
     ${continueHtml()}
-    <section class="grid-3">
-      ${counts
-        .map(
-          (s) => `
-        <a class="card home-section" href="#/rules/${s.id}">
-          <h2>${escapeHtml(s.title)}</h2>
-          <p>${s.n} ${ruleWord(s.n)}</p>
-        </a>`
-        )
-        .join("")}
+
+    <section class="landing-offer" aria-labelledby="offer-title">
+      <p class="eyebrow">Чему учим</p>
+      <h2 id="offer-title">Два предмета</h2>
+      <div class="landing-offer-grid">
+        <div>
+          <h3>Русский язык</h3>
+          <p>Орфография, пунктуация, то, что нужно в школе и на экзамене.</p>
+        </div>
+        <div>
+          <h3>Литература</h3>
+          <p>Чтение, разбор текста, сочинение своими словами.</p>
+        </div>
+      </div>
+      <p class="landing-exams"><span>Школьная программа</span></p>
     </section>
+
+    <section class="landing-about" id="about" aria-labelledby="about-title">
+      <p class="eyebrow">О студии</p>
+      <h2 id="about-title">Как устроена учёба</h2>
+      <p class="lede">Опираемся на официальную базу ФИПИ. На занятии и дома — наши материалы: правила, тренажёры, маршрут под задачи ученика.</p>
+
+      <dl class="landing-format-dl">
+        <div>
+          <dt>Очно или онлайн</dt>
+          <dd>В студии в Горно-Алтайске или по видеосвязи. Ссылка на онлайн — только записанным ученикам.</dd>
+        </div>
+        <div>
+          <dt>Один на один или в группе</dt>
+          <dd>В группе не больше четырёх человек.</dd>
+        </div>
+      </dl>
+
+      <div class="landing-teacher-inline">
+        <div class="landing-teacher-card">
+          <img
+            class="landing-teacher-photo"
+            src="./assets/art/alekseev.jpg"
+            alt="Павел Викторович Алексеев"
+            width="160"
+            height="160"
+            decoding="async"
+          />
+          <div>
+            <p class="landing-teacher-inline-label">Руководитель и ведущий преподаватель</p>
+            <h3>Павел Викторович Алексеев</h3>
+            <p>Доктор филологических наук, профессор. Сам ведёт занятия в студии.</p>
+            <p><a href="https://palekseev.ru/" target="_blank" rel="noopener noreferrer">Личный сайт</a></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-apply" id="apply" aria-labelledby="apply-title">
+      <div class="landing-apply-intro">
+        <p class="eyebrow">Запись</p>
+        <h2 id="apply-title">Оставить заявку</h2>
+        <p class="lede">Можно заполнить форму или сразу написать / позвонить.</p>
+        ${contactsBlock("landing-contacts-compact")}
+      </div>
+      <form class="apply-form" id="apply-form" novalidate>
+        <input type="hidden" name="_subject" value="Заявка в Студию Лексикон" />
+        <input type="hidden" name="_captcha" value="false" />
+        <input type="hidden" name="_template" value="table" />
+        <input type="hidden" name="_next" value="" />
+        <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" />
+
+        <div class="apply-row">
+          <label class="apply-field">
+            <span>Имя ученика или родителя</span>
+            <input class="search apply-input" name="name" required autocomplete="name" placeholder="Как к вам обращаться" />
+          </label>
+          <label class="apply-field">
+            <span>Телефон</span>
+            <input class="search apply-input" name="phone" type="tel" required autocomplete="tel" placeholder="+7 …" />
+          </label>
+        </div>
+
+        <div class="apply-row">
+          <label class="apply-field">
+            <span>Класс</span>
+            <select class="search apply-input" name="grade" required>
+              <option value="">Выберите</option>
+              <option>5</option><option>6</option><option>7</option>
+              <option>8</option><option>9</option><option>10</option><option>11</option>
+            </select>
+          </label>
+          <label class="apply-field">
+            <span>Предмет</span>
+            <select class="search apply-input" name="subject" required>
+              <option value="">Выберите</option>
+              <option>Русский язык</option>
+              <option>Литература</option>
+              <option>Русский язык и литература</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="apply-row">
+          <label class="apply-field">
+            <span>Зачем приходите</span>
+            <select class="search apply-input" name="goal" required>
+              <option value="">Выберите</option>
+              <option>ВПР</option>
+              <option>ОГЭ</option>
+              <option>ЕГЭ</option>
+              <option>Подтянуть школьную программу</option>
+              <option>Другое</option>
+            </select>
+          </label>
+          <fieldset class="apply-field apply-fieldset">
+            <legend>Где удобнее</legend>
+            <label class="apply-check"><input type="radio" name="place" value="Очно в студии" required /> Очно</label>
+            <label class="apply-check"><input type="radio" name="place" value="Онлайн" /> Онлайн</label>
+            <label class="apply-check"><input type="radio" name="place" value="Пока не знаю" /> Пока не знаю</label>
+          </fieldset>
+        </div>
+
+        <fieldset class="apply-field apply-fieldset">
+          <legend>С кем заниматься</legend>
+          <label class="apply-check"><input type="radio" name="mode" value="Индивидуально" required /> Один на один</label>
+          <label class="apply-check"><input type="radio" name="mode" value="В группе до 4 человек" /> В группе (до 4)</label>
+          <label class="apply-check"><input type="radio" name="mode" value="Посоветуйте" /> Посоветуйте</label>
+        </fieldset>
+
+        <label class="apply-field">
+          <span>Пара слов о себе <span class="muted">(по желанию)</span></span>
+          <textarea class="search apply-input apply-textarea" name="note" rows="3" placeholder="Удобное время, что уже пробовали, о чём хочется спросить…"></textarea>
+        </label>
+
+        <div class="landing-cta home-actions apply-actions">
+          <button type="submit" class="btn btn-lg">Отправить</button>
+          <button type="button" class="btn btn-lg secondary" id="apply-mailto">Открыть в почте</button>
+        </div>
+        <p class="muted apply-hint">Заявка придёт нам на почту. Если удобнее через свою почтовую программу — нажмите «Открыть в почте».</p>
+        <p class="apply-status" id="apply-status" role="status" hidden></p>
+      </form>
+    </section>
+
+    <section class="landing-learn" id="learn" aria-labelledby="learn-title">
+      <p class="eyebrow">На сайте</p>
+      <h2 id="learn-title">Учебные материалы</h2>
+      <p class="lede">Два предмета. Пока открыт русский язык — литературу добавим позже.</p>
+
+      <div class="landing-learn-subjects">
+        <div class="landing-learn-subject">
+          <p class="landing-learn-label">Русский язык</p>
+          <div class="landing-learn-links">
+            <a href="#/ege"><strong>ЕГЭ</strong><span>Задания 4–22</span></a>
+            <a href="#/oge"><strong>ОГЭ</strong><span>Раздел готовится</span></a>
+            <a href="#/rules"><strong>Правила</strong><span>${ruleCount} ${ruleWord(ruleCount)}</span></a>
+          </div>
+        </div>
+        <div class="landing-learn-subject landing-learn-subject-soon">
+          <p class="landing-learn-label">Литература</p>
+          <p class="landing-learn-soon">Материалов пока нет — раздел появится позже.</p>
+          <a class="landing-learn-soon-link" href="#/literature">Открыть страницу раздела</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-contact" id="contact" aria-labelledby="contact-title">
+      <div>
+        <p class="eyebrow">Контакты</p>
+        <h2 id="contact-title">Горно-Алтайск</h2>
+        <p class="lede">пр. Коммунистический, 47 · вход со стороны ул. Головина</p>
+        ${contactsBlock()}
+        <p class="muted landing-contact-mail">
+          <a href="mailto:${escapeHtml(STUDIO.applyEmail)}">${escapeHtml(STUDIO.applyEmail)}</a>
+          ·
+          <a href="https://t.me/${escapeHtml(STUDIO.telegram)}" target="_blank" rel="noopener noreferrer">@${escapeHtml(STUDIO.telegram)}</a>
+        </p>
+        <div class="landing-cta home-actions">
+          <a class="btn btn-lg secondary" href="https://go.2gis.com/lknNX" target="_blank" rel="noopener noreferrer">На карте</a>
+          <a class="btn btn-lg secondary" href="#apply">Форма заявки</a>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+export function thanksPage() {
+  return `
+    <p class="eyebrow">Заявка</p>
+    <h1>Спасибо, мы получили письмо</h1>
+    <p class="lede">Скоро ответим. Если что-то срочное — напишите на <a href="mailto:pavel.alekseev.gasu@gmail.com">pavel.alekseev.gasu@gmail.com</a>.</p>
+    <div class="home-actions">
+      <a class="btn btn-lg" href="#/">На главную</a>
+      <a class="btn btn-lg secondary" href="#/ege">К заданиям ЕГЭ</a>
+    </div>
+  `;
+}
+
+export function ogePage() {
+  return `
+    <p class="eyebrow">Русский язык · ОГЭ</p>
+    <h1>ОГЭ по русскому</h1>
+    <p class="lede">Этот раздел ещё наполняется. Пока можно заниматься заданиями ЕГЭ или открыть правила.</p>
+    <div class="home-actions">
+      <a class="btn btn-lg" href="#/ege">К заданиям ЕГЭ</a>
+      <a class="btn btn-lg secondary" href="#/rules">К правилам</a>
+      <a class="btn btn-lg secondary" href="#/">О студии</a>
+    </div>
+  `;
+}
+
+export function literaturePage() {
+  return `
+    <p class="eyebrow">Литература</p>
+    <h1>Материалы по литературе</h1>
+    <p class="lede">Раздел ещё пустой. Сейчас на сайте учебная часть только по русскому языку — правила и тренажёры ЕГЭ.</p>
+    <div class="home-actions">
+      <a class="btn btn-lg" href="#/rules">К правилам по русскому</a>
+      <a class="btn btn-lg secondary" href="#/ege">К заданиям ЕГЭ</a>
+      <a class="btn btn-lg secondary" href="#/">О студии</a>
+    </div>
   `;
 }
 
@@ -249,9 +477,9 @@ export function rulesIndex(content, sectionId = "", q = "") {
     .join("");
 
   return `
-    <p class="eyebrow">Справочник студии</p>
+    <p class="eyebrow">Русский язык</p>
     <h1>Правила</h1>
-    <p class="lede">Откройте главу, затем карточку. Орфограмма в примерах выделена цветом — так удобнее объяснять у доски и читать дома.</p>
+    <p class="lede">Орфография, пунктуация, стилистика. Откройте главу, затем карточку — орфограмма в примерах выделена цветом.</p>
     ${filters}
     ${chapters || `<div class="empty">Ничего не найдено.</div>`}
   `;
@@ -280,6 +508,13 @@ export function rulePage(rule, neighbors = {}) {
       <span>${escapeHtml(rule.title)}</span>
     </div>
     <article class="rule-article">
+      <div class="print-sheet-header" aria-hidden="true">
+        <span class="print-logo-mark">Л</span>
+        <div class="print-logo-text">
+          <strong>Студия Лексикон</strong>
+          <span>Орфография · пунктуация · стилистика</span>
+        </div>
+      </div>
       <p class="kicker">${escapeHtml(rule.chapter.title)}${rule.rosenthal?.paragraph ? " · § " + rule.rosenthal.paragraph : ""}</p>
       <h1>${escapeHtml(rule.title)}</h1>
       <div class="summary-box">${mark(rule.summary)}</div>
@@ -297,6 +532,7 @@ export function rulePage(rule, neighbors = {}) {
           : ""
       }
       <div class="actions">
+        <button type="button" class="btn secondary" id="rule-print" title="Откроет диалог печати — можно сохранить как PDF">Распечатать</button>
         ${
           hasPractice
             ? `<a class="btn" href="#/practice/${encodeURIComponent(rule.slug || rule.id)}">Закрепить заданиями</a>`
@@ -353,7 +589,7 @@ export function practiceIndex(content, filterId = "") {
       </div>
       <div class="card class-only">
         <h3>На занятии</h3>
-        <p>Откройте задание на проекторе или скиньте ссылку в чат. Для крупного шрифта нажмите «Режим доски» в шапке. Дома ученик проходит тот же вариант — без регистрации.</p>
+        <p>Откройте задание на проекторе или скиньте ссылку в чат. Для крупного шрифта нажмите «Крупный шрифт» в шапке. Дома ученик проходит тот же вариант — без регистрации.</p>
       </div>
     </div>
   `;
@@ -367,7 +603,7 @@ export function egeIndex(content, taskNum = "") {
   const numbers = Object.keys(EGE_TITLES).map(Number);
   if (!n) {
     return `
-      <p class="eyebrow">Тренажёр ЕГЭ</p>
+      <p class="eyebrow">Русский язык · ЕГЭ</p>
       <h1>ЕГЭ по русскому</h1>
       <p class="lede">Форма как на экзамене: слово или последовательность цифр. Задания 4–22.</p>
       ${continueHtml()}
