@@ -182,15 +182,21 @@ export function homePage(content) {
   return `
     <section class="landing-hero" aria-label="Студия Лексикон">
       <div class="landing-hero-copy">
-        <p class="eyebrow">${escapeHtml(STUDIO.city)}</p>
-        <p class="landing-brand">Студия Лексикон</p>
+        <p class="eyebrow landing-kicker">
+          <span>Студия Лексикон</span>
+          <span aria-hidden="true">·</span>
+          <span>${escapeHtml(STUDIO.city)}</span>
+        </p>
         <h1 class="landing-subjects">
           <span class="landing-subject">Русский язык</span>
-          <span class="landing-subject">Литература</span>
+          <span class="landing-subject landing-subject-second">и литература</span>
         </h1>
         <p class="landing-title">Подготовка к экзаменам и развитие интеллекта учеников 8–11 классов</p>
-        <p class="landing-meta">Очно и онлайн, один на один или в группе до четырёх человек</p>
-        <p class="landing-teacher-hero">
+        <ul class="landing-facts" aria-label="Формат занятий">
+          <li>Очно и онлайн</li>
+          <li>Индивидуально или в группе до четырёх</li>
+        </ul>
+        <a class="landing-teacher-hero" href="#teacher">
           <img
             class="landing-teacher-hero-photo"
             src="./css/art/alekseev.jpg"
@@ -199,15 +205,20 @@ export function homePage(content) {
             height="48"
             decoding="async"
           />
-          <span>Ведёт Павел Викторович Алексеев, доктор филологических наук</span>
-        </p>
+          <span class="landing-teacher-hero-copy">
+            <strong>Павел Викторович Алексеев</strong>
+            <small>Доктор филологических наук · ведёт все занятия</small>
+          </span>
+        </a>
         <p class="landing-exams landing-exams-hero" aria-label="К чему готовим">
           <span class="exam-vpr">ВПР</span><span class="exam-oge">ОГЭ</span><span class="exam-ege">ЕГЭ</span>
         </p>
         <div class="landing-cta home-actions">
           <a class="btn btn-lg" href="#apply">Записаться</a>
-          <button type="button" class="btn btn-lg secondary" data-reveal-phone>Позвонить</button>
-          <a class="btn btn-lg secondary" href="https://t.me/${escapeHtml(STUDIO.telegram)}" target="_blank" rel="noopener noreferrer">Telegram</a>
+          <div class="landing-quick-links">
+            <button type="button" class="landing-quick-link" data-reveal-phone>Позвонить</button>
+            <a class="landing-quick-link" href="https://t.me/${escapeHtml(STUDIO.telegram)}" target="_blank" rel="noopener noreferrer">Telegram</a>
+          </div>
         </div>
       </div>
       <figure class="landing-hero-art">
