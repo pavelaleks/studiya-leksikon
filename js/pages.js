@@ -199,7 +199,7 @@ export function homePage(content) {
             height="48"
             decoding="async"
           />
-          <span>Занятия ведёт профессор лично</span>
+          <span>Преподаёт П.&nbsp;В.&nbsp;Алексеев</span>
         </p>
         <p class="landing-exams landing-exams-hero" aria-label="К чему готовим">
           <span class="exam-vpr">ВПР</span><span class="exam-oge">ОГЭ</span><span class="exam-ege">ЕГЭ</span>
@@ -230,8 +230,8 @@ export function homePage(content) {
 
     <section class="landing-about" id="teacher" aria-labelledby="teacher-title">
       <p class="eyebrow">Преподаватель</p>
-      <h2 id="teacher-title">Занятия ведёт профессор лично</h2>
-      <p class="lede">Не куратор и не сменный репетитор — на каждом занятии вы работаете с одним преподавателем.</p>
+      <h2 id="teacher-title">${escapeHtml(STUDIO.teacherFull)}</h2>
+      <p class="lede">Доктор филологических наук, профессор. Руководитель студии. Ведёт все занятия сам — очно и онлайн.</p>
       <div class="landing-teacher-card">
         <img
           class="landing-teacher-photo"
@@ -242,8 +242,7 @@ export function homePage(content) {
           decoding="async"
         />
         <div>
-          <h3>${escapeHtml(STUDIO.teacherFull)}</h3>
-          <p>Доктор филологических наук, профессор. Руководитель студии.</p>
+          <p>Русский язык и литература: ВПР, ОГЭ, ЕГЭ, школьная программа.</p>
           <p><a href="${escapeHtml(STUDIO.teacherSite)}" target="_blank" rel="noopener noreferrer">Личный сайт</a></p>
         </div>
       </div>
@@ -273,7 +272,7 @@ export function homePage(content) {
       <div class="landing-faq-list">
         <details class="landing-faq-item" open>
           <summary>Кто ведёт занятия?</summary>
-          <p>Павел Викторович Алексеев — доктор филологических наук, профессор. Он сам ведёт все занятия в студии.</p>
+          <p>Павел Викторович Алексеев — доктор филологических наук, профессор, руководитель студии. Ведёт все занятия.</p>
         </details>
         <details class="landing-faq-item">
           <summary>Как проходит онлайн?</summary>
