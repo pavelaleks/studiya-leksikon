@@ -20,9 +20,9 @@ export function layout(content, active = "", board = false, { hideFooter = false
   const nav = isHome
     ? `
           <a href="#about">О студии</a>
+          <a href="#teacher">Преподаватель</a>
           <a href="#apply">Запись</a>
-          <a href="#learn">Материалы</a>
-          <a href="https://palekseev.ru/" target="_blank" rel="noopener noreferrer">Руководитель</a>`
+          <a href="#learn">Материалы</a>`
     : `
           <a href="#/">Студия</a>
           <a href="#/rules" class="${active === "rules" ? "active" : ""}">Правила</a>
@@ -38,7 +38,7 @@ export function layout(content, active = "", board = false, { hideFooter = false
           <span class="brand-mark">Л</span>
           <span class="brand-text">
             <strong>Студия Лексикон</strong>
-            <span>${isHome ? "Горно-Алтайск" : "русский язык"}</span>
+            <span>${isHome ? "русский язык и литература" : "русский язык"}</span>
           </span>
         </a>
         <nav class="nav">${nav}

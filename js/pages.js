@@ -4,14 +4,16 @@ import { EGE_TITLES, egeByNumber, egeTasks } from "./ege.js";
 import { doneIds, readProgress } from "./progress.js";
 import { STUDIO } from "./config.js";
 
-function contactsBlock(extraClass = "") {
+function contactsBlock(extraClass = "", { mail = true } = {}) {
   const tg = STUDIO.telegram;
-  const mail = STUDIO.applyEmail;
+  const mailBtn = mail
+    ? `<a class="btn btn-lg secondary" href="mailto:${escapeHtml(STUDIO.applyEmail)}">Почта</a>`
+    : "";
   return `
     <div class="landing-contacts ${extraClass}">
       <button type="button" class="btn btn-lg secondary" data-reveal-phone>Позвонить</button>
       <a class="btn btn-lg secondary" href="https://t.me/${escapeHtml(tg)}" target="_blank" rel="noopener noreferrer">Telegram</a>
-      <a class="btn btn-lg secondary" href="mailto:${escapeHtml(mail)}">Почта</a>
+      ${mailBtn}
     </div>`;
 }
 
@@ -92,10 +94,16 @@ function ruleWord(n) {
   return "правил";
 }
 
-function continueHtml() {
+function continueHtml(compact = false) {
   const p = readProgress();
   if (!p.lastId || !p.lastTask) return "";
   const variant = p.lastIndex ? ` · вариант ${p.lastIndex}` : "";
+  if (compact) {
+    return `
+    <a class="landing-continue" href="#/ege-item/${encodeURIComponent(p.lastId)}">
+      Продолжить задание ${p.lastTask}${variant}
+    </a>`;
+  }
   return `
     <a class="card home-continue" href="#/ege-item/${encodeURIComponent(p.lastId)}">
       <p class="kicker">Продолжить</p>
@@ -174,19 +182,33 @@ export function homePage(content) {
   return `
     <section class="landing-hero" aria-label="Студия Лексикон">
       <div class="landing-hero-copy">
+        <p class="eyebrow">${escapeHtml(STUDIO.city)}</p>
+        <p class="landing-brand">Студия Лексикон</p>
+        <h1 class="landing-subjects">
+          <span class="landing-subject">Русский язык</span>
+          <span class="landing-subject">Литература</span>
+        </h1>
+        <p class="landing-title">Подготовка к экзаменам и развитие интеллекта учеников 8–11 классов</p>
+        <p class="landing-meta">Очно и онлайн · группа до 4</p>
+        <p class="landing-teacher-hero">
+          <img
+            class="landing-teacher-hero-photo"
+            src="./css/art/alekseev.jpg"
+            alt=""
+            width="48"
+            height="48"
+            decoding="async"
+          />
+          <span>Занятия ведёт профессор лично</span>
+        </p>
         <p class="landing-exams landing-exams-hero" aria-label="К чему готовим">
           <span class="exam-vpr">ВПР</span><span class="exam-oge">ОГЭ</span><span class="exam-ege">ЕГЭ</span>
         </p>
-        <p class="eyebrow">Горно-Алтайск · русский язык и литература</p>
-        <p class="landing-brand">Студия Лексикон</p>
-        <h1 class="landing-title">Подготовка к экзаменам и развитие интеллекта</h1>
-        <p class="lede landing-lede">База заданий ФИПИ и наши тренажёры. Очно и онлайн, один на один или в группе до четырёх.</p>
         <div class="landing-cta home-actions">
           <a class="btn btn-lg" href="#apply">Записаться</a>
           <button type="button" class="btn btn-lg secondary" data-reveal-phone>Позвонить</button>
           <a class="btn btn-lg secondary" href="https://t.me/${escapeHtml(STUDIO.telegram)}" target="_blank" rel="noopener noreferrer">Telegram</a>
         </div>
-        <p class="landing-hero-more"><a href="#learn">Материалы на сайте</a></p>
       </div>
       <figure class="landing-hero-art">
         <div class="landing-hero-frame">
@@ -206,57 +228,67 @@ export function homePage(content) {
       </figure>
     </section>
 
-    ${continueHtml()}
-
-    <section class="landing-offer" aria-labelledby="offer-title">
-      <p class="eyebrow">Чему учим</p>
-      <h2 id="offer-title">Два предмета</h2>
-      <div class="landing-offer-grid">
+    <section class="landing-about" id="teacher" aria-labelledby="teacher-title">
+      <p class="eyebrow">Преподаватель</p>
+      <h2 id="teacher-title">Занятия ведёт профессор лично</h2>
+      <p class="lede">Не куратор и не сменный репетитор — на каждом занятии вы работаете с одним преподавателем.</p>
+      <div class="landing-teacher-card">
+        <img
+          class="landing-teacher-photo"
+          src="./css/art/alekseev.jpg"
+          alt="Павел Викторович Алексеев"
+          width="160"
+          height="160"
+          decoding="async"
+        />
         <div>
-          <h3>Русский язык</h3>
-          <p>Орфография, пунктуация, то, что нужно в школе и на экзамене.</p>
-        </div>
-        <div>
-          <h3>Литература</h3>
-          <p>Чтение, разбор текста, сочинение своими словами.</p>
+          <h3>${escapeHtml(STUDIO.teacherFull)}</h3>
+          <p>Доктор филологических наук, профессор. Руководитель студии.</p>
+          <p><a href="${escapeHtml(STUDIO.teacherSite)}" target="_blank" rel="noopener noreferrer">Личный сайт</a></p>
         </div>
       </div>
-      <p class="landing-exams"><span>Школьная программа</span></p>
     </section>
 
-    <section class="landing-about" id="about" aria-labelledby="about-title">
+    <section class="landing-offer" id="about" aria-labelledby="offer-title">
       <p class="eyebrow">О студии</p>
-      <h2 id="about-title">Как устроена учёба</h2>
-      <p class="lede">Опираемся на официальную базу ФИПИ. На занятии и дома — наши материалы: правила, тренажёры, маршрут под задачи ученика.</p>
-
+      <h2 id="offer-title">Русский язык и литература для 8–11 класса</h2>
+      <p class="lede">Русский — орфография, пунктуация, то, что нужно в школе и на экзамене. Литература — чтение, разбор текста, сочинение своими словами. Опора на базу ФИПИ и наши тренажёры.</p>
       <dl class="landing-format-dl">
         <div>
-          <dt>Очно или онлайн</dt>
-          <dd>В студии в Горно-Алтайске или по видеосвязи. Ссылка на онлайн — только записанным ученикам.</dd>
+          <dt>Формат</dt>
+          <dd>Очно в Горно-Алтайске или онлайн по видеосвязи. Ссылка на онлайн — только записанным ученикам.</dd>
         </div>
         <div>
-          <dt>Один на один или в группе</dt>
-          <dd>В группе не больше четырёх человек.</dd>
+          <dt>Состав</dt>
+          <dd>Индивидуально или в малой группе: не больше четырёх человек.</dd>
         </div>
       </dl>
+    </section>
 
-      <div class="landing-teacher-inline">
-        <div class="landing-teacher-card">
-          <img
-            class="landing-teacher-photo"
-            src="./css/art/alekseev.jpg"
-            alt="Павел Викторович Алексеев"
-            width="160"
-            height="160"
-            decoding="async"
-          />
-          <div>
-            <p class="landing-teacher-inline-label">Руководитель и ведущий преподаватель</p>
-            <h3>Павел Викторович Алексеев</h3>
-            <p>Доктор филологических наук, профессор. Сам ведёт занятия в студии.</p>
-            <p><a href="https://palekseev.ru/" target="_blank" rel="noopener noreferrer">Личный сайт</a></p>
-          </div>
-        </div>
+    <section class="landing-faq" id="faq" aria-labelledby="faq-title">
+      <p class="eyebrow">Вопросы</p>
+      <h2 id="faq-title">Коротко о главном</h2>
+      <div class="landing-faq-list">
+        <details class="landing-faq-item" open>
+          <summary>Кто ведёт занятия?</summary>
+          <p>Павел Викторович Алексеев — доктор филологических наук, профессор. Он сам ведёт все занятия в студии.</p>
+        </details>
+        <details class="landing-faq-item">
+          <summary>Как проходит онлайн?</summary>
+          <p>По видеосвязи в назначенное время. Ссылку получаете после записи; на занятии тот же преподаватель, что и очно.</p>
+        </details>
+        <details class="landing-faq-item">
+          <summary>Сколько человек в группе?</summary>
+          <p>Не больше четырёх. Можно заниматься один на один — подскажем, что лучше для вашей задачи.</p>
+        </details>
+        <details class="landing-faq-item">
+          <summary>Литература уже открыта?</summary>
+          <p>Да, занятия по литературе ведутся. На сайте учебные материалы пока только по русскому — раздел литературы появится позже.</p>
+        </details>
+        <details class="landing-faq-item">
+          <summary>Как начать?</summary>
+          <p>Оставьте заявку ниже, напишите в Telegram или позвоните — ответим и согласуем формат, класс и время.</p>
+        </details>
       </div>
     </section>
 
@@ -264,7 +296,7 @@ export function homePage(content) {
       <div class="landing-apply-intro">
         <p class="eyebrow">Запись</p>
         <h2 id="apply-title">Оставить заявку</h2>
-        <p class="lede">Можно заполнить форму или сразу написать / позвонить.</p>
+        <p class="lede">Форма или сразу мессенджер / звонок — как удобнее.</p>
         ${contactsBlock("landing-contacts-compact")}
       </div>
       <form class="apply-form" id="apply-form" novalidate>
@@ -349,7 +381,8 @@ export function homePage(content) {
     <section class="landing-learn" id="learn" aria-labelledby="learn-title">
       <p class="eyebrow">На сайте</p>
       <h2 id="learn-title">Учебные материалы</h2>
-      <p class="lede">Два предмета. Пока открыт русский язык — литературу добавим позже.</p>
+      <p class="lede">Пока открыт русский язык — литературу на сайте добавим позже.</p>
+      ${continueHtml(true)}
 
       <div class="landing-learn-subjects">
         <div class="landing-learn-subject">
@@ -371,18 +404,15 @@ export function homePage(content) {
     <section class="landing-contact" id="contact" aria-labelledby="contact-title">
       <div>
         <p class="eyebrow">Контакты</p>
-        <h2 id="contact-title">Горно-Алтайск</h2>
-        <p class="lede">пр. Коммунистический, 47 · вход со стороны ул. Головина</p>
-        ${contactsBlock()}
+        <h2 id="contact-title">${escapeHtml(STUDIO.city)}</h2>
+        <p class="lede">${escapeHtml(STUDIO.address)} · ${escapeHtml(STUDIO.addressHint)}</p>
+        ${contactsBlock("", { mail: false })}
         <p class="muted landing-contact-mail">
           <a href="mailto:${escapeHtml(STUDIO.applyEmail)}">${escapeHtml(STUDIO.applyEmail)}</a>
-          ·
-          <a href="https://t.me/${escapeHtml(STUDIO.telegram)}" target="_blank" rel="noopener noreferrer">@${escapeHtml(STUDIO.telegram)}</a>
         </p>
-        <div class="landing-cta home-actions">
-          <a class="btn btn-lg secondary" href="https://go.2gis.com/lknNX" target="_blank" rel="noopener noreferrer">На карте</a>
-          <a class="btn btn-lg secondary" href="#apply">Форма заявки</a>
-        </div>
+        <p class="landing-contact-map">
+          <a href="${escapeHtml(STUDIO.mapUrl)}" target="_blank" rel="noopener noreferrer">Открыть на карте</a>
+        </p>
       </div>
     </section>
   `;
