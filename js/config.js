@@ -29,6 +29,22 @@ export const STUDIO = {
   phoneParts: ["+7", "913", "998", "53", "10"],
   /** После отправки FormSubmit (абсолютный URL на проде). Пусто — текущий origin + #/thanks */
   applyThanksUrl: "",
+  /** Внешние тренажёры (отдельный репозиторий lexicon-training). */
+  trainersBase: "https://pavelaleks.github.io/lexicon-training",
+  trainers: [
+    {
+      slug: "trenazher-n-nn-leksikon",
+      title: "Н и НН",
+      blurb: "В прилагательных, причастиях и наречиях",
+      tag: "Орфография",
+    },
+    {
+      slug: "trenazher-oborotov-leksikon",
+      title: "Причастные и деепричастные обороты",
+      blurb: "Запятые при оборотах",
+      tag: "Пунктуация",
+    },
+  ],
 };
 
 export function studioPhone() {

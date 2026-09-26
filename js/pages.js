@@ -389,7 +389,7 @@ export function homePage(content) {
           <p class="landing-learn-label">Русский язык</p>
           <div class="landing-learn-links">
             <a href="#/ege"><strong>ЕГЭ</strong><span>Задания 4–22</span></a>
-            <a href="#/oge"><strong>ОГЭ</strong><span>Раздел готовится</span></a>
+            <a href="#/oge"><strong>ОГЭ</strong><span>2 тренажёра</span></a>
             <a href="#/rules"><strong>Правила</strong><span>${ruleCount} ${ruleWord(ruleCount)}</span></a>
           </div>
         </div>
@@ -431,12 +431,27 @@ export function thanksPage() {
 }
 
 export function ogePage() {
+  const trainers = (STUDIO.trainers || [])
+    .map(
+      (t) => `
+      <a class="card oge-trainer-card" href="${escapeHtml(STUDIO.trainersBase)}/trainer/${escapeHtml(t.slug)}" target="_blank" rel="noopener noreferrer">
+        <span class="oge-trainer-tag">${escapeHtml(t.tag)}</span>
+        <strong>${escapeHtml(t.title)}</strong>
+        <span class="muted">${escapeHtml(t.blurb)}</span>
+        <span class="oge-trainer-go">Открыть →</span>
+      </a>`
+    )
+    .join("");
   return `
     <p class="eyebrow">Русский язык · ОГЭ</p>
     <h1>ОГЭ по русскому</h1>
-    <p class="lede">Этот раздел ещё наполняется. Пока можно заниматься заданиями ЕГЭ или открыть правила.</p>
+    <p class="lede">Пока здесь два рабочих тренажёра студии. Полный банк заданий ОГЭ добавим позже.</p>
+    <div class="oge-trainer-list">
+      ${trainers}
+    </div>
+    <p class="muted"><a href="${escapeHtml(STUDIO.trainersBase)}" target="_blank" rel="noopener noreferrer">Каталог всех тренажёров</a></p>
     <div class="home-actions">
-      <a class="btn btn-lg" href="#/ege">К заданиям ЕГЭ</a>
+      <a class="btn btn-lg secondary" href="#/ege">К заданиям ЕГЭ</a>
       <a class="btn btn-lg secondary" href="#/rules">К правилам</a>
       <a class="btn btn-lg secondary" href="#/">О студии</a>
     </div>
