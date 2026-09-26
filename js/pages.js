@@ -191,9 +191,9 @@ export function homePage(content) {
       <figure class="landing-hero-art">
         <div class="landing-hero-frame">
           <picture>
-            <source media="(max-width: 720px)" srcset="./assets/art/sarbinaz-hero-sm.jpg" />
+            <source media="(max-width: 720px)" srcset="./css/art/sarbinaz-hero-sm.jpg" />
             <img
-              src="./assets/art/sarbinaz-hero.jpg"
+              src="./css/art/sarbinaz-hero.jpg"
               alt="Рисунок Сарбиназ Алексеевой: манулы в горах"
               width="1500"
               height="2000"
@@ -244,7 +244,7 @@ export function homePage(content) {
         <div class="landing-teacher-card">
           <img
             class="landing-teacher-photo"
-            src="./assets/art/alekseev.jpg"
+            src="./css/art/alekseev.jpg"
             alt="Павел Викторович Алексеев"
             width="160"
             height="160"
