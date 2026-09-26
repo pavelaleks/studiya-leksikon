@@ -189,7 +189,7 @@ export function homePage(content) {
           <span class="landing-subject">Литература</span>
         </h1>
         <p class="landing-title">Подготовка к экзаменам и развитие интеллекта учеников 8–11 классов</p>
-        <p class="landing-meta">Очно и онлайн · группа до 4</p>
+        <p class="landing-meta">Очно и онлайн, один на один или в группе до четырёх человек</p>
         <p class="landing-teacher-hero">
           <img
             class="landing-teacher-hero-photo"
@@ -199,7 +199,7 @@ export function homePage(content) {
             height="48"
             decoding="async"
           />
-          <span>Преподаёт П.&nbsp;В.&nbsp;Алексеев</span>
+          <span>Ведёт Павел Викторович Алексеев, доктор филологических наук</span>
         </p>
         <p class="landing-exams landing-exams-hero" aria-label="К чему готовим">
           <span class="exam-vpr">ВПР</span><span class="exam-oge">ОГЭ</span><span class="exam-ege">ЕГЭ</span>
@@ -231,7 +231,6 @@ export function homePage(content) {
     <section class="landing-about" id="teacher" aria-labelledby="teacher-title">
       <p class="eyebrow">Преподаватель</p>
       <h2 id="teacher-title">${escapeHtml(STUDIO.teacherFull)}</h2>
-      <p class="lede">Доктор филологических наук, профессор. Руководитель студии. Ведёт все занятия сам — очно и онлайн.</p>
       <div class="landing-teacher-card">
         <img
           class="landing-teacher-photo"
@@ -242,7 +241,8 @@ export function homePage(content) {
           decoding="async"
         />
         <div>
-          <p>Русский язык и литература: ВПР, ОГЭ, ЕГЭ, школьная программа.</p>
+          <p>Доктор филологических наук, профессор.</p>
+          <p>Открыл студию в 2024 году. Все занятия, очные и онлайн, ведёт сам.</p>
           <p><a href="${escapeHtml(STUDIO.teacherSite)}" target="_blank" rel="noopener noreferrer">Личный сайт</a></p>
         </div>
       </div>
@@ -250,45 +250,46 @@ export function homePage(content) {
 
     <section class="landing-offer" id="about" aria-labelledby="offer-title">
       <p class="eyebrow">О студии</p>
-      <h2 id="offer-title">Инновационная студия с 2024 года</h2>
-      <p class="lede">Готовим к ВПР, ОГЭ и ЕГЭ по русскому языку и литературе — не «прогоном вариантов», а по сквозным узлам, где чаще всего теряют баллы.</p>
-      <p class="lede">ВПР по русскому в 8 классе — основа всей цепочки: грамотное списывание, грамматическая основа, типы связи в словосочетании, однородные и обособленные члены, причастные и деепричастные обороты. Эти же умения потом нужны на ОГЭ и ЕГЭ: Н и НН, обособления, нормы, анализ текста, сочинение. Типичные ошибки мы знаем заранее и учим <em>видеть</em> конструкцию предложения — основу, оборот, границу частей — а не угадывать запятую.</p>
-      <p class="lede">Литература — чтение, разбор текста и сочинение своими словами: под школьную программу и экзаменационные формулировки.</p>
+      <h2 id="offer-title">Как мы готовим</h2>
+      <p class="lede">Начинаем с того, на чём держится весь школьный курс русского языка.</p>
+      <p class="lede">В 8 классе это ВПР. На ней проверяют, находит ли ученик грамматическую основу, видит ли причастный и деепричастный обороты, отличает ли однородные члены от обособленных, может ли без ошибок списать текст. Если здесь есть пробел, он переходит в ОГЭ, а оттуда в ЕГЭ: в задания на Н и НН, запятые, грамматические нормы, в сочинение.</p>
+      <p class="lede">Ошибки у школьников из года в год одни и те же. Мы разбираем их с учеником по одной, пока он сам не начнёт видеть, как устроено предложение. Задания берём из открытого банка ФИПИ, для трудных тем делаем свои тренажёры.</p>
+      <p class="lede">По литературе читаем и разбираем произведения школьной программы и учимся писать сочинение своими словами.</p>
       <dl class="landing-format-dl">
         <div>
-          <dt>Метод</dt>
-          <dd>Сквозная отработка слабых мест + база ФИПИ и наши тренажёры (Н/НН, обороты и дальше).</dd>
+          <dt>Где</dt>
+          <dd>В студии в Горно-Алтайске или онлайн по видеосвязи.</dd>
         </div>
         <div>
-          <dt>Формат</dt>
-          <dd>Очно в Горно-Алтайске или онлайн. Индивидуально или в группе до четырёх. Ссылка на онлайн — только записанным.</dd>
+          <dt>С кем</dt>
+          <dd>Один на один или в группе до четырёх человек.</dd>
         </div>
       </dl>
     </section>
 
     <section class="landing-faq" id="faq" aria-labelledby="faq-title">
       <p class="eyebrow">Вопросы</p>
-      <h2 id="faq-title">Коротко о главном</h2>
+      <h2 id="faq-title">Частые вопросы</h2>
       <div class="landing-faq-list">
         <details class="landing-faq-item" open>
           <summary>Кто ведёт занятия?</summary>
-          <p>Павел Викторович Алексеев — доктор филологических наук, профессор, руководитель студии. Ведёт все занятия.</p>
+          <p>Павел Викторович Алексеев. Он ведёт все занятия, и очные, и онлайн.</p>
         </details>
         <details class="landing-faq-item">
           <summary>Как проходит онлайн?</summary>
-          <p>По видеосвязи в назначенное время. Ссылку получаете после записи; на занятии тот же преподаватель, что и очно.</p>
+          <p>По видеосвязи в согласованное время. Ссылку присылаем после записи.</p>
         </details>
         <details class="landing-faq-item">
           <summary>Сколько человек в группе?</summary>
-          <p>Не больше четырёх. Можно заниматься один на один — подскажем, что лучше для вашей задачи.</p>
+          <p>До четырёх. Можно заниматься и один на один. Что подойдёт лучше, решим вместе после первого разговора.</p>
         </details>
         <details class="landing-faq-item">
-          <summary>Литература уже открыта?</summary>
-          <p>Да, занятия по литературе ведутся. На сайте учебные материалы пока только по русскому — раздел литературы появится позже.</p>
+          <summary>Есть ли занятия по литературе?</summary>
+          <p>Да. На сайте пока только материалы по русскому языку, раздел по литературе готовим.</p>
         </details>
         <details class="landing-faq-item">
-          <summary>Как начать?</summary>
-          <p>Оставьте заявку ниже, напишите в Telegram или позвоните — ответим и согласуем формат, класс и время.</p>
+          <summary>С чего начать?</summary>
+          <p>Оставьте заявку, напишите в Telegram или позвоните. Договоримся о времени и формате.</p>
         </details>
       </div>
     </section>
@@ -296,8 +297,8 @@ export function homePage(content) {
     <section class="landing-apply" id="apply" aria-labelledby="apply-title">
       <div class="landing-apply-intro">
         <p class="eyebrow">Запись</p>
-        <h2 id="apply-title">Оставить заявку</h2>
-        <p class="lede">Форма или сразу мессенджер / звонок — как удобнее.</p>
+        <h2 id="apply-title">Записаться</h2>
+        <p class="lede">Заполните форму или свяжитесь с нами напрямую.</p>
         ${contactsBlock("landing-contacts-compact")}
       </div>
       <form class="apply-form" id="apply-form" novalidate>
@@ -323,7 +324,6 @@ export function homePage(content) {
             <span>Класс</span>
             <select class="search apply-input" name="grade" required>
               <option value="">Выберите</option>
-              <option>5</option><option>6</option><option>7</option>
               <option>8</option><option>9</option><option>10</option><option>11</option>
             </select>
           </label>
@@ -340,7 +340,7 @@ export function homePage(content) {
 
         <div class="apply-row">
           <label class="apply-field">
-            <span>Зачем приходите</span>
+            <span>Цель</span>
             <select class="search apply-input" name="goal" required>
               <option value="">Выберите</option>
               <option>ВПР</option>
@@ -366,23 +366,23 @@ export function homePage(content) {
         </fieldset>
 
         <label class="apply-field">
-          <span>Пара слов о себе <span class="muted">(по желанию)</span></span>
-          <textarea class="search apply-input apply-textarea" name="note" rows="3" placeholder="Удобное время, что уже пробовали, о чём хочется спросить…"></textarea>
+          <span>Комментарий <span class="muted">(необязательно)</span></span>
+          <textarea class="search apply-input apply-textarea" name="note" rows="3" placeholder="Например, удобные дни и время"></textarea>
         </label>
 
         <div class="landing-cta home-actions apply-actions">
           <button type="submit" class="btn btn-lg">Отправить</button>
           <button type="button" class="btn btn-lg secondary" id="apply-mailto">Открыть в почте</button>
         </div>
-        <p class="muted apply-hint">Заявка придёт нам на почту. Если удобнее через свою почтовую программу — нажмите «Открыть в почте».</p>
+        <p class="muted apply-hint">Заявка придёт на почту студии. Кнопка «Открыть в почте» создаст такое же письмо в вашей почтовой программе.</p>
         <p class="apply-status" id="apply-status" role="status" hidden></p>
       </form>
     </section>
 
     <section class="landing-learn" id="learn" aria-labelledby="learn-title">
       <p class="eyebrow">На сайте</p>
-      <h2 id="learn-title">Учебные материалы</h2>
-      <p class="lede">Пока открыт русский язык — литературу на сайте добавим позже.</p>
+      <h2 id="learn-title">Материалы для занятий</h2>
+      <p class="lede">Правила и тренажёры по русскому языку. Работаем с ними на уроках, заниматься можно и дома.</p>
       ${continueHtml(true)}
 
       <div class="landing-learn-subjects">
@@ -396,8 +396,7 @@ export function homePage(content) {
         </div>
         <div class="landing-learn-subject landing-learn-subject-soon">
           <p class="landing-learn-label">Литература</p>
-          <p class="landing-learn-soon">Материалов пока нет — раздел появится позже.</p>
-          <a class="landing-learn-soon-link" href="#/literature">Открыть страницу раздела</a>
+          <p class="landing-learn-soon">Раздел готовим.</p>
         </div>
       </div>
     </section>
@@ -412,7 +411,7 @@ export function homePage(content) {
           <a href="mailto:${escapeHtml(STUDIO.applyEmail)}">${escapeHtml(STUDIO.applyEmail)}</a>
         </p>
         <p class="landing-contact-map">
-          <a href="${escapeHtml(STUDIO.mapUrl)}" target="_blank" rel="noopener noreferrer">Открыть на карте</a>
+          <a href="${escapeHtml(STUDIO.mapUrl)}" target="_blank" rel="noopener noreferrer">Как добраться (2ГИС)</a>
         </p>
       </div>
     </section>
@@ -422,8 +421,8 @@ export function homePage(content) {
 export function thanksPage() {
   return `
     <p class="eyebrow">Заявка</p>
-    <h1>Спасибо, мы получили письмо</h1>
-    <p class="lede">Скоро ответим. Если что-то срочное — напишите на <a href="mailto:pavel.alekseev.gasu@gmail.com">pavel.alekseev.gasu@gmail.com</a>.</p>
+    <h1>Спасибо, заявка отправлена</h1>
+    <p class="lede">Мы свяжемся с вами по телефону из заявки. Если вопрос срочный, напишите на <a href="mailto:pavel.alekseev.gasu@gmail.com">pavel.alekseev.gasu@gmail.com</a>.</p>
     <div class="home-actions">
       <a class="btn btn-lg" href="#/">На главную</a>
       <a class="btn btn-lg secondary" href="#/ege">К заданиям ЕГЭ</a>
@@ -446,7 +445,7 @@ export function ogePage() {
   return `
     <p class="eyebrow">Русский язык · ОГЭ</p>
     <h1>ОГЭ по русскому</h1>
-    <p class="lede">Пока здесь два рабочих тренажёра студии. Полный банк заданий ОГЭ добавим позже.</p>
+    <p class="lede">Пока здесь два тренажёра студии: Н и НН и запятые при оборотах. Остальные задания ОГЭ добавим.</p>
     <div class="oge-trainer-list">
       ${trainers}
     </div>
@@ -463,7 +462,7 @@ export function literaturePage() {
   return `
     <p class="eyebrow">Литература</p>
     <h1>Материалы по литературе</h1>
-    <p class="lede">Раздел ещё пустой. Сейчас на сайте учебная часть только по русскому языку — правила и тренажёры ЕГЭ.</p>
+    <p class="lede">Раздел готовим. Пока на сайте есть материалы только по русскому языку.</p>
     <div class="home-actions">
       <a class="btn btn-lg" href="#/rules">К правилам по русскому</a>
       <a class="btn btn-lg secondary" href="#/ege">К заданиям ЕГЭ</a>

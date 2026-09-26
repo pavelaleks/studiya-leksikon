@@ -1,12 +1,12 @@
-import { layout } from "./ui.js?v=land24";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land24";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex, ogePage, thanksPage, literaturePage } from "./pages.js?v=land24";
-import { bindApplyForm } from "./apply.js?v=land24";
-import { EGE_TITLES, egeByNumber } from "./ege.js?v=land24";
-import { renderExercise } from "./exercises.js?v=land24";
-import { adminPage, bindAdmin } from "./admin.js?v=land24";
-import { applyBoard, keepBoardOnHash, parseRoute, setBoard } from "./route.js?v=land24";
-import { pickEgeVariant, touchEge } from "./progress.js?v=land24";
+import { layout } from "./ui.js?v=land25";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land25";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex, ogePage, thanksPage, literaturePage } from "./pages.js?v=land25";
+import { bindApplyForm } from "./apply.js?v=land25";
+import { EGE_TITLES, egeByNumber } from "./ege.js?v=land25";
+import { renderExercise } from "./exercises.js?v=land25";
+import { adminPage, bindAdmin } from "./admin.js?v=land25";
+import { applyBoard, keepBoardOnHash, parseRoute, setBoard } from "./route.js?v=land25";
+import { pickEgeVariant, touchEge } from "./progress.js?v=land25";
 
 const app = document.getElementById("app");
 let content = null;
@@ -14,7 +14,7 @@ let content = null;
 function setTitle(page) {
   document.title = page
     ? `${page} — Студия Лексикон`
-    : "Студия Лексикон — орфография, пунктуация, стилистика";
+    : "Студия Лексикон — русский язык и литература, Горно-Алтайск";
 }
 
 function skeletonHtml() {

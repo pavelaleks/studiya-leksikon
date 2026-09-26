@@ -58,7 +58,7 @@ export function layout(content, active = "", board = false, { hideFooter = false
           <a href="https://go.2gis.com/lknNX" target="_blank" rel="noopener noreferrer">г. Горно-Алтайск, пр. Коммунистический, 47</a>
           <span> (вход со стороны ул. Головина)</span>
         </p>
-        <p class="footer-note">Русский язык и литература. Очно и онлайн.</p>
+        <p class="footer-note">Русский язык и литература для 8–11 классов. Очно и онлайн.</p>
         <p class="footer-admin"><a href="#/admin">Модератору</a></p>
       </div>
     </footer>`

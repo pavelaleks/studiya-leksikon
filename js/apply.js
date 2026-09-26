@@ -76,7 +76,7 @@ export function bindApplyForm(root = document) {
     location.href = `mailto:${STUDIO.applyEmail}?subject=${subject}&body=${body}`;
     if (status) {
       status.hidden = false;
-      status.textContent = "Откроется письмо с заявкой. Если не открылось — напишите на " + STUDIO.applyEmail;
+      status.textContent = "Сейчас откроется письмо с заявкой. Если этого не произошло, напишите на " + STUDIO.applyEmail;
     }
   });
 
