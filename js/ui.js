@@ -19,7 +19,7 @@ export function layout(content, active = "", board = false, { hideFooter = false
   const isHome = active === "home";
   const nav = isHome
     ? `
-          <a href="#about">О студии</a>
+          <a href="#about">Программы</a>
           <a href="#teacher">Преподаватель</a>
           <a href="#apply">Запись</a>
           <a href="#learn">Материалы</a>`

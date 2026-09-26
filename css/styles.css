@@ -1995,6 +1995,105 @@ body.is-landing main {
   border-color: rgba(111, 45, 50, 0.18);
 }
 
+.landing-programs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 22px 0 18px;
+}
+
+.landing-program {
+  display: flex;
+  flex-direction: column;
+  padding: 22px 22px 20px;
+  border-radius: 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+
+.landing-program-tag {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.landing-program h3 {
+  margin: 0 0 4px;
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  line-height: 1.2;
+}
+
+.landing-program-format {
+  margin: 0 0 14px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.landing-program ul {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-program li {
+  position: relative;
+  margin: 0 0 8px;
+  padding-left: 16px;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.landing-program li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.landing-program-focus {
+  margin: auto 0 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.landing-program-focus strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--accent);
+}
+
+.landing-base {
+  max-width: 52em;
+  margin: 0 0 10px;
+  padding: 14px 18px;
+  border-left: 3px solid var(--accent);
+  background: rgba(255, 253, 248, 0.6);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.landing-source {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .landing-format-dl {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2342,6 +2441,7 @@ body.is-landing main {
     object-position: 50% 22%;
   }
 
+  .landing-programs,
   .landing-format-dl,
   .landing-apply,
   .landing-learn-subjects,
