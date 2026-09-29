@@ -470,7 +470,7 @@ export function ogePage() {
   const trainers = (STUDIO.trainers || [])
     .map(
       (t) => `
-      <a class="card oge-trainer-card" href="${escapeHtml(STUDIO.trainersBase)}/trainer/${escapeHtml(t.slug)}" target="_blank" rel="noopener noreferrer">
+      <a class="card oge-trainer-card" href="#/trainer/${escapeHtml(t.slug)}">
         <span class="oge-trainer-tag">${escapeHtml(t.tag)}</span>
         <strong>${escapeHtml(t.title)}</strong>
         <span class="muted">${escapeHtml(t.blurb)}</span>
@@ -481,11 +481,10 @@ export function ogePage() {
   return `
     <p class="eyebrow">Русский язык · ОГЭ</p>
     <h1>ОГЭ по русскому</h1>
-    <p class="lede">Пока здесь два тренажёра студии: Н и НН и запятые при оборотах. Остальные задания ОГЭ добавим.</p>
+    <p class="lede">Два тренажёра студии: Н и НН и запятые при оборотах. Остальные задания ОГЭ добавим.</p>
     <div class="oge-trainer-list">
       ${trainers}
     </div>
-    <p class="muted"><a href="${escapeHtml(STUDIO.trainersBase)}" target="_blank" rel="noopener noreferrer">Каталог всех тренажёров</a></p>
     <div class="home-actions">
       <a class="btn btn-lg secondary" href="#/ege">К заданиям ЕГЭ</a>
       <a class="btn btn-lg secondary" href="#/rules">К правилам</a>

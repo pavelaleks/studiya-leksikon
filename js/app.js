@@ -1,12 +1,13 @@
-import { layout } from "./ui.js?v=land31";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land31";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex, ogePage, thanksPage, literaturePage } from "./pages.js?v=land31";
-import { bindApplyForm } from "./apply.js?v=land31";
-import { EGE_TITLES, egeByNumber } from "./ege.js?v=land31";
-import { renderExercise } from "./exercises.js?v=land31";
-import { adminPage, bindAdmin } from "./admin.js?v=land31";
-import { applyBoard, keepBoardOnHash, parseRoute, setBoard } from "./route.js?v=land31";
-import { pickEgeVariant, touchEge } from "./progress.js?v=land31";
+import { layout } from "./ui.js?v=land32";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land32";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex, ogePage, thanksPage, literaturePage } from "./pages.js?v=land32";
+import { bindApplyForm } from "./apply.js?v=land32";
+import { EGE_TITLES, egeByNumber } from "./ege.js?v=land32";
+import { renderExercise } from "./exercises.js?v=land32";
+import { mountTrainer } from "./trainers.js?v=land32";
+import { adminPage, bindAdmin } from "./admin.js?v=land32";
+import { applyBoard, keepBoardOnHash, parseRoute, setBoard } from "./route.js?v=land32";
+import { pickEgeVariant, touchEge } from "./progress.js?v=land32";
 
 const app = document.getElementById("app");
 let content = null;
@@ -204,6 +205,19 @@ async function render() {
   if (a === "oge") {
     mountHtml(ogePage(), "oge");
     setTitle("ОГЭ по русскому");
+    return;
+  }
+
+  if (a === "trainer") {
+    if (!b) {
+      mountHtml(`<div class="empty">Выберите тренажёр. <a href="#/oge">К разделу ОГЭ</a></div>`, "oge");
+      setTitle("Тренажёр");
+      return;
+    }
+    mountHtml(`<div id="trainer-root"></div>`, "oge");
+    const host = app.querySelector("#trainer-root");
+    mountTrainer(host, decodeURIComponent(b));
+    setTitle("Тренажёр ОГЭ");
     return;
   }
 

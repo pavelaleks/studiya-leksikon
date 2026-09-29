@@ -29,19 +29,18 @@ export const STUDIO = {
   phoneParts: ["+7", "913", "998", "53", "10"],
   /** После отправки FormSubmit (абсолютный URL на проде). Пусто — текущий origin + #/thanks */
   applyThanksUrl: "",
-  /** Внешние тренажёры (отдельный репозиторий lexicon-training). */
-  trainersBase: "https://pavelaleks.github.io/lexicon-training",
+  /** Тренажёры ОГЭ: JSON в js/trainers-data/, маршрут #/trainer/:slug */
   trainers: [
     {
       slug: "trenazher-n-nn-leksikon",
       title: "Н и НН",
-      blurb: "В прилагательных, причастиях и наречиях",
+      blurb: "В прилагательных, причастиях и наречиях · 174 задания",
       tag: "Орфография",
     },
     {
       slug: "trenazher-oborotov-leksikon",
       title: "Причастные и деепричастные обороты",
-      blurb: "Запятые при оборотах",
+      blurb: "Запятые при оборотах · 75 заданий",
       tag: "Пунктуация",
     },
   ],

@@ -1,0 +1,21 @@
+{
+  "trainers": [
+    {
+      "slug": "trenazher-n-nn-leksikon",
+      "name": "Н и НН в прилагательных, причастиях и наречиях",
+      "description": "Н и НН в прилагательных, причастиях и наречиях — Студия Лексикон",
+      "type": "spelling.nn",
+      "category": "orthography",
+      "count": 174
+    },
+    {
+      "slug": "trenazher-oborotov-leksikon",
+      "name": "Запятые при причастных и деепричастных оборотах",
+      "description": "Запятые при причастных и деепричастных оборотах — Студия Лексикон",
+      "type": "punctuation.commas",
+      "category": "punctuation",
+      "count": 75
+    }
+  ],
+  "generated": "2026-02-16T07:56:53.382Z"
+}
