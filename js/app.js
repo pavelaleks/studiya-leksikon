@@ -1,13 +1,13 @@
-import { layout } from "./ui.js?v=land35";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land35";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex, ogePage, thanksPage, literaturePage } from "./pages.js?v=land35";
-import { bindApplyForm } from "./apply.js?v=land35";
-import { EGE_TITLES, egeByNumber } from "./ege.js?v=land35";
-import { renderExercise } from "./exercises.js?v=land35";
-import { mountTrainer } from "./trainers.js?v=land35";
-import { adminPage, bindAdmin } from "./admin.js?v=land35";
-import { applyBoard, keepBoardOnHash, parseRoute, setBoard } from "./route.js?v=land35";
-import { pickEgeVariant, touchEge } from "./progress.js?v=land35";
+import { layout } from "./ui.js?v=land36";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land36";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex, ogePage, thanksPage, literaturePage } from "./pages.js?v=land36";
+import { bindApplyForm } from "./apply.js?v=land36";
+import { EGE_TITLES, egeByNumber } from "./ege.js?v=land36";
+import { renderExercise } from "./exercises.js?v=land36";
+import { mountTrainer } from "./trainers.js?v=land36";
+import { adminPage, bindAdmin } from "./admin.js?v=land36";
+import { applyBoard, keepBoardOnHash, parseRoute, setBoard } from "./route.js?v=land36";
+import { pickEgeVariant, touchEge } from "./progress.js?v=land36";
 
 const app = document.getElementById("app");
 let content = null;

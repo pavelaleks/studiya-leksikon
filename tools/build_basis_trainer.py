@@ -15,19 +15,22 @@ OUT_DATA = ROOT / "data" / "trainers" / "trenazher-osnova-leksikon.json"
 TASK_SPLIT = re.compile(r"(?m)^(\d+)\.\s+Тип\s+2\s+№\s+(\d+)")
 ANSWER_RE = re.compile(r"О\s*т\s*в\s*е\s*т\s*:\s*([0-9]+)", re.I)
 
-VERB_RE = re.compile(
-    r"(ётся|ется|ится|атся|ятся|ёт|ет|ит|ат|ят|"
-    r"ал|ала|али|лся|лась|лись|ён|ена|ены|ан|ана|аны|"
-    r"ил|ила|или|ул|ула|ули|ось|ась|ют|ут)\b|"
-    r"\b(есть|был|была|было|были|будет|стать|стал|стала|стали|является|называл\w*|начал\w*|"
-    r"может|могли|мог|смог\w*|нужен|нужна|нужно|нужны|нельзя|можно|относится|относ\w*|"
-    r"происходит|происходило)\w*",
-    re.I,
+# Nouns that end like past verbs (…ал) — not finite verbs
+NOUN_L_END = re.compile(
+    r"(иал|уал|еал|иалл|еталл|урнал|окзал|анал|ундак|оциал|ентиал|енциал)$"
+)
+
+# Past without -л: возник, исчез, вырос…
+PAST_NO_L = re.compile(
+    r"^(воз)?ник(ла|ло|ли)?$|^(из)?чез(ла|ло|ли)?$|^(вы|за|под)?рос(ла|ло|ли)?$|"
+    r"^(с)?пас(ла|ло|ли)?$|^(при|у|по)?нес(ла|ло|ли)?$|^(по)?мог(ла|ло|ли)?$|"
+    r"^мог(ла|ло|ли)?$|^(с|за|под)?лег(ла|ло|ли)?$|^(с|за|под)?жег(ла|ло|ли)?$"
 )
 
 
 def clean_text(text: str) -> str:
     text = text.replace("\u00ad", "").replace("\u202f", " ").replace("\xa0", " ")
+    text = text.replace("\u2060", "").replace("\ufeff", "")
     # PDF often inserts Latin accented letters into Cyrillic words (полóг)
     for lat, cyr in {
         "á": "а",
@@ -152,17 +155,138 @@ def normalize_label(label: str) -> str:
     return re.sub(r"\s+", " ", label).strip(" ,;")
 
 
-def has_verbish(label: str) -> bool:
-    return bool(VERB_RE.search(label))
+def is_short_nominal(tok: str) -> bool:
+    return is_short_nominal_strict(tok)
 
 
-def infer_null_copula(label: str) -> bool:
-    if "—" in label or "–" in label:
-        return True
-    if has_verbish(label):
+def is_finite_verb(tok: str, allow_nominal: bool = True) -> bool:
+    """True for finite verbs / infinitives — not nouns like «потенциал»."""
+    t = _norm_tok(tok)
+    if not t or t in {"не", "бы", "ли", "же", "и", "а", "но", "да"}:
         return False
-    words = re.findall(r"[А-Яа-яЁё\-]+", label)
-    return len(words) >= 2
+    # Modals / copulas first — before short-nominal endings (-но)
+    if t in {
+        "есть",
+        "был",
+        "была",
+        "было",
+        "были",
+        "будет",
+        "будут",
+        "буду",
+        "стать",
+        "стал",
+        "стала",
+        "стало",
+        "стали",
+        "является",
+        "являются",
+        "имеется",
+        "имеются",
+        "имелись",
+        "существует",
+        "существуют",
+        "существовал",
+        "существовала",
+        "происходит",
+        "происходят",
+        "произошло",
+        "произошла",
+        "произошли",
+        "можно",
+        "нельзя",
+        "нет",
+    }:
+        return True
+    if allow_nominal and is_short_nominal_strict(t):
+        return False
+    if re.search(
+        r"(юсь|ешься|ется|ётся|емся|етесь|утся|ются|ишься|ится|имся|итесь|атся|ятся|"
+        r"лся|лась|лось|лись)$",
+        t,
+    ):
+        return True
+    if len(t) >= 4 and re.search(r"(ешь|ет|ёт|ем|ете|ут|ют|ишь|ит|им|ите|ат|ят)$", t):
+        return True
+    # imperative
+    if len(t) >= 4 and re.search(r"(й|йте|и|ите|ь|ьте)$", t) and not is_short_nominal_strict(t):
+        # avoid nouns: кровь, etc. — require longer verb-like
+        if t.endswith(("йте", "ьте", "ите")):
+            return True
+    if t.endswith(("ть", "ти", "чь")) and len(t) >= 4:
+        return True
+    if re.search(r"[аеиоуыяюэ]л(а|о|и)?$", t) or re.search(r"(ил|ыл|ел|ол|ул|ял)(а|о|и)?$", t):
+        if NOUN_L_END.search(t):
+            return False
+        if len(t) >= 8 and t.endswith("ал"):
+            return False
+        return True
+    if PAST_NO_L.match(t):
+        return True
+    # смогла, берегла, пекла…
+    if re.search(r"[гкх]л(а|о|и)?$", t):
+        return True
+    return False
+
+
+def is_short_nominal_strict(t: str) -> bool:
+    """Краткие прилагательные/причастия и формы в роли именной части (не существительные)."""
+    t = _norm_tok(t)
+    if len(t) < 3:
+        return False
+    # глаголы / причастия на -л…
+    if re.search(r"(л|ла|ло|ли|лся|лась|лось|лись)$", t):
+        return False
+    if re.search(r"(ется|ётся|ится|утся|ются|атся|ятся|ет|ёт|ут|ют|ит|ат|ят|ешь|ишь)$", t):
+        return False
+    # типичные краткие и полные формы в сказуемом
+    if re.search(r"(ен|ён|ан|ян|он|на|но|ны|то|та|ты|ая|ое|ые|ие|ий|ый|ой)$", t):
+        return True
+    # сравнительная степень: важнее, лучше, выше
+    if len(t) >= 4 and re.search(r"(ее|ей|ше|же)$", t):
+        return True
+    # короткие краткие типа малы, стара, полог, высок — без суффиксов существительных
+    if len(t) <= 6 and re.search(r"(а|о|ы|и|ек|ок|ог|ог)$", t):
+        if re.search(r"(ки|ики|ники|чики|ства|ения|ение|ость|тель|ция|ции)$", t):
+            return False
+        if t.endswith(("ки", "хи", "ги", "цы")):
+            return False
+        return True
+    return False
+
+
+def has_finite_verb(text: str) -> bool:
+    return any(is_finite_verb(tok) for tok in phrase_tokens(text))
+
+
+def has_verbish(label: str) -> bool:
+    """Backward-compatible alias: finite verb somewhere in the phrase."""
+    return has_finite_verb(label)
+
+
+def is_nominal_predicate(pred: str) -> bool:
+    toks = [t for t in phrase_tokens(pred) if t not in {"не", "бы"}]
+    if not toks:
+        return False
+    if any(is_finite_verb(t) for t in toks):
+        return False
+    # all content tokens look nominal (adj/participle/noun)
+    return True
+
+
+def should_show_null_copula(option_label: str, subj: str, pred: str) -> bool:
+    """∅ only for nominal predicates without an expressed copula/verb."""
+    if not pred and not ("—" in option_label or "–" in option_label):
+        return False
+    if "—" in option_label or "–" in option_label:
+        # X — Y : null copula if Y is not a finite verb
+        return not has_finite_verb(pred) if pred else True
+    if not pred:
+        return False
+    if has_finite_verb(pred):
+        return False
+    # краткое прилагательное / причастие / существительное в роли сказуемого
+    return is_nominal_predicate(pred)
 
 
 def tokenize_sentence(s: str) -> list[str]:
@@ -183,6 +307,7 @@ def _strip_accents(w: str) -> str:
 
 
 def _norm_tok(w: str) -> str:
+    w = w.replace("\u2060", "").replace("\ufeff", "")
     return _strip_accents(w).lower()
 
 
@@ -412,6 +537,7 @@ def pair_basis_spans(
 
 def split_basis_parts(label: str) -> tuple[str, str]:
     label = normalize_label(label)
+    label = re.sub(r"^(наиболее|самый|самая|самое|самые|очень)\s+", "", label, flags=re.I)
     if "—" in label:
         a, b = label.split("—", 1)
         return a.strip(), b.strip()
@@ -439,10 +565,15 @@ def split_basis_parts(label: str) -> tuple[str, str]:
             return words[-1], " ".join(words[:-1])
         return "", label
 
+    # можно / нельзя + infinitive — whole predicate, no subject
+    if first in {"можно", "нельзя"}:
+        return "", label
+
     if first in {
         "есть",
         "имелись",
         "имеется",
+        "имеются",
         "существует",
         "существовал",
         "нужен",
@@ -451,6 +582,9 @@ def split_basis_parts(label: str) -> tuple[str, str]:
         "нужны",
         "происходит",
         "происходило",
+        "произошло",
+        "произошла",
+        "произошли",
     }:
         if len(words) >= 2:
             return " ".join(words[1:]), words[0]
@@ -459,7 +593,26 @@ def split_basis_parts(label: str) -> tuple[str, str]:
     if re.match(r"^[А-ЯA-Z]\.?[А-ЯA-Z]\.?$", words[0]) and len(words) >= 3:
         return " ".join(words[:2]), " ".join(words[2:])
 
+    # Verb / clear nominal predicative first: «подешевел он», «непривлекателен человек»
+    if len(words) >= 2 and _is_predicative_first(words[0]):
+        rest = " ".join(words[1:])
+        if not has_finite_verb(rest) or (len(words) == 2 and not is_finite_verb(words[1])):
+            return rest, words[0]
+
     return words[0], " ".join(words[1:])
+
+
+def _is_predicative_first(tok: str) -> bool:
+    """First token looks like predicate that can precede subject (непривлекателен человек)."""
+    if is_finite_verb(tok):
+        return True
+    t = _norm_tok(tok)
+    if t in {"я", "ты", "он", "она", "оно", "мы", "вы", "они", "это", "то"}:
+        return False
+    # Strong short forms / comparatives only; len>=4 so «он» ≠ ending «он»
+    if len(t) < 4:
+        return False
+    return bool(re.search(r"(ен|ён|ан|ян|он|на|но|ны|то|ее|ей|ше|же)$", t))
 
 
 def describe_subject(text: str) -> str:
@@ -474,13 +627,14 @@ def describe_subject(text: str) -> str:
 
 
 def describe_predicate(text: str, null_copula: bool) -> str:
+    if not text:
+        return "—" if not null_copula else "нулевая связка + именная часть"
+    low = text.lower().replace("ё", "е")
+    parts = low.split()
+    if parts and parts[0] in {"можно", "нельзя"}:
+        return f"«{text}» — главная часть односоставного (состояние / возможность)"
     if null_copula and text:
         return f"«{text}» — именная часть сказуемого; связка нулевая (вместо «есть»)"
-    if null_copula and not text:
-        return "нулевая связка + именная часть"
-    if not text:
-        return "—"
-    parts = text.lower().split()
     if parts and parts[0] in {
         "был",
         "была",
@@ -507,11 +661,15 @@ def describe_predicate(text: str, null_copula: bool) -> str:
         "смогли",
     }:
         return f"«{text}» — составное глагольное сказуемое"
-    if " и " in f" {text.lower()} ":
+    if " и " in f" {low} ":
         return f"«{text}» — однородные сказуемые"
     if parts and parts[0] in {"нужен", "нужна", "нужно", "нужны"}:
-        return f"«{text}» — составное именное (краткое прилагательное)"
-    return f"«{text}» — глагольное сказуемое"
+        return f"«{text}» — составное именное (краткое прилагательное); связка нулевая"
+    if has_finite_verb(text):
+        return f"«{text}» — глагольное сказуемое"
+    if is_short_nominal_strict(parts[-1] if parts else ""):
+        return f"«{text}» — составное именное сказуемое (краткая форма)"
+    return f"«{text}» — именное сказуемое"
 
 
 def build_visual(option: dict, sentences: list[str]) -> dict | None:
@@ -525,17 +683,12 @@ def build_visual(option: dict, sentences: list[str]) -> dict | None:
     subj_idx, pred_idx = pair_basis_spans(words, subj, pred, label)
     if not subj_idx and not pred_idx:
         return None
-    show_null = infer_null_copula(label) and bool(subj_idx) and bool(pred_idx) and not has_verbish(label)
-    if ("—" in option["label"] or "–" in option["label"]) and subj_idx and not has_verbish(label):
-        show_null = True
-    if subj_idx and pred_idx and not has_verbish(label) and "—" not in option["label"]:
-        if len(phrase_tokens(pred)) <= 2:
-            show_null = True
+    show_null = should_show_null_copula(option["label"], subj, pred) and bool(pred_idx or subj_idx)
+    # Place ∅ only when subject stands before the nominal part (readable for kids)
     null_after = None
-    if show_null and subj_idx:
+    if show_null and subj_idx and pred_idx and subj_idx[-1] < pred_idx[0]:
         null_after = subj_idx[-1]
-        end = pred_idx[0] if pred_idx else len(words)
-        for i in range(subj_idx[-1] + 1, end):
+        for i in range(subj_idx[-1] + 1, pred_idx[0]):
             if words[i] in {"—", "–", "-"}:
                 null_after = i - 1
                 break
