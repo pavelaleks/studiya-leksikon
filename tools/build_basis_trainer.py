@@ -31,6 +31,10 @@ PAST_NO_L = re.compile(
 def clean_text(text: str) -> str:
     text = text.replace("\u00ad", "").replace("\u202f", " ").replace("\xa0", " ")
     text = text.replace("\u2060", "").replace("\ufeff", "")
+    # Remove combining stress marks so «о́рган» stays one token
+    text = unicodedata.normalize("NFD", text)
+    text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
+    text = unicodedata.normalize("NFC", text)
     # PDF often inserts Latin accented letters into Cyrillic words (полóг)
     for lat, cyr in {
         "á": "а",
@@ -148,6 +152,8 @@ def extract_why_wrong(block: str, option_id: str) -> str:
 
 
 def normalize_label(label: str) -> str:
+    label = "".join(ch for ch in unicodedata.normalize("NFD", label) if unicodedata.category(ch) != "Mn")
+    label = unicodedata.normalize("NFC", label)
     label = re.sub(r"\(\s*бы\s*\)", "бы", label)
     label = re.sub(r"\(\s*это\s*\)", "это", label)
     label = re.sub(r"\(\s*(как|так и|или)\s*\)", " ", label, flags=re.I)
@@ -592,6 +598,9 @@ def split_basis_parts(label: str) -> tuple[str, str]:
     } and len(words) >= 2:
         if words[-1][:1].isupper() and words[-1].lower() not in {w.lower() for w in words[:-1]}:
             return words[-1], " ".join(words[:-1])
+        # «были подвешены колокольчики»
+        if len(words) >= 3 and not is_finite_verb(words[-1]) and not is_short_nominal_strict(words[-1]):
+            return words[-1], " ".join(words[:-1])
         return "", label
 
     # можно / нельзя + infinitive — whole predicate, no subject
@@ -621,6 +630,19 @@ def split_basis_parts(label: str) -> tuple[str, str]:
 
     if re.match(r"^[А-ЯA-Z]\.?[А-ЯA-Z]\.?$", words[0]) and len(words) >= 3:
         return " ".join(words[:2]), " ".join(words[2:])
+
+    # «А. С. Пушкин мог написать» / «А. С. Пушкин отметил»
+    initials = []
+    i = 0
+    while i < len(words) and re.fullmatch(r"[А-ЯA-Z]\.?", words[i]):
+        initials.append(words[i])
+        i += 1
+    if initials and i < len(words) and re.fullmatch(r"[А-Яа-яЁё\-]+", words[i]) and words[i][0].isupper():
+        name = initials + [words[i]]
+        rest = words[i + 1 :]
+        if rest:
+            return " ".join(name), " ".join(rest)
+        return " ".join(name), ""
 
     # Verb / clear nominal predicative first: «подешевел он», «непривлекателен человек»
     if len(words) >= 2 and _is_predicative_first(words[0]):
