@@ -182,6 +182,9 @@ export function homePage(content) {
   return `
     <section class="landing-hero" aria-label="Студия Лексикон">
       <div class="landing-hero-copy">
+        <p class="landing-exams landing-exams-hero" aria-label="К чему готовим">
+          <span class="exam-vpr">ВПР</span><span class="exam-oge">ОГЭ</span><span class="exam-ege">ЕГЭ</span>
+        </p>
         <p class="eyebrow landing-kicker">
           <span>Студия Лексикон</span>
           <span aria-hidden="true">·</span>
@@ -210,9 +213,6 @@ export function homePage(content) {
             <small>Основатель и ведущий преподаватель студии</small>
           </span>
         </a>
-        <p class="landing-exams landing-exams-hero" aria-label="К чему готовим">
-          <span class="exam-vpr">ВПР</span><span class="exam-oge">ОГЭ</span><span class="exam-ege">ЕГЭ</span>
-        </p>
         <div class="landing-cta home-actions">
           <a class="btn btn-lg" href="#apply">Записаться</a>
           <div class="landing-quick-links">

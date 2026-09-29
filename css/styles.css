@@ -1948,8 +1948,8 @@ body.is-landing main {
 }
 
 .landing-exams-hero {
-  margin: 0 0 14px;
-  gap: 8px;
+  margin: 0 0 20px;
+  gap: 10px;
 }
 
 .landing-exams span {
@@ -1966,11 +1966,11 @@ body.is-landing main {
 }
 
 .landing-exams-hero span {
-  min-height: 28px;
-  padding: 4px 11px;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  border-radius: 8px;
+  min-height: 40px;
+  padding: 8px 18px;
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  border-radius: 999px;
   border: 1px solid transparent;
   box-shadow: none;
   background: #e8efe9;
