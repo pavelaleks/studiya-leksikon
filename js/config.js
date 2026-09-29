@@ -27,8 +27,8 @@ export const STUDIO = {
   telegram: "terminus12",
   /** Части номера — собираются только по клику «Позвонить». */
   phoneParts: ["+7", "913", "998", "53", "10"],
-  /** После отправки FormSubmit (абсолютный URL на проде). Пусто — текущий origin + #/thanks */
-  applyThanksUrl: "",
+  /** Страница «спасибо» после заявки (FormSubmit / редирект). */
+  applyThanksUrl: "https://pavelaleks.github.io/studiya-leksikon/#/thanks",
   /** Тренажёры ОГЭ: JSON в js/trainers-data/, маршрут #/trainer/:slug */
   trainers: [
     {

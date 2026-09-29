@@ -2303,6 +2303,14 @@ body.is-landing main {
   font-weight: 600;
 }
 
+.apply-status.ok {
+  color: #2f4a3c;
+}
+
+.apply-status.bad {
+  color: #6f2d32;
+}
+
 .landing-learn-links {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

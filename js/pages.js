@@ -410,7 +410,7 @@ export function homePage(content) {
           <button type="submit" class="btn btn-lg">Отправить</button>
           <button type="button" class="btn btn-lg secondary" id="apply-mailto">Открыть в почте</button>
         </div>
-        <p class="muted apply-hint">Заявка придёт на почту студии. Кнопка «Открыть в почте» создаст такое же письмо в вашей почтовой программе.</p>
+        <p class="muted apply-hint">Заявка приходит на почту студии (<a href="mailto:pavel.alekseev.gasu@gmail.com">pavel.alekseev.gasu@gmail.com</a>). Если отправка через сайт не сработает, используйте «Открыть в почте» или Telegram.</p>
         <p class="apply-status" id="apply-status" role="status" hidden></p>
       </form>
     </section>
