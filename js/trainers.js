@@ -231,8 +231,11 @@ function renderBasis(exercise, state) {
   const correctIds = (exercise.options || []).filter((o) => o.correct).map((o) => String(o.id));
 
   const textHtml = (exercise.sentences || [])
-    .map((s, i) => `<p class="basis-passage-sent"><span class="basis-num">(${i + 1})</span> ${escapeHtml(s)}</p>`)
-    .join("");
+    .map(
+      (s, i) =>
+        `<span class="basis-passage-sent"><span class="basis-num">(${i + 1})</span> ${escapeHtml(s)}</span>`
+    )
+    .join(" ");
 
   const optionsHtml = (exercise.options || [])
     .map((o) => {
@@ -260,8 +263,9 @@ function renderBasis(exercise, state) {
         <button type="button" class="${cls}" data-opt="${escapeHtml(id)}" ${state.checked ? "disabled" : ""}>
           <span class="basis-opt-id">${escapeHtml(id)}</span>
           <span class="basis-opt-body">
-            <span class="basis-opt-label">${escapeHtml(o.label)}</span>
-            <span class="basis-opt-sent muted">предложение ${escapeHtml(String(o.sentence))}</span>
+            <span class="basis-opt-label">${escapeHtml(o.label)} <span class="basis-opt-sent muted">· пр. ${escapeHtml(
+              String(o.sentence)
+            )}</span></span>
             ${why}
           </span>
           ${mark}
@@ -270,9 +274,13 @@ function renderBasis(exercise, state) {
     .join("");
 
   return `
-    <div class="basis-passage">${textHtml}</div>
-    <p class="basis-task muted">Выберите все варианты, в которых грамматическая основа указана верно. Может быть несколько ответов.</p>
-    <div class="basis-options" role="group" aria-label="Варианты основ">${optionsHtml}</div>
+    <div class="basis-layout">
+      <div class="basis-passage" tabindex="0">${textHtml}</div>
+      <div class="basis-side">
+        <p class="basis-task">Отметьте все верные основы</p>
+        <div class="basis-options" role="group" aria-label="Варианты основ">${optionsHtml}</div>
+      </div>
+    </div>
     ${
       state.checked
         ? `
@@ -402,16 +410,24 @@ export async function mountTrainer(root, slug) {
 
     const canCheck = k === "nn" ? state.chosen !== null : k === "basis" ? state.selected.length > 0 : true;
     const progress = exercises.length ? Math.round((state.index / exercises.length) * 100) : 0;
+    const cardCls = k === "basis" ? "card trainer-card trainer-card-basis" : "card trainer-card";
+    const head =
+      k === "basis"
+        ? `<div class="basis-toolbar">
+            <p class="kicker basis-kicker">Задание ${state.index + 1} / ${exercises.length}</p>
+            <p class="basis-hint muted">Можно выбрать несколько</p>
+          </div>`
+        : `<p class="kicker">Задание ${state.index + 1} из ${exercises.length}</p>
+           <h2 class="trainer-title">${escapeHtml(data.name)}</h2>
+           <p class="muted">${hintFor(k)}</p>`;
 
     root.innerHTML = `
-      <div class="crumbs"><a href="#/oge">← ОГЭ</a></div>
-      <div class="card trainer-card">
+      <div class="crumbs${k === "basis" ? " crumbs-compact" : ""}"><a href="#/oge">← ОГЭ</a></div>
+      <div class="${cardCls}">
         <div class="trainer-progress" aria-hidden="true"><span style="width:${progress}%"></span></div>
-        <p class="kicker">Задание ${state.index + 1} из ${exercises.length}</p>
-        <h2 class="trainer-title">${escapeHtml(data.name)}</h2>
-        <p class="muted">${hintFor(k)}</p>
+        ${head}
         <div class="trainer-body">${body}</div>
-        <div class="actions trainer-actions">
+        <div class="actions trainer-actions${k === "basis" ? " trainer-actions-sticky" : ""}">
           ${
             state.checked
               ? `<button type="button" class="btn btn-lg" data-next>${
