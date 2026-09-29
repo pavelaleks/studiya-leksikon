@@ -32,6 +32,12 @@ export const STUDIO = {
   /** Тренажёры ОГЭ: JSON в js/trainers-data/, маршрут #/trainer/:slug */
   trainers: [
     {
+      slug: "trenazher-osnova-leksikon",
+      title: "Грамматическая основа",
+      blurb: "Задание 2 ОГЭ: подлежащее, сказуемое, нулевая связка · 80 заданий",
+      tag: "Синтаксис",
+    },
+    {
       slug: "trenazher-n-nn-leksikon",
       title: "Н и НН",
       blurb: "В прилагательных, причастиях и наречиях · 174 задания",

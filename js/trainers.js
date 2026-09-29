@@ -24,6 +24,13 @@ function sameCommas(user, correct) {
   return a.every((v, i) => v === b[i]);
 }
 
+function sameIds(user, correct) {
+  const a = [...new Set(user || [])].map(String).sort();
+  const b = [...new Set(correct || [])].map(String).sort();
+  if (a.length !== b.length) return false;
+  return a.every((v, i) => v === b[i]);
+}
+
 function findPhraseWordIndices(words, phrase) {
   if (!phrase || !words?.length) return [];
   const phraseWords = phrase.trim().split(/\s+/);
@@ -44,6 +51,7 @@ function sentenceWithCommas(words, commas) {
 function typeLabel(type) {
   if (type === "spelling.nn") return "Орфография";
   if (type === "punctuation.commas") return "Пунктуация";
+  if (type === "syntax.basis") return "Синтаксис";
   return "Тренажёр";
 }
 
@@ -52,6 +60,71 @@ function gradeFromPct(pct) {
   if (pct >= 70) return 4;
   if (pct >= 50) return 3;
   return 2;
+}
+
+function isPunct(tok) {
+  return /^[^\p{L}\p{N}—–-]+$/u.test(tok);
+}
+
+function renderSentenceTokens(words, marks) {
+  const subject = new Set(marks?.subject || []);
+  const predicate = new Set(marks?.predicate || []);
+  const nullAfter = marks?.nullCopulaAfter;
+  const show = Boolean(marks);
+
+  return words
+    .map((word, i) => {
+      const classes = ["basis-tok"];
+      if (show && subject.has(i)) classes.push("is-subject");
+      if (show && predicate.has(i)) classes.push("is-predicate");
+      if (isPunct(word)) classes.push("is-punct");
+      let html = `<span class="${classes.join(" ")}">${escapeHtml(word)}</span>`;
+      if (show && nullAfter === i) {
+        html += `<span class="basis-null" title="Нулевая связка (есть)">∅</span>`;
+      }
+      const next = words[i + 1];
+      const space = next && !isPunct(next) && !isPunct(word) ? " " : next && isPunct(next) ? "" : next ? " " : "";
+      return html + space;
+    })
+    .join("");
+}
+
+function renderBasisReveal(exercise) {
+  const correctOpts = (exercise.options || []).filter((o) => o.correct && o.visual);
+  if (!correctOpts.length) return "";
+
+  const cards = correctOpts
+    .map((o) => {
+      const v = o.visual;
+      const sentHtml = renderSentenceTokens(v.words || [], v);
+      const nullRow = v.nullCopula
+        ? `<li><span class="basis-pill null">∅ нулевая связка</span> вместо глагола «есть» — именное сказуемое</li>`
+        : "";
+      return `
+        <article class="basis-reveal-card">
+          <p class="basis-reveal-head">Вариант ${escapeHtml(o.id)} · предложение ${escapeHtml(String(o.sentence))} · <strong>${escapeHtml(
+            o.label
+          )}</strong></p>
+          <p class="basis-sentence">${sentHtml}</p>
+          <ul class="basis-how">
+            <li><span class="basis-pill subject">подлежащее</span> ${escapeHtml(v.subjectHow || "—")}</li>
+            <li><span class="basis-pill predicate">сказуемое</span> ${escapeHtml(v.predicateHow || "—")}</li>
+            ${nullRow}
+          </ul>
+        </article>`;
+    })
+    .join("");
+
+  return `
+    <div class="basis-reveal">
+      <p class="kicker">Разбор верных основ</p>
+      <p class="trainer-legend muted">
+        <span class="leg-subject">подлежащее</span>
+        <span class="leg-predicate">сказуемое</span>
+        <span class="leg-null">∅ нулевая связка</span>
+      </p>
+      ${cards}
+    </div>`;
 }
 
 function renderNN(exercise, state) {
@@ -153,6 +226,73 @@ function renderPunctuation(exercise, state) {
     }`;
 }
 
+function renderBasis(exercise, state) {
+  const selected = new Set(state.selected || []);
+  const correctIds = (exercise.options || []).filter((o) => o.correct).map((o) => String(o.id));
+
+  const textHtml = (exercise.sentences || [])
+    .map((s, i) => `<p class="basis-passage-sent"><span class="basis-num">(${i + 1})</span> ${escapeHtml(s)}</p>`)
+    .join("");
+
+  const optionsHtml = (exercise.options || [])
+    .map((o) => {
+      const id = String(o.id);
+      const on = selected.has(id);
+      let cls = "basis-option";
+      if (on) cls += " on";
+      if (state.checked) {
+        if (o.correct && on) cls += " ok";
+        else if (o.correct && !on) cls += " miss";
+        else if (!o.correct && on) cls += " wrong";
+      }
+      const mark = state.checked
+        ? o.correct
+          ? `<span class="basis-mark ok" aria-hidden="true">✓</span>`
+          : on
+            ? `<span class="basis-mark bad" aria-hidden="true">✗</span>`
+            : ""
+        : "";
+      const why =
+        state.checked && !o.correct && on && o.whyWrong
+          ? `<p class="basis-why muted">${escapeHtml(o.whyWrong)}</p>`
+          : "";
+      return `
+        <button type="button" class="${cls}" data-opt="${escapeHtml(id)}" ${state.checked ? "disabled" : ""}>
+          <span class="basis-opt-id">${escapeHtml(id)}</span>
+          <span class="basis-opt-body">
+            <span class="basis-opt-label">${escapeHtml(o.label)}</span>
+            <span class="basis-opt-sent muted">предложение ${escapeHtml(String(o.sentence))}</span>
+            ${why}
+          </span>
+          ${mark}
+        </button>`;
+    })
+    .join("");
+
+  return `
+    <div class="basis-passage">${textHtml}</div>
+    <p class="basis-task muted">Выберите все варианты, в которых грамматическая основа указана верно. Может быть несколько ответов.</p>
+    <div class="basis-options" role="group" aria-label="Варианты основ">${optionsHtml}</div>
+    ${
+      state.checked
+        ? `
+      <div class="trainer-feedback ${state.ok ? "ok" : "bad"}">${
+          state.ok
+            ? "Верно"
+            : `Ошибка. Правильный ответ: ${escapeHtml(exercise.answer || correctIds.join(""))}`
+        }</div>
+      ${renderBasisReveal(exercise)}
+      ${
+        exercise.comment
+          ? `<details class="basis-comment"><summary>Полный комментарий</summary><p>${escapeHtml(
+              exercise.comment
+            )}</p></details>`
+          : ""
+      }`
+        : ""
+    }`;
+}
+
 /**
  * Mount interactive OGE trainer into a container element.
  * Returns a cleanup function.
@@ -177,6 +317,20 @@ export async function mountTrainer(root, slug) {
     checked: false,
     chosen: null,
     userCommas: [],
+    selected: [],
+  };
+
+  const kind = () => {
+    if (data.type === "spelling.nn") return "nn";
+    if (data.type === "punctuation.commas") return "punct";
+    if (data.type === "syntax.basis") return "basis";
+    return "punct";
+  };
+
+  const hintFor = (k) => {
+    if (k === "nn") return "Выберите Н или НН на месте пропуска.";
+    if (k === "punct") return "Нажмите между словами, чтобы поставить или убрать запятую.";
+    return "Отметьте все верные варианты грамматической основы — как в задании 2 ОГЭ.";
   };
 
   const paint = () => {
@@ -198,6 +352,7 @@ export async function mountTrainer(root, slug) {
         state.checked = false;
         state.chosen = null;
         state.userCommas = [];
+        state.selected = [];
         paint();
       };
       return;
@@ -224,21 +379,28 @@ export async function mountTrainer(root, slug) {
     }
 
     const ex = exercises[state.index];
-    const isNN = data.type === "spelling.nn";
-    const ok = isNN
-      ? state.chosen === ex.answer
-      : sameCommas(state.userCommas, ex.commas || []);
+    const k = kind();
+    const correctIds = (ex.options || []).filter((o) => o.correct).map((o) => String(o.id));
+    const ok =
+      k === "nn"
+        ? state.chosen === ex.answer
+        : k === "basis"
+          ? sameIds(state.selected, correctIds)
+          : sameCommas(state.userCommas, ex.commas || []);
     if (state.checked) state.ok = ok;
 
-    const body = isNN
-      ? renderNN(ex, { chosen: state.chosen, checked: state.checked, ok })
-      : renderPunctuation(ex, {
-          userCommas: state.userCommas,
-          checked: state.checked,
-          ok,
-        });
+    const body =
+      k === "nn"
+        ? renderNN(ex, { chosen: state.chosen, checked: state.checked, ok })
+        : k === "basis"
+          ? renderBasis(ex, { selected: state.selected, checked: state.checked, ok })
+          : renderPunctuation(ex, {
+              userCommas: state.userCommas,
+              checked: state.checked,
+              ok,
+            });
 
-    const canCheck = isNN ? state.chosen !== null : true;
+    const canCheck = k === "nn" ? state.chosen !== null : k === "basis" ? state.selected.length > 0 : true;
     const progress = exercises.length ? Math.round((state.index / exercises.length) * 100) : 0;
 
     root.innerHTML = `
@@ -247,11 +409,7 @@ export async function mountTrainer(root, slug) {
         <div class="trainer-progress" aria-hidden="true"><span style="width:${progress}%"></span></div>
         <p class="kicker">Задание ${state.index + 1} из ${exercises.length}</p>
         <h2 class="trainer-title">${escapeHtml(data.name)}</h2>
-        ${
-          isNN
-            ? `<p class="muted">Выберите Н или НН на месте пропуска.</p>`
-            : `<p class="muted">Нажмите между словами, чтобы поставить или убрать запятую.</p>`
-        }
+        <p class="muted">${hintFor(k)}</p>
         <div class="trainer-body">${body}</div>
         <div class="actions trainer-actions">
           ${
@@ -284,6 +442,18 @@ export async function mountTrainer(root, slug) {
       };
     });
 
+    root.querySelectorAll("[data-opt]").forEach((btn) => {
+      btn.onclick = () => {
+        if (state.checked) return;
+        const id = btn.getAttribute("data-opt");
+        const set = new Set(state.selected);
+        if (set.has(id)) set.delete(id);
+        else set.add(id);
+        state.selected = [...set].sort();
+        paint();
+      };
+    });
+
     root.querySelector("[data-reset-commas]")?.addEventListener("click", () => {
       if (state.checked) return;
       state.userCommas = [];
@@ -292,8 +462,14 @@ export async function mountTrainer(root, slug) {
 
     root.querySelector("[data-check]")?.addEventListener("click", () => {
       if (state.checked) return;
-      if (isNN && state.chosen === null) return;
-      const good = isNN ? state.chosen === ex.answer : sameCommas(state.userCommas, ex.commas || []);
+      if (k === "nn" && state.chosen === null) return;
+      if (k === "basis" && !state.selected.length) return;
+      const good =
+        k === "nn"
+          ? state.chosen === ex.answer
+          : k === "basis"
+            ? sameIds(state.selected, correctIds)
+            : sameCommas(state.userCommas, ex.commas || []);
       state.checked = true;
       if (good) state.correct += 1;
       paint();
@@ -309,6 +485,7 @@ export async function mountTrainer(root, slug) {
       state.checked = false;
       state.chosen = null;
       state.userCommas = [];
+      state.selected = [];
       paint();
     });
   };
