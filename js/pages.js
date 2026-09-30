@@ -338,12 +338,6 @@ export function homePage(content) {
         ${contactsBlock("landing-contacts-compact")}
       </div>
       <form class="apply-form" id="apply-form" novalidate>
-        <input type="hidden" name="_subject" value="Заявка в Студию Лексикон" />
-        <input type="hidden" name="_captcha" value="false" />
-        <input type="hidden" name="_template" value="table" />
-        <input type="hidden" name="_next" value="" />
-        <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" />
-
         <div class="apply-row">
           <label class="apply-field">
             <span>Имя ученика или родителя</span>
@@ -407,15 +401,13 @@ export function homePage(content) {
         </label>
 
         <div class="landing-cta home-actions apply-actions">
-          <button type="submit" class="btn btn-lg">Отправить на почту</button>
-          <button type="button" class="btn btn-lg secondary" id="apply-telegram">Telegram</button>
-          <button type="button" class="btn btn-lg secondary" id="apply-mailto">Открыть в почте</button>
+          <button type="submit" class="btn btn-lg">Отправить в Telegram</button>
+          <button type="button" class="btn btn-lg secondary" id="apply-mailto">На почту</button>
         </div>
         <p class="muted apply-hint">
-          «Отправить на почту» шлёт заявку на
-          <a href="mailto:pavel.alekseev.gasu@gmail.com">pavel.alekseev.gasu@gmail.com</a>
-          через FormSubmit. В первый раз придёт письмо с подтверждением адреса — откройте его и нажмите Activate.
-          Если письма нет, загляните в «Спам». Telegram и «Открыть в почте» работают сразу.
+          «Отправить» откроет Telegram (@terminus12) с уже заполненной заявкой — останется нажать «Отправить» в чате.
+          «На почту» откроет письмо на
+          <a href="mailto:pavel.alekseev.gasu@gmail.com">pavel.alekseev.gasu@gmail.com</a>.
         </p>
         <p class="apply-status" id="apply-status" role="status" hidden></p>
       </form>
@@ -464,7 +456,7 @@ export function thanksPage() {
   return `
     <p class="eyebrow">Заявка</p>
     <h1>Спасибо, заявка отправлена</h1>
-    <p class="lede">Мы свяжемся с вами по телефону из заявки. Если вопрос срочный, напишите на <a href="mailto:pavel.alekseev.gasu@gmail.com">pavel.alekseev.gasu@gmail.com</a>.</p>
+    <p class="lede">Откройте Telegram и нажмите «Отправить» в чате со студией — там уже готов текст заявки. Если чат не открылся, напишите на <a href="mailto:pavel.alekseev.gasu@gmail.com">pavel.alekseev.gasu@gmail.com</a> или в Telegram <a href="https://t.me/terminus12" target="_blank" rel="noopener noreferrer">@terminus12</a>.</p>
     <div class="home-actions">
       <a class="btn btn-lg" href="#/">На главную</a>
       <a class="btn btn-lg secondary" href="#/ege">К заданиям ЕГЭ</a>

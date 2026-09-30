@@ -1,4 +1,4 @@
-import { SITE, STUDIO, studioPhone } from "./config.js";
+import { STUDIO, studioPhone } from "./config.js";
 
 function val(form, name) {
   const el = form.elements.namedItem(name);
@@ -25,15 +25,6 @@ function buildBody(form) {
   const note = val(form, "note");
   if (note) lines.push("", `Комментарий: ${note}`);
   return lines.join("\n");
-}
-
-function thanksUrl() {
-  if (STUDIO.applyThanksUrl) return STUDIO.applyThanksUrl;
-  const base =
-    SITE.githubUser && SITE.repo
-      ? `https://${SITE.githubUser}.github.io/${SITE.repo}/`
-      : `${location.origin}${location.pathname.replace(/[^/]*$/, "")}`;
-  return `${base}#/thanks`;
 }
 
 function telegramApplyUrl(form) {
@@ -64,11 +55,9 @@ export function bindRevealPhone(root = document) {
 }
 
 /**
- * Как работает запись:
- * 1) «Отправить» — обычный POST на FormSubmit → письмо на STUDIO.applyEmail
- *    (при первом разе FormSubmit шлёт письмо активации — его нужно открыть и подтвердить).
- * 2) «Открыть в почте» — mailto с тем же текстом (всегда работает локально).
- * 3) «Telegram» — открывает чат с готовым текстом заявки.
+ * FormSubmit.co отвечает 500, поэтому запись без него:
+ * «Отправить» → Telegram с готовым текстом, затем #/thanks.
+ * «На почту» → mailto.
  */
 export function bindApplyForm(root = document) {
   bindRevealPhone(root);
@@ -78,15 +67,9 @@ export function bindApplyForm(root = document) {
 
   const status = root.querySelector("#apply-status");
   const mailFallback = root.querySelector("#apply-mailto");
-  const tgFallback = root.querySelector("#apply-telegram");
   const submitBtn = form.querySelector('[type="submit"]');
 
-  form.action = `https://formsubmit.co/${encodeURIComponent(STUDIO.applyEmail)}`;
-  form.method = "POST";
-  form.acceptCharset = "UTF-8";
-
-  const next = form.querySelector('input[name="_next"]');
-  if (next) next.value = thanksUrl();
+  form.removeAttribute("action");
 
   const setStatus = (text, ok) => {
     if (!status) return;
@@ -105,31 +88,20 @@ export function bindApplyForm(root = document) {
     setStatus(`Откроется почтовая программа. Адрес: ${STUDIO.applyEmail}`, true);
   });
 
-  tgFallback?.addEventListener("click", (e) => {
-    e.preventDefault();
-    if (!form.reportValidity()) return;
-    const url = telegramApplyUrl(form);
-    if (!url) {
-      setStatus("Telegram не настроен.", false);
-      return;
-    }
-    window.open(url, "_blank", "noopener");
-    setStatus("Открыли Telegram с текстом заявки — нажмите «Отправить» в чате.", true);
-  });
-
   form.addEventListener("submit", (e) => {
-    const honey = form.querySelector('[name="_honey"]');
-    if (honey && String(honey.value || "").trim()) {
-      e.preventDefault();
-      return;
-    }
+    e.preventDefault();
     if (!form.reportValidity()) {
-      e.preventDefault();
       setStatus("Заполните обязательные поля.", false);
       return;
     }
+    const url = telegramApplyUrl(form);
+    if (!url) {
+      setStatus("Telegram не настроен. Напишите на почту или позвоните.", false);
+      return;
+    }
     if (submitBtn) submitBtn.disabled = true;
-    setStatus("Отправляем заявку на почту студии…", true);
-    // дальше браузер сам POST на FormSubmit
+    setStatus("Открываем Telegram с текстом заявки…", true);
+    window.open(url, "_blank", "noopener");
+    location.hash = "#/thanks";
   });
 }
