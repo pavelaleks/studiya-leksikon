@@ -407,10 +407,16 @@ export function homePage(content) {
         </label>
 
         <div class="landing-cta home-actions apply-actions">
-          <button type="submit" class="btn btn-lg">Отправить</button>
+          <button type="submit" class="btn btn-lg">Отправить на почту</button>
+          <button type="button" class="btn btn-lg secondary" id="apply-telegram">Telegram</button>
           <button type="button" class="btn btn-lg secondary" id="apply-mailto">Открыть в почте</button>
         </div>
-        <p class="muted apply-hint">Заявка приходит на почту студии (<a href="mailto:pavel.alekseev.gasu@gmail.com">pavel.alekseev.gasu@gmail.com</a>). Если отправка через сайт не сработает, используйте «Открыть в почте» или Telegram.</p>
+        <p class="muted apply-hint">
+          «Отправить на почту» шлёт заявку на
+          <a href="mailto:pavel.alekseev.gasu@gmail.com">pavel.alekseev.gasu@gmail.com</a>
+          через FormSubmit. В первый раз придёт письмо с подтверждением адреса — откройте его и нажмите Activate.
+          Если письма нет, загляните в «Спам». Telegram и «Открыть в почте» работают сразу.
+        </p>
         <p class="apply-status" id="apply-status" role="status" hidden></p>
       </form>
     </section>
