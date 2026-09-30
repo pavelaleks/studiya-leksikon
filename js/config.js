@@ -25,6 +25,8 @@ export const STUDIO = {
   teacherSite: "https://palekseev.ru/",
   applyEmail: "pavel.alekseev.gasu@gmail.com",
   telegram: "terminus12",
+  /** WhatsApp: тот же номер, что и телефон. */
+  whatsapp: "79139985310",
   /** Части номера — собираются только по клику «Позвонить». */
   phoneParts: ["+7", "913", "998", "53", "10"],
   /** Страница «спасибо» после заявки. */
@@ -59,5 +61,29 @@ export function studioPhone() {
   if (!digits.startsWith("7")) digits = "7" + digits;
   const local = digits.slice(1);
   const display = `+7 ${local.slice(0, 3)} ${local.slice(3, 6)}-${local.slice(6, 8)}-${local.slice(8)}`;
-  return { display, tel: `+${digits}` };
+  return { display, tel: `+${digits}`, digits };
+}
+
+export function studioWhatsApp() {
+  let digits = String(STUDIO.whatsapp || studioPhone().digits || "").replace(/\D/g, "");
+  if (digits.startsWith("8")) digits = "7" + digits.slice(1);
+  if (digits && !digits.startsWith("7")) digits = "7" + digits;
+  const local = digits.slice(1);
+  const display = digits
+    ? `+7 ${local.slice(0, 3)} ${local.slice(3, 6)}-${local.slice(6, 8)}-${local.slice(8)}`
+    : "";
+  return {
+    digits,
+    display,
+    url: digits ? `https://wa.me/${digits}` : "",
+  };
+}
+
+export function studioTelegram() {
+  const nick = String(STUDIO.telegram || "").replace(/^@/, "");
+  return {
+    nick,
+    handle: nick ? `@${nick}` : "",
+    url: nick ? `https://t.me/${nick}` : "",
+  };
 }

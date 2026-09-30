@@ -2,17 +2,26 @@ import { escapeHtml } from "./ui.js";
 import { legend, mark } from "./markup.js";
 import { EGE_TITLES, egeByNumber, egeTasks } from "./ege.js";
 import { doneIds, readProgress } from "./progress.js";
-import { STUDIO } from "./config.js";
+import { STUDIO, studioTelegram, studioWhatsApp } from "./config.js";
+import { iconTelegram, iconWhatsApp } from "./icons.js";
 
 function contactsBlock(extraClass = "", { mail = true } = {}) {
-  const tg = STUDIO.telegram;
+  const tg = studioTelegram();
+  const wa = studioWhatsApp();
   const mailBtn = mail
     ? `<a class="btn btn-lg secondary" href="mailto:${escapeHtml(STUDIO.applyEmail)}">Почта</a>`
+    : "";
+  const tgBtn = tg.url
+    ? `<a class="btn btn-lg secondary msg-btn" href="${escapeHtml(tg.url)}" target="_blank" rel="noopener noreferrer">${iconTelegram()} Telegram</a>`
+    : "";
+  const waBtn = wa.url
+    ? `<a class="btn btn-lg secondary msg-btn" href="${escapeHtml(wa.url)}" target="_blank" rel="noopener noreferrer">${iconWhatsApp()} WhatsApp</a>`
     : "";
   return `
     <div class="landing-contacts ${extraClass}">
       <button type="button" class="btn btn-lg secondary" data-reveal-phone>Позвонить</button>
-      <a class="btn btn-lg secondary" href="https://t.me/${escapeHtml(tg)}" target="_blank" rel="noopener noreferrer">Telegram</a>
+      ${tgBtn}
+      ${waBtn}
       ${mailBtn}
     </div>`;
 }
@@ -217,7 +226,8 @@ export function homePage(content) {
           <a class="btn btn-lg" href="#apply">Записаться</a>
           <div class="landing-quick-links">
             <button type="button" class="landing-quick-link" data-reveal-phone>Позвонить</button>
-            <a class="landing-quick-link" href="https://t.me/${escapeHtml(STUDIO.telegram)}" target="_blank" rel="noopener noreferrer">Telegram</a>
+            <a class="landing-quick-link msg-link" href="${escapeHtml(studioTelegram().url)}" target="_blank" rel="noopener noreferrer">${iconTelegram("msg-icon msg-icon-tg msg-icon-sm")} Telegram</a>
+            <a class="landing-quick-link msg-link" href="${escapeHtml(studioWhatsApp().url)}" target="_blank" rel="noopener noreferrer">${iconWhatsApp("msg-icon msg-icon-wa msg-icon-sm")} WhatsApp</a>
           </div>
         </div>
       </div>
@@ -325,7 +335,7 @@ export function homePage(content) {
         </details>
         <details class="landing-faq-item">
           <summary>С чего начать?</summary>
-          <p>Оставьте заявку, напишите в Telegram или позвоните. Договоримся о времени и формате.</p>
+          <p>Оставьте заявку, напишите в Telegram или WhatsApp либо позвоните. Договоримся о времени и формате.</p>
         </details>
       </div>
     </section>
@@ -400,13 +410,39 @@ export function homePage(content) {
           <textarea class="search apply-input apply-textarea" name="note" rows="3" placeholder="Например, удобные дни и время"></textarea>
         </label>
 
+        <fieldset class="apply-field apply-fieldset apply-channel">
+          <legend>Куда отправить заявку</legend>
+          <div class="apply-channel-grid">
+            <label class="apply-channel-opt">
+              <input type="radio" name="channel" value="telegram" checked required />
+              <span class="apply-channel-card">
+                ${iconTelegram("msg-icon msg-icon-tg msg-icon-lg")}
+                <span class="apply-channel-copy">
+                  <strong>Telegram</strong>
+                  <small>@${escapeHtml(STUDIO.telegram)}</small>
+                </span>
+              </span>
+            </label>
+            <label class="apply-channel-opt">
+              <input type="radio" name="channel" value="whatsapp" />
+              <span class="apply-channel-card">
+                ${iconWhatsApp("msg-icon msg-icon-wa msg-icon-lg")}
+                <span class="apply-channel-copy">
+                  <strong>WhatsApp</strong>
+                  <small>${escapeHtml(studioWhatsApp().display || "+7 913 998-53-10")}</small>
+                </span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+
         <div class="landing-cta home-actions apply-actions">
-          <button type="submit" class="btn btn-lg">Отправить в Telegram</button>
+          <button type="submit" class="btn btn-lg" id="apply-submit">${iconTelegram()} Отправить в Telegram</button>
           <button type="button" class="btn btn-lg secondary" id="apply-mailto">На почту</button>
         </div>
         <p class="muted apply-hint">
-          «Отправить» откроет Telegram (@terminus12) с уже заполненной заявкой — останется нажать «Отправить» в чате.
-          «На почту» откроет письмо на
+          Выберите мессенджер и нажмите «Отправить» — откроется чат с уже заполненной заявкой.
+          Останется подтвердить отправку в Telegram или WhatsApp. «На почту» откроет письмо на
           <a href="mailto:pavel.alekseev.gasu@gmail.com">pavel.alekseev.gasu@gmail.com</a>.
         </p>
         <p class="apply-status" id="apply-status" role="status" hidden></p>
@@ -453,10 +489,25 @@ export function homePage(content) {
 }
 
 export function thanksPage() {
+  let channel = "telegram";
+  try {
+    channel = sessionStorage.getItem("applyChannel") || "telegram";
+  } catch {
+    /* ignore */
+  }
+  const tg = studioTelegram();
+  const wa = studioWhatsApp();
+  const viaWa = channel === "whatsapp";
+  const messenger = viaWa
+    ? `${iconWhatsApp()} <a href="${escapeHtml(wa.url)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>`
+    : `${iconTelegram()} <a href="${escapeHtml(tg.url)}" target="_blank" rel="noopener noreferrer">Telegram (${escapeHtml(tg.handle)})</a>`;
+  const alt = viaWa
+    ? `${iconTelegram("msg-icon msg-icon-tg msg-icon-inline")} <a href="${escapeHtml(tg.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(tg.handle)}</a>`
+    : `${iconWhatsApp("msg-icon msg-icon-wa msg-icon-inline")} <a href="${escapeHtml(wa.url)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>`;
   return `
     <p class="eyebrow">Заявка</p>
-    <h1>Спасибо, заявка отправлена</h1>
-    <p class="lede">Откройте Telegram и нажмите «Отправить» в чате со студией — там уже готов текст заявки. Если чат не открылся, напишите на <a href="mailto:pavel.alekseev.gasu@gmail.com">pavel.alekseev.gasu@gmail.com</a> или в Telegram <a href="https://t.me/terminus12" target="_blank" rel="noopener noreferrer">@terminus12</a>.</p>
+    <h1>Спасибо, заявка почти отправлена</h1>
+    <p class="lede thanks-lede">Откройте ${messenger} и нажмите «Отправить» в чате — текст заявки уже подставлен. Если чат не открылся, напишите на <a href="mailto:${escapeHtml(STUDIO.applyEmail)}">${escapeHtml(STUDIO.applyEmail)}</a> или в ${alt}.</p>
     <div class="home-actions">
       <a class="btn btn-lg" href="#/">На главную</a>
       <a class="btn btn-lg secondary" href="#/ege">К заданиям ЕГЭ</a>
