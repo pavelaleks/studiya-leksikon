@@ -224,11 +224,6 @@ export function homePage(content) {
         </a>
         <div class="landing-cta home-actions">
           <a class="btn btn-lg" href="#apply">Записаться</a>
-          <div class="landing-quick-links">
-            <button type="button" class="landing-quick-link" data-reveal-phone>Позвонить</button>
-            <a class="landing-quick-link msg-link" href="${escapeHtml(studioTelegram().url)}" target="_blank" rel="noopener noreferrer">${iconTelegram("msg-icon msg-icon-tg msg-icon-sm")} Telegram</a>
-            <a class="landing-quick-link msg-link" href="${escapeHtml(studioWhatsApp().url)}" target="_blank" rel="noopener noreferrer">${iconWhatsApp("msg-icon msg-icon-wa msg-icon-sm")} WhatsApp</a>
-          </div>
         </div>
       </div>
       <figure class="landing-hero-art">
