@@ -1,5 +1,4 @@
-import { STUDIO, studioPhone, studioTelegram, studioWhatsApp } from "./config.js";
-import { iconTelegram, iconWhatsApp } from "./icons.js";
+import { studioPhone, studioTelegram, studioWhatsApp } from "./config.js";
 
 function val(form, name) {
   const el = form.elements.namedItem(name);
@@ -28,26 +27,14 @@ function buildBody(form) {
   return lines.join("\n");
 }
 
-function channelOf(form) {
-  return val(form, "channel") === "whatsapp" ? "whatsapp" : "telegram";
-}
-
-function applyUrl(form) {
+function applyUrl(channel, form) {
   const text = encodeURIComponent(buildBody(form));
-  if (channelOf(form) === "whatsapp") {
+  if (channel === "whatsapp") {
     const wa = studioWhatsApp();
     return wa.url ? `${wa.url}?text=${text}` : "";
   }
   const tg = studioTelegram();
   return tg.url ? `${tg.url}?text=${text}` : "";
-}
-
-function syncSubmitLabel(form, submitBtn) {
-  if (!submitBtn) return;
-  const wa = channelOf(form) === "whatsapp";
-  submitBtn.innerHTML = wa
-    ? `${iconWhatsApp()} Отправить в WhatsApp`
-    : `${iconTelegram()} Отправить в Telegram`;
 }
 
 export function bindRevealPhone(root = document) {
@@ -72,9 +59,8 @@ export function bindRevealPhone(root = document) {
 }
 
 /**
- * Запись без FormSubmit:
- * выбор Telegram / WhatsApp → открыть чат с текстом заявки → #/thanks.
- * «На почту» → mailto.
+ * Заявка: кнопка Telegram или WhatsApp открывает чат с текстом → #/thanks.
+ * Почта в форме не используется (FormSubmit нестабилен; mailto на телефонах часто пустой).
  */
 export function bindApplyForm(root = document) {
   bindRevealPhone(root);
@@ -83,15 +69,7 @@ export function bindApplyForm(root = document) {
   if (!form) return;
 
   const status = root.querySelector("#apply-status");
-  const mailFallback = root.querySelector("#apply-mailto");
-  const submitBtn = form.querySelector("#apply-submit") || form.querySelector('[type="submit"]');
-
   form.removeAttribute("action");
-  syncSubmitLabel(form, submitBtn);
-
-  form.querySelectorAll('input[name="channel"]').forEach((input) => {
-    input.addEventListener("change", () => syncSubmitLabel(form, submitBtn));
-  });
 
   const setStatus = (text, ok) => {
     if (!status) return;
@@ -101,25 +79,17 @@ export function bindApplyForm(root = document) {
     status.classList.toggle("bad", ok === false);
   };
 
-  mailFallback?.addEventListener("click", (e) => {
-    e.preventDefault();
-    if (!form.reportValidity()) return;
-    const subject = encodeURIComponent("Заявка в Студию Лексикон");
-    const body = encodeURIComponent(buildBody(form));
-    location.href = `mailto:${STUDIO.applyEmail}?subject=${subject}&body=${body}`;
-    setStatus(`Откроется почтовая программа. Адрес: ${STUDIO.applyEmail}`, true);
-  });
-
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     if (!form.reportValidity()) {
       setStatus("Заполните обязательные поля.", false);
       return;
     }
-    const channel = channelOf(form);
-    const url = applyUrl(form);
+    const submitter = e.submitter;
+    const channel = submitter?.value === "whatsapp" ? "whatsapp" : "telegram";
+    const url = applyUrl(channel, form);
     if (!url) {
-      setStatus("Мессенджер не настроен. Напишите на почту или позвоните.", false);
+      setStatus("Мессенджер не настроен. Позвоните или напишите в контактах ниже.", false);
       return;
     }
     try {
@@ -127,7 +97,9 @@ export function bindApplyForm(root = document) {
     } catch {
       /* ignore */
     }
-    if (submitBtn) submitBtn.disabled = true;
+    form.querySelectorAll('button[type="submit"]').forEach((btn) => {
+      btn.disabled = true;
+    });
     setStatus(
       channel === "whatsapp"
         ? "Открываем WhatsApp с текстом заявки…"

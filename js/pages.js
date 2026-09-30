@@ -345,7 +345,7 @@ export function homePage(content) {
         <p class="eyebrow">Запись</p>
         <h2 id="apply-title">Записаться</h2>
         <p class="lede">Заполните форму или свяжитесь с нами напрямую.</p>
-        ${contactsBlock("landing-contacts-compact")}
+        ${contactsBlock("landing-contacts-compact", { mail: false })}
       </div>
       <form class="apply-form" id="apply-form" novalidate>
         <div class="apply-row">
@@ -410,41 +410,14 @@ export function homePage(content) {
           <textarea class="search apply-input apply-textarea" name="note" rows="3" placeholder="Например, удобные дни и время"></textarea>
         </label>
 
-        <fieldset class="apply-field apply-fieldset apply-channel">
-          <legend>Куда отправить заявку</legend>
-          <div class="apply-channel-grid">
-            <label class="apply-channel-opt">
-              <input type="radio" name="channel" value="telegram" checked required />
-              <span class="apply-channel-card">
-                ${iconTelegram("msg-icon msg-icon-tg msg-icon-lg")}
-                <span class="apply-channel-copy">
-                  <strong>Telegram</strong>
-                  <small>@${escapeHtml(STUDIO.telegram)}</small>
-                </span>
-              </span>
-            </label>
-            <label class="apply-channel-opt">
-              <input type="radio" name="channel" value="whatsapp" />
-              <span class="apply-channel-card">
-                ${iconWhatsApp("msg-icon msg-icon-wa msg-icon-lg")}
-                <span class="apply-channel-copy">
-                  <strong>WhatsApp</strong>
-                  <small>${escapeHtml(studioWhatsApp().display || "+7 913 998-53-10")}</small>
-                </span>
-              </span>
-            </label>
+        <div class="apply-send" role="group" aria-label="Отправить заявку">
+          <p class="apply-send-label">Отправить заявку</p>
+          <div class="landing-cta home-actions apply-actions apply-channel-grid">
+            <button type="submit" class="btn btn-lg msg-btn" name="channel" value="telegram">${iconTelegram()} Telegram</button>
+            <button type="submit" class="btn btn-lg secondary msg-btn" name="channel" value="whatsapp">${iconWhatsApp()} WhatsApp</button>
           </div>
-        </fieldset>
-
-        <div class="landing-cta home-actions apply-actions">
-          <button type="submit" class="btn btn-lg" id="apply-submit">${iconTelegram()} Отправить в Telegram</button>
-          <button type="button" class="btn btn-lg secondary" id="apply-mailto">На почту</button>
+          <p class="muted apply-hint">Откроется чат с уже заполненной заявкой — останется нажать «Отправить» в мессенджере.</p>
         </div>
-        <p class="muted apply-hint">
-          Выберите мессенджер и нажмите «Отправить» — откроется чат с уже заполненной заявкой.
-          Останется подтвердить отправку в Telegram или WhatsApp. «На почту» откроет письмо на
-          <a href="mailto:pavel.alekseev.gasu@gmail.com">pavel.alekseev.gasu@gmail.com</a>.
-        </p>
         <p class="apply-status" id="apply-status" role="status" hidden></p>
       </form>
     </section>
@@ -507,7 +480,7 @@ export function thanksPage() {
   return `
     <p class="eyebrow">Заявка</p>
     <h1>Спасибо, заявка почти отправлена</h1>
-    <p class="lede thanks-lede">Откройте ${messenger} и нажмите «Отправить» в чате — текст заявки уже подставлен. Если чат не открылся, напишите на <a href="mailto:${escapeHtml(STUDIO.applyEmail)}">${escapeHtml(STUDIO.applyEmail)}</a> или в ${alt}.</p>
+    <p class="lede thanks-lede">Откройте ${messenger} и нажмите «Отправить» в чате — текст заявки уже подставлен. Если чат не открылся, напишите в ${alt} или позвоните.</p>
     <div class="home-actions">
       <a class="btn btn-lg" href="#/">На главную</a>
       <a class="btn btn-lg secondary" href="#/ege">К заданиям ЕГЭ</a>
