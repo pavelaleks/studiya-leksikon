@@ -90,9 +90,9 @@ function renderShell(data) {
 
   return `
     <div class="lit-page" id="lit-root">
-      <header class="lit-head">
-        <p class="eyebrow">ЕГЭ · задание 11</p>
-        <h1>Темы сочинений по литературе</h1>
+      <header class="lit-head" id="lit-task-11">
+        <p class="eyebrow">Задание 11</p>
+        <h2 class="lit-h2">Темы сочинений</h2>
         <p class="lede">Сводный список: <strong>${data.total}</strong> тем (80 вариантов × 5). Поиск по автору, произведению или формулировке.</p>
         <label class="lit-search-wrap" for="lit-search">
           <span class="visually-hidden">Поиск по темам</span>
@@ -208,8 +208,8 @@ export async function mountLiterature(host) {
   } catch (err) {
     host.classList.remove("lit-loading");
     host.innerHTML = `
-      <p class="eyebrow">ЕГЭ · задание 11</p>
-      <h1>Темы сочинений по литературе</h1>
+      <p class="eyebrow">Задание 11</p>
+      <h2 class="lit-h2">Темы сочинений</h2>
       <div class="empty">Не удалось загрузить список тем. <button type="button" class="btn secondary" id="lit-retry">Повторить</button></div>`;
     host.querySelector("#lit-retry")?.addEventListener("click", () => {
       cache = null;

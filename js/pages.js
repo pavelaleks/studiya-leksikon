@@ -188,6 +188,9 @@ export function homePage(content) {
     (a, s) => a + s.chapters.reduce((b, c) => b + c.rules.length, 0),
     0
   );
+  const ogeCount = (STUDIO.trainers || []).length;
+  const ogeWord =
+    ogeCount === 1 ? "тренажёр" : ogeCount >= 2 && ogeCount <= 4 ? "тренажёра" : "тренажёров";
   return `
     <section class="landing-hero" aria-label="Студия Лексикон">
       <div class="landing-hero-copy">
@@ -420,24 +423,30 @@ export function homePage(content) {
     <section class="landing-learn" id="learn" aria-labelledby="learn-title">
       <p class="eyebrow">На сайте</p>
       <h2 id="learn-title">Материалы для занятий</h2>
-      <p class="lede">Правила и тренажёры по русскому языку. Работаем с ними на уроках, заниматься можно и дома.</p>
+      <p class="lede">Русский язык и литература: правила, тренажёры и темы для ЕГЭ. Работаем с ними на уроках, заниматься можно и дома.</p>
       ${continueHtml(true)}
 
       <div class="landing-learn-subjects">
-        <div class="landing-learn-subject">
-          <p class="landing-learn-label">Русский язык</p>
-          <div class="landing-learn-links">
+        <article class="landing-learn-subject">
+          <header class="landing-learn-subject-head">
+            <p class="landing-learn-label">Русский язык</p>
+            <p class="landing-learn-subject-note">ОГЭ и ЕГЭ</p>
+          </header>
+          <div class="landing-learn-links landing-learn-links-ru">
             <a href="#/ege"><strong>ЕГЭ</strong><span>Задания 4–22</span></a>
-            <a href="#/oge"><strong>ОГЭ</strong><span>2 тренажёра</span></a>
+            <a href="#/oge"><strong>ОГЭ</strong><span>${ogeCount} ${ogeWord}</span></a>
             <a href="#/rules"><strong>Правила</strong><span>${ruleCount} ${ruleWord(ruleCount)}</span></a>
           </div>
-        </div>
-        <div class="landing-learn-subject">
-          <p class="landing-learn-label">Литература</p>
-          <div class="landing-learn-links">
-            <a href="#/literature"><strong>Задание 11</strong><span>400 тем сочинений ЕГЭ</span></a>
+        </article>
+        <article class="landing-learn-subject">
+          <header class="landing-learn-subject-head">
+            <p class="landing-learn-label">Литература</p>
+            <p class="landing-learn-subject-note">ЕГЭ</p>
+          </header>
+          <div class="landing-learn-links landing-learn-links-lit">
+            <a href="#/literature"><strong>Задания 1–11</strong><span>Материалы к экзамену</span></a>
           </div>
-        </div>
+        </article>
       </div>
     </section>
 
@@ -513,10 +522,24 @@ export function ogePage() {
 }
 
 export function literaturePage() {
+  const tasks = Array.from({ length: 11 }, (_, i) => i + 1)
+    .map((n) => {
+      if (n === 11) {
+        return `<a class="lit-task-chip is-active" href="#lit-task-11">Задание ${n}</a>`;
+      }
+      return `<span class="lit-task-chip is-soon" title="Скоро">Задание ${n}</span>`;
+    })
+    .join("");
   return `
+    <div class="lit-hub">
+      <p class="eyebrow">Литература · ЕГЭ</p>
+      <h1>Задания 1–11</h1>
+      <p class="lede">Материалы к ЕГЭ по литературе. Сейчас открыто задание 11 — темы сочинений.</p>
+      <nav class="lit-task-nav" aria-label="Номера заданий ЕГЭ по литературе">${tasks}</nav>
+    </div>
     <div class="lit-page lit-loading" id="lit-root">
-      <p class="eyebrow">ЕГЭ · задание 11</p>
-      <h1>Темы сочинений по литературе</h1>
+      <p class="eyebrow">Задание 11</p>
+      <h1>Темы сочинений</h1>
       <p class="lede muted">Загружаем список тем…</p>
     </div>`;
 }
