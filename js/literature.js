@@ -225,6 +225,7 @@ function hubHtml(manifest) {
     .join("");
   return `
     <header class="lit-hub">
+      <p class="crumbs"><a href="#/">← Студия</a></p>
       <p class="eyebrow">Литература · ЕГЭ</p>
       <h1>Задания 1–11</h1>
       <p class="lede">Фрагмент, вопрос и пояснение. Краткий ответ проверяется на сайте. Письменные задания 4, 5, 9, 10 и 11 можно отправить преподавателю в Telegram.</p>
@@ -282,7 +283,10 @@ function listHtml({ file, bank, mode }) {
     mode === "extra"
       ? `<p class="eyebrow">Дополнительно</p><h1>${escapeHtml(file.title)}</h1>`
       : `<p class="eyebrow">Задание ${task}</p><h1>${escapeHtml(title)}</h1><p class="lede">${escapeHtml(hint)}. ${file.count} ${ru(file.count, "задание", "задания", "заданий")}${written ? ". Ответ можно отправить в Telegram." : "."}</p>`;
-  const back = mode === "extra" ? `<p class="crumbs"><a href="#/literature">← К заданиям 1–11</a></p>` : taskNav(task);
+  const back =
+    mode === "extra"
+      ? `<p class="crumbs"><a href="#/literature">← К заданиям 1–11</a></p>`
+      : `<p class="crumbs"><a href="#/literature">← К заданиям 1–11</a></p>${taskNav(task)}`;
   return `
     ${back}
     <header class="lit-head">
@@ -383,7 +387,10 @@ function problemHtml({ file, bank, problem, index, total, mode }) {
       ${next ? `<a href="${hrefOf(next)}">Следующее →</a>` : `<span></span>`}
     </div>`;
   return `
-    <p class="crumbs"><a href="${listHref}">← ${mode === "extra" ? escapeHtml(file.title) : `Задание ${task}`}</a></p>
+    <p class="crumbs">
+      <a href="#/literature">Литература</a><span>/</span>
+      <a href="${listHref}">${mode === "extra" ? escapeHtml(file.title) : `Задание ${task}`}</a>
+    </p>
     ${mode === "extra" ? "" : taskNav(task)}
     <article class="lit-problem">
       <p class="eyebrow">${escapeHtml(kindLabel)} · № ${problem.id}</p>
@@ -453,7 +460,10 @@ function themesHtml(data) {
     })
     .join("");
   return `
-    <p class="crumbs"><a href="#/literature/11">← Задание 11</a></p>
+    <p class="crumbs">
+      <a href="#/literature">Литература</a><span>/</span>
+      <a href="#/literature/11">Задание 11</a>
+    </p>
     ${taskNav(11)}
     <header class="lit-head">
       <p class="eyebrow">Задание 11</p>
@@ -517,7 +527,10 @@ function termsHtml(data, focusId = "") {
     })
     .join("");
   return `
-    <p class="crumbs"><a href="#/literature">← К заданиям</a></p>
+    <p class="crumbs">
+      <a href="#/literature">Литература</a><span>/</span>
+      <span>Словарь терминов</span>
+    </p>
     <header class="lit-head lit-terms-head">
       <p class="eyebrow">Литература · ЕГЭ</p>
       <h1>Словарь терминов</h1>
@@ -539,7 +552,10 @@ function termsTrainHtml(data) {
     .concat((data.categories || []).map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.title)}</option>`))
     .join("");
   return `
-    <p class="crumbs"><a href="#/literature/terms">← К словарю</a></p>
+    <p class="crumbs">
+      <a href="#/literature">Литература</a><span>/</span>
+      <a href="#/literature/terms">Словарь</a>
+    </p>
     <header class="lit-head">
       <p class="eyebrow">Тренажёр</p>
       <h1>Литературоведческие термины</h1>
@@ -971,6 +987,11 @@ export async function mountLiterature(host, rest = []) {
     if (view.view === "themes") bindThemes(host);
     if (view.view === "terms") bindTerms(host, view.focusId || "");
     if (view.view === "terms-train") bindTermsTrain(host, view.terms);
+    if (!(view.view === "terms" && view.focusId)) {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
   } catch (err) {
     host.innerHTML = `<div class="empty">Не удалось загрузить задания. <button type="button" class="btn secondary" id="lit-retry">Повторить</button></div>`;
     host.querySelector("#lit-retry")?.addEventListener("click", () => {

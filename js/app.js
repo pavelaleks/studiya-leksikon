@@ -1,7 +1,7 @@
-import { layout } from "./ui.js?v=land52";
+import { layout } from "./ui.js?v=land53";
 import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land46";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex, ogePage, thanksPage, literaturePage } from "./pages.js?v=land52";
-import { mountLiterature } from "./literature.js?v=land51";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex, ogePage, thanksPage, literaturePage } from "./pages.js?v=land53";
+import { mountLiterature } from "./literature.js?v=land53";
 import { bindApplyForm } from "./apply.js?v=land46";
 import { EGE_TITLES, egeByNumber } from "./ege.js?v=land46";
 import { renderExercise } from "./exercises.js?v=land46";
@@ -34,9 +34,16 @@ function skeletonHtml() {
     </div>`;
 }
 
-function mountHtml(html, active, opts) {
+function scrollToTop() {
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+}
+
+function mountHtml(html, active, opts = {}) {
   app.innerHTML = layout(html, active, opts);
   bindSkip();
+  if (!(opts.preserveScroll || opts.scroll === false)) scrollToTop();
 }
 
 function bindSkip() {
@@ -57,7 +64,7 @@ function bindSearch(sectionId, q) {
   const search = app.querySelector("#rule-search");
   if (!search) return;
   search.addEventListener("input", () => {
-    mountHtml(rulesIndex(content, sectionId, search.value), "rules");
+    mountHtml(rulesIndex(content, sectionId, search.value), "rules", { scroll: false });
     bindSearch(sectionId, search.value);
     const again = app.querySelector("#rule-search");
     if (again) {
@@ -120,7 +127,7 @@ async function render() {
   ]);
   if (!a || homeAnchors.has(a)) {
     document.body.classList.add("is-landing");
-    mountHtml(homePage(content), "home");
+    mountHtml(homePage(content), "home", { scroll: homeAnchors.has(a) ? false : true });
     bindApplyForm(app);
     setTitle("");
     if (homeAnchors.has(a)) {
@@ -195,7 +202,8 @@ async function render() {
     }
     mountHtml(`<div id="trainer-root"></div>`, "oge");
     const host = app.querySelector("#trainer-root");
-    mountTrainer(host, decodeURIComponent(b));
+    await mountTrainer(host, decodeURIComponent(b));
+    scrollToTop();
     setTitle("Тренажёр ОГЭ");
     return;
   }
@@ -204,7 +212,7 @@ async function render() {
     mountHtml(literaturePage(), "literature");
     setTitle("Литература · ЕГЭ");
     const root = app.querySelector("#lit-root");
-    if (root) mountLiterature(root, parts.slice(1));
+    if (root) await mountLiterature(root, parts.slice(1));
     return;
   }
 
@@ -280,4 +288,20 @@ async function render() {
 }
 
 window.addEventListener("hashchange", render);
+
+app.addEventListener("click", (e) => {
+  const link = e.target.closest('a[href^="#"]');
+  if (!link || link.target === "_blank") return;
+  const href = link.getAttribute("href") || "";
+  // Якорные секции лендинга (#about) обрабатывает render
+  if (/^#[a-zA-Z]/.test(href) && !href.startsWith("#/")) return;
+  const nextRaw = href.replace(/^#/, "") || "/";
+  const curRaw = (location.hash || "#").replace(/^#/, "") || "/";
+  const nextPath = (nextRaw.split("?")[0] || "/").replace(/\/+$/, "") || "/";
+  const curPath = (curRaw.split("?")[0] || "/").replace(/\/+$/, "") || "/";
+  if (nextPath === curPath) {
+    scrollToTop();
+  }
+});
+
 render();

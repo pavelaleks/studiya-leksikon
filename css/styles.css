@@ -3234,7 +3234,7 @@ body.is-landing main {
 
 .lit-head {
   position: sticky;
-  top: 0;
+  top: 72px;
   z-index: 5;
   margin: 0 0 18px;
   padding: 4px 0 14px;

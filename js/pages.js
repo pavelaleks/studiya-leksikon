@@ -508,6 +508,7 @@ export function ogePage() {
     )
     .join("");
   return `
+    <p class="crumbs"><a href="#/">← Студия</a></p>
     <p class="eyebrow">Русский язык · ОГЭ</p>
     <h1>ОГЭ по русскому</h1>
     <p class="lede">Тренажёры студии: грамматическая основа, Н и НН, запятые при оборотах. Остальные задания ОГЭ добавим.</p>
@@ -577,6 +578,7 @@ export function rulesIndex(content, sectionId = "", q = "") {
     .join("");
 
   return `
+    <p class="crumbs"><a href="#/">← Студия</a></p>
     <p class="eyebrow">Русский язык</p>
     <h1>Правила</h1>
     <p class="lede">Орфография, пунктуация, стилистика. Откройте главу, затем карточку — орфограмма в примерах выделена цветом.</p>
@@ -703,6 +705,7 @@ export function egeIndex(content, taskNum = "") {
   const numbers = Object.keys(EGE_TITLES).map(Number);
   if (!n) {
     return `
+      <p class="crumbs"><a href="#/">← Студия</a></p>
       <p class="eyebrow">Русский язык · ЕГЭ</p>
       <h1>ЕГЭ по русскому</h1>
       <p class="lede">Форма как на экзамене: слово или последовательность цифр. Задания 4–22.</p>
