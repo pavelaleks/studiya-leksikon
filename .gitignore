@@ -15,6 +15,7 @@ tools/check_ege_bank.py
 tools/ege_dump.py
 tools/ege_texts.py
 tools/__pycache__/
+tools/_sdamgia_cache/
 *.doc
 tools/spravochnik.txt
 tools/spravochnik_utf8.txt

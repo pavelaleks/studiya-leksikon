@@ -3510,6 +3510,379 @@ body.is-landing main {
   margin-top: 28px;
 }
 
+.lit-task-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.lit-task-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 148px;
+  padding: 16px 16px 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 10px 24px rgba(30, 25, 20, 0.04);
+}
+
+.lit-task-card:hover {
+  border-color: rgba(111, 45, 50, 0.35);
+  transform: translateY(-1px);
+}
+
+.lit-task-num {
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.lit-task-card strong {
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+.lit-task-card .muted {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.lit-task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: auto;
+  padding-top: 8px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.lit-write-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #1d7eab;
+}
+
+.lit-archive {
+  margin-top: 22px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+  overflow: hidden;
+}
+
+.lit-archive > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  cursor: pointer;
+  font-weight: 700;
+  list-style: none;
+}
+
+.lit-archive > summary::-webkit-details-marker {
+  display: none;
+}
+
+.lit-extra-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 14px 14px;
+}
+
+.lit-extra-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--paper);
+  color: inherit;
+  text-decoration: none;
+}
+
+.lit-extra-link small {
+  color: var(--accent);
+  font-weight: 750;
+}
+
+.lit-source-note {
+  margin: 22px 0 0;
+  font-size: 13px;
+}
+
+.lit-side-link {
+  margin: 8px 0 0;
+}
+
+.lit-topic-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.lit-topic-chip {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  text-align: left;
+}
+
+.lit-topic-chip small {
+  color: var(--accent);
+}
+
+.lit-topic-chip.is-active {
+  color: #fff;
+  border-color: transparent;
+  background: var(--accent);
+}
+
+.lit-topic-chip.is-active small {
+  color: #fff;
+}
+
+.lit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lit-item {
+  display: grid;
+  grid-template-columns: 2.4em minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: inherit;
+  text-decoration: none;
+}
+
+.lit-item:hover {
+  border-color: rgba(111, 45, 50, 0.35);
+}
+
+.lit-item-n {
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+  color: var(--accent);
+  padding-top: 2px;
+}
+
+.lit-item-body strong {
+  display: block;
+  line-height: 1.3;
+}
+
+.lit-item-body span {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.lit-problem h1 {
+  margin-bottom: 6px;
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+}
+
+.lit-meta {
+  margin-top: 0;
+}
+
+.lit-kicker {
+  margin: 0 0 8px;
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lit-passage,
+.lit-question,
+.lit-solution {
+  margin: 16px 0;
+}
+
+.lit-passage,
+.lit-solution {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 253, 248, 0.78);
+}
+
+.lit-html {
+  font-family: var(--serif);
+  line-height: 1.55;
+}
+
+.lit-html p {
+  margin: 0.28em 0;
+}
+
+.lit-html .lit-right {
+  text-align: right;
+  margin-top: 0.8em;
+}
+
+.lit-html table {
+  width: auto;
+  margin: 10px 0;
+  border-collapse: collapse;
+}
+
+.lit-html td,
+.lit-html th {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.lit-question {
+  font-size: 1.05rem;
+}
+
+.lit-check label,
+.lit-write label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 750;
+}
+
+.lit-check-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lit-check-row .search {
+  flex: 1 1 200px;
+  margin: 0;
+}
+
+.lit-result {
+  min-height: 1.4em;
+  margin: 10px 0 0;
+  font-weight: 650;
+}
+
+.lit-result.is-ok {
+  color: var(--ok);
+}
+
+.lit-result.is-bad {
+  color: var(--bad);
+}
+
+.lit-essay {
+  width: 100%;
+  min-height: 200px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.lit-send {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font: inherit;
+  margin-top: 12px;
+  padding: 10px 16px 10px 12px;
+  border: 0;
+  border-radius: 16px;
+  background: #229ed9;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 8px 18px rgba(34, 158, 217, 0.28);
+}
+
+.lit-send:hover {
+  background: #1b8ec4;
+}
+
+.lit-send .msg-icon {
+  width: 28px;
+  height: 28px;
+  color: #fff;
+}
+
+.lit-send strong,
+.lit-send small {
+  display: block;
+}
+
+.lit-send strong {
+  font-size: 15px;
+}
+
+.lit-send small {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 550;
+  opacity: 0.92;
+}
+
+.lit-send-status {
+  min-height: 1.3em;
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+
+.lit-solution summary {
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.lit-solution .lit-html {
+  margin-top: 10px;
+}
+
+.lit-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.lit-item[hidden],
+.lit-topic[hidden],
+.lit-author[hidden],
+.lit-period[hidden],
+.lit-nav-chip[hidden] {
+  display: none !important;
+}
+
 @media (max-width: 720px) {
   .lit-head {
     position: static;

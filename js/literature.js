@@ -1,7 +1,25 @@
-import { BASE } from "./config.js";
+import { BASE, studioTelegram } from "./config.js";
+import { iconTelegram } from "./icons.js";
 import { escapeHtml } from "./ui.js";
 
-const DATA_URL = new URL("js/literature-data/ege-task-11-topics.json", new URL(BASE, location.href));
+const MANIFEST_URL = new URL("js/literature-data/manifest.json", new URL(BASE, location.href));
+const TOPICS_URL = new URL("js/literature-data/ege-task-11-topics.json", new URL(BASE, location.href));
+
+const WRITTEN = new Set([4, 5, 9, 10, 11]);
+
+const TASK_COPY = {
+  1: ["Проза", "Краткий ответ по фрагменту"],
+  2: ["Соответствие", "Цифры к каждой позиции"],
+  3: ["Термины", "Эпос и драма"],
+  4: ["Развёрнутый ответ", "5–10 предложений по фрагменту"],
+  5: ["Анализ прозы", "Фрагмент и всё произведение"],
+  6: ["Термины", "Лирика"],
+  7: ["Тропы и стих", "Средства, размер, рифма"],
+  8: ["Приёмы", "Средства в стихотворении"],
+  9: ["Развёрнутый ответ", "Анализ стихотворения"],
+  10: ["Сопоставление", "Два стихотворения"],
+  11: ["Сочинение", "Одна тема из пяти"],
+};
 
 const PERIOD_SHORT = {
   "древнерусская-литература": "Древнерусская",
@@ -13,39 +31,347 @@ const PERIOD_SHORT = {
   "свободные-сопоставительные-междисциплинарные-темы": "Свободные темы",
 };
 
-let cache = null;
+const ALLOWED = new Set([
+  "p", "br", "b", "strong", "i", "em", "u", "sub", "sup",
+  "table", "thead", "tbody", "tr", "td", "th",
+  "ul", "ol", "li", "blockquote", "nobr", "div", "span", "center", "h3", "h4", "a",
+]);
 
-async function loadTopics() {
-  if (cache) return cache;
-  const res = await fetch(DATA_URL.toString(), { cache: "no-store" });
-  if (!res.ok) throw new Error(`Не удалось загрузить темы (${res.status})`);
-  cache = await res.json();
-  return cache;
+let manifestCache = null;
+const bankCache = new Map();
+let topicsCache = null;
+
+function ru(n, one, few, many) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
 }
 
 function norm(s) {
   return String(s || "")
     .toLowerCase()
     .replace(/ё/g, "е")
+    .replace(/[«»“”]/g, '"')
+    .replace(/[–—]/g, "-")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-function periodShort(period) {
-  return PERIOD_SHORT[period.id] || period.title;
+function answerKey(s) {
+  return norm(s).replace(/^[.:;\s]+|[.:;\s]+$/g, "");
 }
 
-function renderShell(data) {
+function clip(s, n) {
+  const text = String(s || "").replace(/\s+/g, " ").trim();
+  if (text.length <= n) return text;
+  return `${text.slice(0, n - 1).trim()}…`;
+}
+
+function dataUrl(path) {
+  return new URL(path, new URL(BASE, location.href)).toString();
+}
+
+async function loadJson(url) {
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Не удалось загрузить данные (${res.status})`);
+  return res.json();
+}
+
+async function loadManifest() {
+  if (manifestCache) return manifestCache;
+  manifestCache = await loadJson(MANIFEST_URL.toString());
+  return manifestCache;
+}
+
+async function loadBank(file) {
+  if (bankCache.has(file)) return bankCache.get(file);
+  const data = await loadJson(dataUrl(`js/literature-data/${file}`));
+  bankCache.set(file, data);
+  return data;
+}
+
+async function loadTopics() {
+  if (topicsCache) return topicsCache;
+  topicsCache = await loadJson(TOPICS_URL.toString());
+  return topicsCache;
+}
+
+function egeFiles(manifest) {
+  return (manifest.files || []).filter((f) => f.kind === "ege").sort((a, b) => a.task - b.task);
+}
+
+function extraFiles(manifest) {
+  return (manifest.files || []).filter((f) => f.kind === "extra");
+}
+
+function taskNav(active) {
+  const chips = egeNumbers()
+    .map((n) => {
+      const on = Number(active) === n;
+      return `<a class="lit-task-chip${on ? " is-active" : ""}" href="#/literature/${n}">${n}</a>`;
+    })
+    .join("");
+  return `<nav class="lit-task-nav" aria-label="Номера заданий ЕГЭ">${chips}</nav>`;
+}
+
+function egeNumbers() {
+  return Array.from({ length: 11 }, (_, i) => i + 1);
+}
+
+function sourceNote() {
+  return `<p class="lit-source-note muted">Задания и пояснения: <a href="https://lit-ege.sdamgia.ru/" target="_blank" rel="noopener noreferrer">Решу ЕГЭ</a></p>`;
+}
+
+function workLine(problem) {
+  const bits = [];
+  if (problem.author) bits.push(problem.author);
+  if (problem.work) bits.push(`«${problem.work}»`);
+  return bits.join(". ");
+}
+
+function cardTitle(problem) {
+  return workLine(problem) || problem.topic || "Задание";
+}
+
+function sanitizeHtml(html) {
+  const doc = new DOMParser().parseFromString(`<div>${html || ""}</div>`, "text/html");
+  const root = doc.body.firstElementChild;
+  if (!root) return "";
+  [...root.querySelectorAll("*")].reverse().forEach((node) => {
+    if (!node.parentNode) return;
+    const tag = node.tagName.toLowerCase();
+    if (!ALLOWED.has(tag)) {
+      node.replaceWith(...node.childNodes);
+      return;
+    }
+    [...node.attributes].forEach((attr) => {
+      const name = attr.name.toLowerCase();
+      if (name === "class" && attr.value.split(/\s+/).includes("lit-right")) return;
+      if ((name === "colspan" || name === "rowspan") && (tag === "td" || tag === "th")) return;
+      if (name === "href" && tag === "a" && /^https?:/i.test(attr.value)) return;
+      node.removeAttribute(attr.name);
+    });
+    if (tag === "a" && node.getAttribute("href")) {
+      node.setAttribute("target", "_blank");
+      node.setAttribute("rel", "noopener noreferrer");
+    }
+  });
+  return root.innerHTML;
+}
+
+function hubHtml(manifest) {
+  const files = egeFiles(manifest);
+  const cards = files
+    .map((file) => {
+      const [title, hint] = TASK_COPY[file.task] || [file.title, ""];
+      const written = WRITTEN.has(file.task);
+      return `
+        <a class="lit-task-card${written ? " is-written" : ""}" href="#/literature/${file.task}">
+          <span class="lit-task-num">${file.task}</span>
+          <strong>${escapeHtml(title)}</strong>
+          <span class="muted">${escapeHtml(hint)}</span>
+          <span class="lit-task-meta">
+            <span>${file.count} ${ru(file.count, "задание", "задания", "заданий")}</span>
+            ${
+              written
+                ? `<span class="lit-write-mark">${iconTelegram("msg-icon msg-icon-sm")} письменно</span>`
+                : ""
+            }
+          </span>
+        </a>`;
+    })
+    .join("");
+  const extras = extraFiles(manifest);
+  const extraCount = extras.reduce((sum, f) => sum + (f.count || 0), 0);
+  const extraLinks = extras
+    .map(
+      (f) => `
+      <a class="lit-extra-link" href="#/literature/archive/${escapeHtml(f.id)}">
+        <span>${escapeHtml(f.title)}</span>
+        <small>${f.count}</small>
+      </a>`
+    )
+    .join("");
+  return `
+    <header class="lit-hub">
+      <p class="eyebrow">Литература · ЕГЭ</p>
+      <h1>Задания 1–11</h1>
+      <p class="lede">Фрагмент, вопрос и пояснение. Краткий ответ проверяется на сайте. Письменные задания 4, 5, 9, 10 и 11 можно отправить преподавателю в Telegram.</p>
+    </header>
+    <div class="lit-task-grid">${cards}</div>
+    <details class="lit-archive">
+      <summary>Дополнительные задания прежнего формата <span class="lit-count">${extraCount}</span></summary>
+      <div class="lit-extra-list">${extraLinks}</div>
+    </details>
+    ${sourceNote()}`;
+}
+
+function listHtml({ file, bank, mode }) {
+  const task = file.task;
+  const written = WRITTEN.has(task);
+  const [title, hint] = TASK_COPY[task] || [file.title, file.title];
+  const topics = (file.topics || [])
+    .map(
+      (t) =>
+        `<button type="button" class="lit-topic-chip" data-topic="${t.id}">${escapeHtml(t.title)} <small>${t.count}</small></button>`
+    )
+    .join("");
+  const items = (bank.problems || [])
+    .map((problem, i) => {
+      const href =
+        mode === "extra"
+          ? `#/literature/archive/${file.id}/${problem.id}`
+          : `#/literature/${task}/${problem.id}`;
+      const blob = norm([cardTitle(problem), problem.questionText, problem.topic, problem.author, problem.work].join(" "));
+      return `
+        <a class="lit-item" href="${href}" data-topic="${problem.topicId}" data-blob="${escapeHtml(blob)}">
+          <span class="lit-item-n">${i + 1}</span>
+          <span class="lit-item-body">
+            <strong>${escapeHtml(cardTitle(problem))}</strong>
+            <span>${escapeHtml(clip(problem.questionText, 180))}</span>
+          </span>
+        </a>`;
+    })
+    .join("");
+  const themes =
+    task === 11
+      ? `<p class="lit-side-link"><a href="#/literature/11/themes">Сводный список тем сочинений</a></p>`
+      : "";
+  const head =
+    mode === "extra"
+      ? `<p class="eyebrow">Дополнительно</p><h1>${escapeHtml(file.title)}</h1>`
+      : `<p class="eyebrow">Задание ${task}</p><h1>${escapeHtml(title)}</h1><p class="lede">${escapeHtml(hint)}. ${file.count} ${ru(file.count, "задание", "задания", "заданий")}${written ? ". Ответ можно отправить в Telegram." : "."}</p>`;
+  const back = mode === "extra" ? `<p class="crumbs"><a href="#/literature">← К заданиям 1–11</a></p>` : taskNav(task);
+  return `
+    ${back}
+    <header class="lit-head">
+      ${head}
+      ${themes}
+      <label class="lit-search-wrap" for="lit-q">
+        <span class="visually-hidden">Поиск по заданиям</span>
+        <input class="search lit-search" id="lit-q" type="search" placeholder="Автор, произведение или слова из вопроса" autocomplete="off" />
+      </label>
+      <p class="lit-search-status muted" id="lit-status" aria-live="polite"></p>
+      ${topics ? `<div class="lit-topic-nav" aria-label="Темы">${topics}</div>` : ""}
+    </header>
+    <div class="lit-list" id="lit-list">${items}</div>
+    ${sourceNote()}`;
+}
+
+function passageLabel(problem) {
+  if (problem.answerKind === "essay") return "Текст варианта";
+  if (problem.task >= 6) return "Стихотворение";
+  return "Фрагмент";
+}
+
+function fitTelegramUrl(text) {
+  const tg = studioTelegram();
+  if (!tg.url) return "";
+  let body = text;
+  let url = `${tg.url}?text=${encodeURIComponent(body)}`;
+  while (url.length > 3900 && body.length > 180) {
+    body = `${body.slice(0, Math.floor(body.length * 0.82)).trim()}…`;
+    url = `${tg.url}?text=${encodeURIComponent(body)}`;
+  }
+  return url;
+}
+
+function telegramText(problem, answer, listHref) {
+  const lines = [
+    "Студия «Лексикон». ЕГЭ по литературе",
+    `Задание ${problem.task}, № ${problem.id}`,
+  ];
+  const who = workLine(problem);
+  if (who) lines.push(who);
+  const question = clip(problem.questionText, 700);
+  if (question) lines.push("", question);
+  lines.push("", "Ответ ученика:", String(answer || "").trim() || "(допишу в чате или пришлю фото тетради)");
+  const link = `${location.origin}${location.pathname}${location.search}${listHref}`;
+  lines.push("", link);
+  return lines.join("\n");
+}
+
+function problemHtml({ file, bank, problem, index, total, mode }) {
+  const task = problem.task;
+  const written = WRITTEN.has(task) && (problem.answerKind === "open" || problem.answerKind === "essay");
+  const passage = problem.passageId ? bank.passages?.[problem.passageId] : null;
+  const listHref = mode === "extra" ? `#/literature/archive/${file.id}` : `#/literature/${task}`;
+  const prev = index > 0 ? bank.problems[index - 1] : null;
+  const next = index < bank.problems.length - 1 ? bank.problems[index + 1] : null;
+  const hrefOf = (item) =>
+    mode === "extra" ? `#/literature/archive/${file.id}/${item.id}` : `#/literature/${task}/${item.id}`;
+  const who = workLine(problem);
+  const kindLabel =
+    problem.answerKind === "match"
+      ? "Соответствие: запишите цифры подряд"
+      : problem.answerKind === "short"
+        ? "Краткий ответ"
+        : problem.answerKind === "essay"
+          ? "Сочинение"
+          : "Развёрнутый ответ";
+  const passageBlock = passage
+    ? `<section class="lit-passage"><p class="lit-kicker">${passageLabel(problem)}</p><div class="lit-html">${sanitizeHtml(passage.html)}</div></section>`
+    : "";
+  const answerBlock = written
+    ? `
+      <section class="lit-write">
+        <label for="lit-essay">Ваш ответ</label>
+        <textarea id="lit-essay" class="lit-essay" placeholder="Напишите ответ здесь. Потом отправьте его в Telegram — можно дописать в чате или приложить фото."></textarea>
+        <button type="button" class="lit-send" id="lit-send">
+          ${iconTelegram("msg-icon msg-icon-lg")}
+          <span><strong>Отправить задание</strong><small>Откроется Telegram, текст уже будет в сообщении</small></span>
+        </button>
+        <p class="lit-send-status muted" id="lit-send-status" aria-live="polite"></p>
+      </section>`
+    : problem.answer
+      ? `
+      <section class="lit-check">
+        <label for="lit-answer">${escapeHtml(kindLabel)}</label>
+        <div class="lit-check-row">
+          <input id="lit-answer" class="search" type="text" autocomplete="off" placeholder="${problem.answerKind === "match" ? "Например: 243" : "Введите ответ"}" />
+          <button type="button" class="btn" id="lit-check">Проверить</button>
+        </div>
+        <p class="lit-result" id="lit-result" aria-live="polite"></p>
+      </section>`
+      : "";
+  const nav = `
+    <div class="lit-pager">
+      ${prev ? `<a href="${hrefOf(prev)}">← Предыдущее</a>` : `<span></span>`}
+      <span class="muted">${index + 1} из ${total}</span>
+      ${next ? `<a href="${hrefOf(next)}">Следующее →</a>` : `<span></span>`}
+    </div>`;
+  return `
+    <p class="crumbs"><a href="${listHref}">← ${mode === "extra" ? escapeHtml(file.title) : `Задание ${task}`}</a></p>
+    ${mode === "extra" ? "" : taskNav(task)}
+    <article class="lit-problem">
+      <p class="eyebrow">${escapeHtml(kindLabel)} · № ${problem.id}</p>
+      <h1>${escapeHtml(who || file.title)}</h1>
+      <p class="lit-meta muted">${escapeHtml(problem.topic || "")}${problem.source ? ` · ${escapeHtml(problem.source)}` : ""}</p>
+      ${passageBlock}
+      <section class="lit-question"><div class="lit-html">${sanitizeHtml(problem.questionHtml)}</div></section>
+      ${answerBlock}
+      ${
+        problem.solutionHtml
+          ? `<details class="lit-solution"><summary>Пояснение</summary><div class="lit-html">${sanitizeHtml(problem.solutionHtml)}</div></details>`
+          : ""
+      }
+      ${nav}
+    </article>
+    ${sourceNote()}`;
+}
+
+function themesHtml(data) {
   const nav = data.periods
     .map(
       (p) => `
       <a class="lit-nav-chip" href="#lit-${escapeHtml(p.id)}" data-period="${escapeHtml(p.id)}">
-        <span>${escapeHtml(periodShort(p))}</span>
+        <span>${escapeHtml(PERIOD_SHORT[p.id] || p.title)}</span>
         <small>${p.count}</small>
       </a>`
     )
     .join("");
-
   const periods = data.periods
     .map((period) => {
       const authors = period.authors
@@ -60,7 +386,7 @@ function renderShell(data) {
             )
             .join("");
           return `
-            <details class="lit-author" data-author-id="${escapeHtml(period.id)}-${ai}" open>
+            <details class="lit-author" open>
               <summary>
                 <span class="lit-author-name">${escapeHtml(author.name)}</span>
                 <span class="lit-count">${author.topics.length}</span>
@@ -69,16 +395,13 @@ function renderShell(data) {
             </details>`;
         })
         .join("");
-
       return `
         <section class="lit-period" id="lit-${escapeHtml(period.id)}" data-period="${escapeHtml(period.id)}">
           <details class="lit-period-box" open>
             <summary class="lit-period-summary">
               <span>
                 <span class="lit-period-title">${escapeHtml(period.title)}</span>
-                <span class="muted lit-period-meta">${period.count} тем · ${period.authors.length} ${authorWord(
-                  period.authors.length
-                )}</span>
+                <span class="muted lit-period-meta">${period.count} тем · ${period.authors.length} ${ru(period.authors.length, "автор", "автора", "авторов")}</span>
               </span>
               <span class="lit-count lit-count-lg">${period.count}</span>
             </summary>
@@ -87,101 +410,209 @@ function renderShell(data) {
         </section>`;
     })
     .join("");
-
   return `
-    <div class="lit-page" id="lit-root">
-      <header class="lit-head" id="lit-task-11">
-        <p class="eyebrow">Задание 11</p>
-        <h2 class="lit-h2">Темы сочинений</h2>
-        <p class="lede">Сводный список: <strong>${data.total}</strong> тем (80 вариантов × 5). Поиск по автору, произведению или формулировке.</p>
-        <label class="lit-search-wrap" for="lit-search">
-          <span class="visually-hidden">Поиск по темам</span>
-          <input class="search lit-search" id="lit-search" type="search" placeholder="Например: Пушкин, Онегин, честь, Печорин…" autocomplete="off" />
-        </label>
-        <p class="lit-search-status muted" id="lit-search-status" aria-live="polite"></p>
-        <nav class="lit-nav" aria-label="Периоды">${nav}</nav>
-      </header>
-      <div class="lit-body">${periods}</div>
-      <div class="home-actions lit-foot">
-        <a class="btn btn-lg secondary" href="#/ege">К ЕГЭ по русскому</a>
-        <a class="btn btn-lg secondary" href="#/">О студии</a>
-      </div>
-    </div>`;
+    <p class="crumbs"><a href="#/literature/11">← Задание 11</a></p>
+    ${taskNav(11)}
+    <header class="lit-head">
+      <p class="eyebrow">Задание 11</p>
+      <h1>Темы сочинений</h1>
+      <p class="lede">Сводный список: <strong>${data.total}</strong> тем. Рядом — <a href="#/literature/11">готовые варианты с пояснениями</a>.</p>
+      <label class="lit-search-wrap" for="lit-search">
+        <span class="visually-hidden">Поиск по темам</span>
+        <input class="search lit-search" id="lit-search" type="search" placeholder="Пушкин, Онегин, честь, Печорин…" autocomplete="off" />
+      </label>
+      <p class="lit-search-status muted" id="lit-search-status" aria-live="polite"></p>
+      <nav class="lit-nav" aria-label="Периоды">${nav}</nav>
+    </header>
+    <div class="lit-body">${periods}</div>`;
 }
 
-function authorWord(n) {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return "автор";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "автора";
-  return "авторов";
+function missingHtml() {
+  return `<div class="empty">Такого задания нет. <a href="#/literature">К списку</a></div>`;
 }
 
-function applyFilter(root, rawQuery) {
-  const q = norm(rawQuery);
-  const status = root.querySelector("#lit-search-status");
-  const topics = [...root.querySelectorAll(".lit-topic")];
-  let visible = 0;
-
-  topics.forEach((li) => {
-    const author = li.closest(".lit-author");
-    const period = li.closest(".lit-period");
-    const blob = norm(
-      [
-        li.dataset.n,
-        li.querySelector(".lit-topic-text")?.textContent,
-        author?.querySelector(".lit-author-name")?.textContent,
-        period?.querySelector(".lit-period-title")?.textContent,
-      ].join(" ")
-    );
-    const ok = !q || q.split(/\s+/).every((token) => blob.includes(token));
-    li.hidden = !ok;
-    if (ok) visible += 1;
-  });
-
-  root.querySelectorAll(".lit-author").forEach((author) => {
-    const any = [...author.querySelectorAll(".lit-topic")].some((li) => !li.hidden);
-    author.hidden = !any;
-    if (q && any) author.open = true;
-  });
-
-  root.querySelectorAll(".lit-period").forEach((section) => {
-    const any = [...section.querySelectorAll(".lit-author")].some((a) => !a.hidden);
-    section.hidden = !any;
-    const box = section.querySelector(".lit-period-box");
-    if (box && q && any) box.open = true;
-  });
-
-  root.querySelectorAll(".lit-nav-chip").forEach((chip) => {
-    const id = chip.dataset.period;
-    const section = root.querySelector(`.lit-period[data-period="${CSS.escape(id)}"]`);
-    chip.hidden = Boolean(section?.hidden);
-    chip.classList.toggle("is-dim", Boolean(q) && !chip.hidden && visible === 0);
-  });
-
-  if (!status) return;
-  if (!q) {
-    status.textContent = "";
-    return;
+async function renderView(rest) {
+  const manifest = await loadManifest();
+  const [a, b, c] = rest;
+  if (!a) return { html: hubHtml(manifest), view: "hub", title: "Литература · ЕГЭ" };
+  if (a === "archive") {
+    if (!b) return { html: hubHtml(manifest), view: "hub", title: "Литература · ЕГЭ" };
+    const file = extraFiles(manifest).find((f) => f.id === b);
+    if (!file) return { html: missingHtml(), view: "missing", title: "Задание не найдено" };
+    const bank = await loadBank(file.file);
+    if (!c) return { html: listHtml({ file, bank, mode: "extra" }), view: "list", title: file.title };
+    const index = bank.problems.findIndex((p) => String(p.id) === String(c));
+    if (index < 0) return { html: missingHtml(), view: "missing", title: "Задание не найдено" };
+    return {
+      html: problemHtml({ file, bank, problem: bank.problems[index], index, total: bank.problems.length, mode: "extra" }),
+      view: "problem",
+      title: `Дополнительно · № ${c}`,
+      problem: bank.problems[index],
+    };
   }
-  status.textContent =
-    visible === 0
-      ? "Ничего не найдено — попробуйте другое слово или фамилию автора."
-      : `Найдено: ${visible} ${topicWord(visible)}`;
+  if (a === "11" && b === "themes") {
+    const data = await loadTopics();
+    return { html: themesHtml(data), view: "themes", title: "Темы сочинений" };
+  }
+  const task = Number(a);
+  const file = egeFiles(manifest).find((f) => f.task === task);
+  if (!file) return { html: missingHtml(), view: "missing", title: "Задание не найдено" };
+  const bank = await loadBank(file.file);
+  if (!b) {
+    const [title] = TASK_COPY[task] || [file.title];
+    return { html: listHtml({ file, bank, mode: "ege" }), view: "list", title: `Задание ${task}. ${title}` };
+  }
+  const index = bank.problems.findIndex((p) => String(p.id) === String(b));
+  if (index < 0) return { html: missingHtml(), view: "missing", title: "Задание не найдено" };
+  const problem = bank.problems[index];
+  return {
+    html: problemHtml({ file, bank, problem, index, total: bank.problems.length, mode: "ege" }),
+    view: "problem",
+    title: `Задание ${task} · № ${problem.id}`,
+    problem,
+  };
 }
 
-function topicWord(n) {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return "тема";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "темы";
-  return "тем";
+function bindList(root) {
+  const search = root.querySelector("#lit-q");
+  const status = root.querySelector("#lit-status");
+  const items = [...root.querySelectorAll(".lit-item")];
+  let topic = "";
+  const apply = () => {
+    const q = norm(search?.value || "");
+    const tokens = q ? q.split(" ") : [];
+    let visible = 0;
+    items.forEach((el) => {
+      const okTopic = !topic || el.dataset.topic === topic;
+      const blob = el.dataset.blob || "";
+      const okQ = tokens.every((token) => blob.includes(token));
+      const ok = okTopic && okQ;
+      el.hidden = !ok;
+      if (ok) visible += 1;
+    });
+    root.querySelectorAll(".lit-topic-chip").forEach((chip) => {
+      chip.classList.toggle("is-active", chip.dataset.topic === topic);
+    });
+    if (!status) return;
+    status.textContent = q || topic ? `Показано: ${visible}` : "";
+  };
+  search?.addEventListener("input", apply);
+  root.querySelectorAll(".lit-topic-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      topic = topic === chip.dataset.topic ? "" : chip.dataset.topic;
+      apply();
+    });
+  });
 }
 
-function bindUi(root) {
+function answersMatch(problem, raw) {
+  const got = answerKey(raw);
+  if (!got) return false;
+  const keys = [problem.answerNorm, ...(problem.answerAlts || [])].filter(Boolean).map(answerKey);
+  if (problem.answerKind === "match") {
+    const digits = (s) => String(s).replace(/\D/g, "");
+    return keys.some((k) => digits(k) && digits(k) === digits(got));
+  }
+  return keys.some((k) => k === got);
+}
+
+function bindProblem(root, problem) {
+  const input = root.querySelector("#lit-answer");
+  const result = root.querySelector("#lit-result");
+  const check = root.querySelector("#lit-check");
+  const solution = root.querySelector(".lit-solution");
+  const run = () => {
+    if (!input || !result) return;
+    const value = input.value.trim();
+    if (!value) {
+      result.textContent = "Введите ответ.";
+      result.className = "lit-result";
+      return;
+    }
+    const ok = answersMatch(problem, value);
+    result.className = `lit-result ${ok ? "is-ok" : "is-bad"}`;
+    result.textContent = ok ? "Верно." : "Пока не совпало. Можно проверить формулировку или открыть пояснение.";
+    if (ok && solution) solution.open = true;
+  };
+  check?.addEventListener("click", run);
+  input?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      run();
+    }
+  });
+
+  const area = root.querySelector("#lit-essay");
+  const send = root.querySelector("#lit-send");
+  const status = root.querySelector("#lit-send-status");
+  const draftKey = `lit-draft-${problem.id}`;
+  if (area) {
+    try {
+      const saved = sessionStorage.getItem(draftKey);
+      if (saved) area.value = saved;
+    } catch {
+      /* ignore */
+    }
+    area.addEventListener("input", () => {
+      try {
+        sessionStorage.setItem(draftKey, area.value);
+      } catch {
+        /* ignore */
+      }
+    });
+  }
+  send?.addEventListener("click", () => {
+    const href = `#/literature/${problem.task}/${problem.id}`;
+    const url = fitTelegramUrl(telegramText(problem, area?.value || "", href));
+    if (!url) {
+      if (status) status.textContent = "Telegram не настроен.";
+      return;
+    }
+    if (status) status.textContent = "Открываю Telegram. В чате нажмите «Отправить».";
+    window.open(url, "_blank", "noopener");
+  });
+}
+
+function bindThemes(root) {
   const search = root.querySelector("#lit-search");
-  search?.addEventListener("input", () => applyFilter(root, search.value));
-
+  const status = root.querySelector("#lit-search-status");
+  const apply = () => {
+    const q = norm(search?.value || "");
+    const tokens = q ? q.split(" ") : [];
+    let visible = 0;
+    root.querySelectorAll(".lit-topic").forEach((li) => {
+      const author = li.closest(".lit-author");
+      const period = li.closest(".lit-period");
+      const blob = norm(
+        [
+          li.dataset.n,
+          li.querySelector(".lit-topic-text")?.textContent,
+          author?.querySelector(".lit-author-name")?.textContent,
+          period?.querySelector(".lit-period-title")?.textContent,
+        ].join(" ")
+      );
+      const ok = tokens.every((token) => blob.includes(token));
+      li.hidden = !ok;
+      if (ok) visible += 1;
+    });
+    root.querySelectorAll(".lit-author").forEach((author) => {
+      const any = [...author.querySelectorAll(".lit-topic")].some((li) => !li.hidden);
+      author.hidden = !any;
+      if (q && any) author.open = true;
+    });
+    root.querySelectorAll(".lit-period").forEach((section) => {
+      const any = [...section.querySelectorAll(".lit-author")].some((a) => !a.hidden);
+      section.hidden = !any;
+      const box = section.querySelector(".lit-period-box");
+      if (box && q && any) box.open = true;
+    });
+    root.querySelectorAll(".lit-nav-chip").forEach((chip) => {
+      const section = root.querySelector(`.lit-period[data-period="${CSS.escape(chip.dataset.period || "")}"]`);
+      chip.hidden = Boolean(section?.hidden);
+    });
+    if (status) status.textContent = q ? `Найдено: ${visible} ${ru(visible, "тема", "темы", "тем")}` : "";
+  };
+  search?.addEventListener("input", apply);
   root.querySelectorAll(".lit-nav-chip").forEach((chip) => {
     chip.addEventListener("click", (e) => {
       e.preventDefault();
@@ -191,29 +622,27 @@ function bindUi(root) {
       const box = target.querySelector(".lit-period-box");
       if (box) box.open = true;
       target.scrollIntoView({ behavior: "smooth", block: "start" });
-      history.replaceState(null, "", `${location.pathname}${location.search}#/literature`);
     });
   });
 }
 
-export async function mountLiterature(host) {
+export async function mountLiterature(host, rest = []) {
   if (!host) return;
+  host.innerHTML = `<p class="lede muted">Загружаем задания…</p>`;
   try {
-    const data = await loadTopics();
-    const tmp = document.createElement("div");
-    tmp.innerHTML = renderShell(data).trim();
-    const next = tmp.firstElementChild;
-    host.replaceWith(next);
-    bindUi(next);
+    const view = await renderView(rest);
+    host.innerHTML = view.html;
+    document.title = `${view.title} — Студия Лексикон`;
+    if (view.view === "list") bindList(host);
+    if (view.view === "problem") bindProblem(host, view.problem);
+    if (view.view === "themes") bindThemes(host);
   } catch (err) {
-    host.classList.remove("lit-loading");
-    host.innerHTML = `
-      <p class="eyebrow">Задание 11</p>
-      <h2 class="lit-h2">Темы сочинений</h2>
-      <div class="empty">Не удалось загрузить список тем. <button type="button" class="btn secondary" id="lit-retry">Повторить</button></div>`;
+    host.innerHTML = `<div class="empty">Не удалось загрузить задания. <button type="button" class="btn secondary" id="lit-retry">Повторить</button></div>`;
     host.querySelector("#lit-retry")?.addEventListener("click", () => {
-      cache = null;
-      mountLiterature(host);
+      manifestCache = null;
+      topicsCache = null;
+      bankCache.clear();
+      mountLiterature(host, rest);
     });
     console.error(err);
   }

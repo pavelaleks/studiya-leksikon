@@ -444,7 +444,7 @@ export function homePage(content) {
             <p class="landing-learn-subject-note">ЕГЭ</p>
           </header>
           <div class="landing-learn-links landing-learn-links-lit">
-            <a href="#/literature"><strong>Задания 1–11</strong><span>Материалы к экзамену</span></a>
+            <a href="#/literature"><strong>Задания 1–11</strong><span>Фрагменты, ответы, пояснения</span></a>
           </div>
         </article>
       </div>
@@ -522,26 +522,7 @@ export function ogePage() {
 }
 
 export function literaturePage() {
-  const tasks = Array.from({ length: 11 }, (_, i) => i + 1)
-    .map((n) => {
-      if (n === 11) {
-        return `<a class="lit-task-chip is-active" href="#lit-task-11">Задание ${n}</a>`;
-      }
-      return `<span class="lit-task-chip is-soon" title="Скоро">Задание ${n}</span>`;
-    })
-    .join("");
-  return `
-    <div class="lit-hub">
-      <p class="eyebrow">Литература · ЕГЭ</p>
-      <h1>Задания 1–11</h1>
-      <p class="lede">Материалы к ЕГЭ по литературе. Сейчас открыто задание 11 — темы сочинений.</p>
-      <nav class="lit-task-nav" aria-label="Номера заданий ЕГЭ по литературе">${tasks}</nav>
-    </div>
-    <div class="lit-page lit-loading" id="lit-root">
-      <p class="eyebrow">Задание 11</p>
-      <h1>Темы сочинений</h1>
-      <p class="lede muted">Загружаем список тем…</p>
-    </div>`;
+  return `<div class="lit-page" id="lit-root"><p class="lede muted">Загружаем задания…</p></div>`;
 }
 
 export function rulesIndex(content, sectionId = "", q = "") {
