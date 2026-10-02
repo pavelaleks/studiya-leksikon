@@ -85,6 +85,17 @@ def looks_like_term(term: str) -> bool:
         return False
     if not re.search(r"[А-ЯЁA-Za-zа-яё]", term):
         return False
+    # обломки этимологии: «…»), άκμη — вершина)
+    if term.endswith(")") and "(" not in term:
+        return False
+    if re.match(r"^(от\s+)?(греч|лат|фр|итал|нем|англ)\.?\b", low):
+        return False
+    if re.search(r"[άἀἁἂἃἄἅἆἇἈἉὰάᾰᾱἐἑἔἕὲέἠἡἤἥἦἧὴήἰἱἴἵἶἷὶίὀὁὄὅὸόὐὑὔὕὖὗὺύὠὡὤὥὦὧὼώ]", term):
+        return False
+    if re.match(r"^[a-z]+(\s*[–—]\s*|\s+от\s+|\s*,)", term, re.I):
+        return False
+    if re.fullmatch(r"X{1,3}|XXI?", term):
+        return False
     return True
 
 
@@ -386,12 +397,14 @@ def categorize(term: str, definition: str) -> tuple[str, str]:
 def polish_term(term: str) -> str:
     term = clean(term)
     term = re.sub(r"\s+", " ", term)
-    if ". " in term:
+    # Не резать по «греч. / лат.» внутри этимологии в скобках
+    has_etym = bool(re.search(r"\((?:от\s+)?(?:греч|лат|фр|итал|нем|англ)\.", term, re.I))
+    if ". " in term and not has_etym:
         head, tail = term.split(". ", 1)
         head, tail = head.strip(), tail.strip()
         if len(head) >= 8 and ("»" in head or head.startswith(("«", '"', "“")) or len(head) > 42):
             term = head
-        elif looks_like_term(tail) and len(tail) <= 60:
+        elif looks_like_term(tail) and len(tail) <= 60 and not tail.endswith(")"):
             term = tail
     term = re.sub(r"\s+в литературе\.?$", "", term, flags=re.I)
     if re.match(r"^[А-ЯЁа-яё].*»", term) and "«" not in term:
@@ -401,8 +414,15 @@ def polish_term(term: str) -> str:
         left = term.split(":", 1)[0].strip()
         if 3 <= len(left) <= 55:
             term = left
-    # Prefer bare lemma over long etymology title
-    m = re.match(r"^(.{2,40}?)\s*\([^)]{3,}\)\s*$", term)
+    # Лемма без этимологии в скобках
+    m = re.match(
+        r"^([А-ЯЁA-Za-zа-яё«»\"-]{2,55}(?:\s+[А-ЯЁA-Za-zа-яё«»\"-]{1,40}){0,4})"
+        r"\s*\((?:от\s+)?(?:греч|лат|фр|итал|нем|англ)\b.*\)\s*$",
+        term,
+        re.I | re.S,
+    )
+    if not m:
+        m = re.match(r"^([А-ЯЁA-Za-zа-яё«»\"-]{2,55})\s*\([^)]{3,}\)\s*$", term)
     if m and looks_like_term(m.group(1).strip()):
         term = m.group(1).strip()
     return term.strip(" .;:")
