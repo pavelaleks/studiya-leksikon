@@ -137,8 +137,7 @@ a:hover {
   flex-wrap: wrap;
 }
 
-.nav a,
-.nav-board {
+.nav a {
   text-decoration: none;
   color: var(--ink);
   padding: 8px 12px;
@@ -147,25 +146,10 @@ a:hover {
   font-weight: 600;
 }
 
-.nav-board {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  font: inherit;
-  cursor: pointer;
-}
-
 .nav a:hover,
-.nav a.active,
-.nav-board:hover,
-.nav-board.active {
+.nav a.active {
   background: var(--accent-soft);
   color: var(--accent);
-}
-
-.nav-board.active {
-  background: var(--accent);
-  color: #fff;
 }
 
 main {
@@ -956,8 +940,7 @@ textarea {
     padding: 20px 0 48px;
   }
 
-  .nav a,
-  .nav-board {
+  .nav a {
     min-height: 44px;
     display: inline-flex;
     align-items: center;
@@ -1065,83 +1048,6 @@ textarea {
   .class-only.card {
     display: block;
   }
-}
-
-html.board {
-  font-size: 20px;
-}
-
-html.board h1 {
-  font-size: clamp(42px, 5.5vw, 68px);
-}
-
-html.board .summary-box {
-  font-size: 26px;
-  line-height: 1.4;
-}
-
-html.board .theory-block p,
-html.board .rule-article p,
-html.board .exceptions,
-html.board .mistakes,
-html.board .note {
-  font-size: 24px;
-}
-
-html.board .ex-line,
-html.board .copy-text {
-  font-size: 28px;
-  line-height: 1.5;
-}
-
-html.board .rule-table {
-  font-size: 22px;
-}
-
-html.board h3 {
-  font-size: 1.45rem;
-}
-
-html.board .choice {
-  font-size: 20px;
-  padding: 16px 18px;
-}
-
-html.board .gap {
-  min-width: 2em;
-  border-bottom-width: 3px;
-}
-
-html.board .ege-card h2,
-html.board .ege-instruction,
-html.board .ege-text,
-html.board .ege-stimulus,
-html.board .ege-lines,
-html.board .ege-words,
-html.board .ege-match-left,
-html.board .ege-match-right {
-  font-size: 22px;
-  line-height: 1.5;
-}
-
-html.board .ege-word-btn,
-html.board .ege-line-btn {
-  font-size: 22px;
-}
-
-html.board .ege-answer-word {
-  font-size: 26px;
-}
-
-.board-banner {
-  margin: 0;
-  padding: 8px 0 10px;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--accent);
-  background: var(--accent-soft);
-  border-bottom: 1px solid var(--line);
 }
 
 .print-sheet-header {
@@ -1509,8 +1415,7 @@ body.is-loading .site-footer {
   .actions,
   .pager,
   .rule-toc,
-  .legend,
-  .board-banner {
+  .legend {
     display: none !important;
   }
 
@@ -2654,8 +2559,7 @@ body.is-landing main {
     display: none;
   }
 
-  .nav a,
-  .nav-board {
+  .nav a {
     flex: 0 0 auto;
     min-height: 38px;
     padding: 7px 10px;

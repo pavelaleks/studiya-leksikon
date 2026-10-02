@@ -1,13 +1,13 @@
-import { layout } from "./ui.js?v=land46";
+import { layout } from "./ui.js?v=land52";
 import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land46";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex, ogePage, thanksPage, literaturePage } from "./pages.js?v=land51";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex, ogePage, thanksPage, literaturePage } from "./pages.js?v=land52";
 import { mountLiterature } from "./literature.js?v=land51";
 import { bindApplyForm } from "./apply.js?v=land46";
 import { EGE_TITLES, egeByNumber } from "./ege.js?v=land46";
 import { renderExercise } from "./exercises.js?v=land46";
 import { mountTrainer } from "./trainers.js?v=land46";
 import { adminPage, bindAdmin } from "./admin.js?v=land46";
-import { applyBoard, keepBoardOnHash, parseRoute, setBoard } from "./route.js?v=land46";
+import { parseRoute } from "./route.js?v=land52";
 import { pickEgeVariant, touchEge } from "./progress.js?v=land46";
 
 const app = document.getElementById("app");
@@ -35,9 +35,7 @@ function skeletonHtml() {
 }
 
 function mountHtml(html, active, opts) {
-  app.innerHTML = layout(html, active, parseRoute().board, opts);
-  applyBoard();
-  bindBoardToggle();
+  app.innerHTML = layout(html, active, opts);
   bindSkip();
 }
 
@@ -53,26 +51,6 @@ function bindSkip() {
 
 function bindRulePrint() {
   app.querySelector("#rule-print")?.addEventListener("click", () => window.print());
-}
-
-function bindBoardToggle() {
-  const btn = app.querySelector("#board-toggle");
-  if (!btn) return;
-  btn.addEventListener("click", () => {
-    const on = !parseRoute().board;
-    setBoard(on);
-    btn.classList.toggle("active", on);
-    btn.setAttribute("aria-pressed", String(on));
-    const header = app.querySelector(".site-header");
-    header?.querySelector(".board-banner")?.remove();
-    if (on && header) {
-      const banner = document.createElement("p");
-      banner.className = "board-banner";
-      banner.setAttribute("role", "status");
-      banner.textContent = "Крупный шрифт для проектора. Нажмите ещё раз в шапке, чтобы выключить.";
-      header.appendChild(banner);
-    }
-  });
 }
 
 function bindSearch(sectionId, q) {
@@ -239,7 +217,7 @@ async function render() {
         setTitle("ЕГЭ");
         return;
       }
-      const href = keepBoardOnHash(`#/ege-item/${encodeURIComponent(pick.id)}`);
+      const href = `#/ege-item/${encodeURIComponent(pick.id)}`;
       history.replaceState(null, "", location.pathname + location.search + href);
       render();
       return;
@@ -300,15 +278,6 @@ async function render() {
   mountHtml(`<div class="empty">Страница не найдена. <a href="#/">На главную</a></div>`);
   setTitle("Страница не найдена");
 }
-
-app.addEventListener("click", (e) => {
-  const a = e.target.closest('a[href^="#"]');
-  if (!a || a.target === "_blank") return;
-  const next = keepBoardOnHash(a.getAttribute("href") || "");
-  if (next === (a.getAttribute("href") || "")) return;
-  e.preventDefault();
-  location.hash = next;
-});
 
 window.addEventListener("hashchange", render);
 render();
