@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import html as html_lib
 import http.client
 import json
 import re
@@ -45,7 +46,18 @@ def log(msg: str) -> None:
     print(msg, flush=True)
 
 
+def fix_entities(value: str, *, keep_markup_entities: bool = False) -> str:
+    """Чинит &nbsp без ';' и обычные HTML-сущности. В HTML &lt;/&gt; не трогаем."""
+    if not value or "&" not in value:
+        return value
+    value = re.sub(r"&nbsp;?", " ", value, flags=re.I)
+    if keep_markup_entities:
+        return value
+    return html_lib.unescape(value)
+
+
 def norm_text(value: str) -> str:
+    value = fix_entities(value)
     value = (
         value.replace("\u00ad", "")
         .replace("\xa0", " ")
@@ -261,7 +273,7 @@ def clean_fragment(node: Tag | None) -> str:
     html = re.sub(r"(?:<p>\s*</p>\s*)+", "", html)
     html = re.sub(r"(?is)(<p>\s*)<b>\s*Пояснение\.?\s*</b>\s*", r"\1", html, count=1)
     html = re.sub(r"(?:<p>\s*</p>\s*)+", "", html)
-    return html.strip()
+    return fix_entities(html.strip(), keep_markup_entities=True)
 
 
 def plain_from_html(html: str) -> str:

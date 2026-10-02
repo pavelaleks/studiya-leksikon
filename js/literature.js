@@ -124,10 +124,22 @@ function sourceNote() {
   return `<p class="lit-source-note muted">Задания и пояснения: <a href="https://lit-ege.sdamgia.ru/" target="_blank" rel="noopener noreferrer">Решу ЕГЭ</a></p>`;
 }
 
+function decodeEntities(value) {
+  return String(value ?? "")
+    .replace(/&nbsp;?/gi, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)));
+}
+
 function workLine(problem) {
   const bits = [];
-  if (problem.author) bits.push(problem.author);
-  if (problem.work) bits.push(`«${problem.work}»`);
+  if (problem.author) bits.push(decodeEntities(problem.author));
+  if (problem.work) bits.push(`«${decodeEntities(problem.work)}»`);
   return bits.join(". ");
 }
 
@@ -136,7 +148,7 @@ function cardTitle(problem) {
 }
 
 function sanitizeHtml(html) {
-  const doc = new DOMParser().parseFromString(`<div>${html || ""}</div>`, "text/html");
+  const doc = new DOMParser().parseFromString(`<div>${String(html || "").replace(/&nbsp;?/gi, " ")}</div>`, "text/html");
   const root = doc.body.firstElementChild;
   if (!root) return "";
   [...root.querySelectorAll("*")].reverse().forEach((node) => {
@@ -230,7 +242,7 @@ function listHtml({ file, bank, mode }) {
           <span class="lit-item-n">${i + 1}</span>
           <span class="lit-item-body">
             <strong>${escapeHtml(cardTitle(problem))}</strong>
-            <span>${escapeHtml(clip(problem.questionText, 180))}</span>
+            <span>${escapeHtml(clip(decodeEntities(problem.questionText), 180))}</span>
           </span>
         </a>`;
     })
@@ -348,7 +360,9 @@ function problemHtml({ file, bank, problem, index, total, mode }) {
     <article class="lit-problem">
       <p class="eyebrow">${escapeHtml(kindLabel)} · № ${problem.id}</p>
       <h1>${escapeHtml(who || file.title)}</h1>
-      <p class="lit-meta muted">${escapeHtml(problem.topic || "")}${problem.source ? ` · ${escapeHtml(problem.source)}` : ""}</p>
+      <p class="lit-meta muted">${escapeHtml(decodeEntities(problem.topic || ""))}${
+        problem.source ? ` · ${escapeHtml(decodeEntities(problem.source))}` : ""
+      }</p>
       ${passageBlock}
       <section class="lit-question"><div class="lit-html">${sanitizeHtml(problem.questionHtml)}</div></section>
       ${answerBlock}
