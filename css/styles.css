@@ -3852,6 +3852,12 @@ body.is-landing main {
   opacity: 0.92;
 }
 
+.lit-send-hint {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .lit-send-status {
   min-height: 1.3em;
   margin: 8px 0 0;

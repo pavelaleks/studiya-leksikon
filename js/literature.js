@@ -299,7 +299,7 @@ function telegramText(problem, answer, listHref) {
   if (who) lines.push(who);
   const question = clip(problem.questionText, 700);
   if (question) lines.push("", question);
-  lines.push("", "Ответ ученика:", String(answer || "").trim() || "(допишу в чате или пришлю фото тетради)");
+  lines.push("", "Ответ ученика:", String(answer || "").trim() || "(напишу в чате или пришлю фото)");
   const link = `${location.origin}${location.pathname}${location.search}${listHref}`;
   lines.push("", link);
   return lines.join("\n");
@@ -330,11 +330,12 @@ function problemHtml({ file, bank, problem, index, total, mode }) {
     ? `
       <section class="lit-write">
         <label for="lit-essay">Ваш ответ</label>
-        <textarea id="lit-essay" class="lit-essay" placeholder="Напишите ответ здесь. Потом отправьте его в Telegram — можно дописать в чате или приложить фото."></textarea>
+        <textarea id="lit-essay" class="lit-essay" placeholder="Напишите ответ здесь — или оставьте поле пустым, если хотите прислать фото тетради."></textarea>
         <button type="button" class="lit-send" id="lit-send">
           ${iconTelegram("msg-icon msg-icon-lg")}
-          <span><strong>Отправить задание</strong><small>Откроется Telegram, текст уже будет в сообщении</small></span>
+          <span><strong>Отправить задание</strong><small>Откроется Telegram с текстом сообщения</small></span>
         </button>
+        <p class="lit-send-hint muted">Фото приложите уже в чате Telegram: скрепка или кнопка вложения рядом с полем ввода.</p>
         <p class="lit-send-status muted" id="lit-send-status" aria-live="polite"></p>
       </section>`
     : problem.answer
@@ -582,7 +583,7 @@ function bindProblem(root, problem) {
       if (status) status.textContent = "Telegram не настроен.";
       return;
     }
-    if (status) status.textContent = "Открываю Telegram. В чате нажмите «Отправить».";
+    if (status) status.textContent = "Открываю Telegram. Нажмите «Отправить» в чате; фото добавьте скрепкой рядом с сообщением.";
     window.open(url, "_blank", "noopener");
   });
 }
