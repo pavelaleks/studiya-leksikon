@@ -1,7 +1,7 @@
 import { layout } from "./ui.js?v=land53";
 import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land46";
 import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex, ogePage, thanksPage, literaturePage } from "./pages.js?v=land53";
-import { mountLiterature } from "./literature.js?v=land53";
+import { mountLiterature } from "./literature.js?v=land54";
 import { bindApplyForm } from "./apply.js?v=land46";
 import { EGE_TITLES, egeByNumber } from "./ege.js?v=land46";
 import { renderExercise } from "./exercises.js?v=land46";

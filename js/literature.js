@@ -75,8 +75,12 @@ function dataUrl(path) {
   return new URL(path, new URL(BASE, location.href)).toString();
 }
 
+const DATA_VER = "lit54";
+
 async function loadJson(url) {
-  const res = await fetch(url, { cache: "no-store" });
+  const u = new URL(url, location.href);
+  if (!u.searchParams.has("v")) u.searchParams.set("v", DATA_VER);
+  const res = await fetch(u.toString());
   if (!res.ok) throw new Error(`Не удалось загрузить данные (${res.status})`);
   return res.json();
 }
@@ -87,11 +91,41 @@ async function loadManifest() {
   return manifestCache;
 }
 
+function listPath(file) {
+  return String(file).replace(/\.json$/i, ".list.json");
+}
+
+async function loadList(file) {
+  const key = `list:${file}`;
+  if (bankCache.has(key)) return bankCache.get(key);
+  try {
+    const data = await loadJson(dataUrl(`js/literature-data/${listPath(file)}`));
+    bankCache.set(key, data);
+    return data;
+  } catch {
+    // запасной путь: полный банк, если list ещё не собран
+    return loadBank(file);
+  }
+}
+
 async function loadBank(file) {
   if (bankCache.has(file)) return bankCache.get(file);
-  const data = await loadJson(dataUrl(`js/literature-data/${file}`));
-  bankCache.set(file, data);
-  return data;
+  const pending = loadJson(dataUrl(`js/literature-data/${file}`)).then((data) => {
+    bankCache.set(file, data);
+    return data;
+  });
+  bankCache.set(file, pending);
+  try {
+    return await pending;
+  } catch (err) {
+    bankCache.delete(file);
+    throw err;
+  }
+}
+
+function prefetchBank(file) {
+  if (!file || bankCache.has(file)) return;
+  loadBank(file).catch(() => {});
 }
 
 async function loadTopics() {
@@ -598,13 +632,24 @@ async function renderView(rest) {
   }
 
   const manifest = await loadManifest();
-  if (!a) return { html: hubHtml(manifest), view: "hub", title: "Литература · ЕГЭ" };
+  if (!a) {
+    egeFiles(manifest)
+      .slice(0, 4)
+      .forEach((f) => {
+        loadList(f.file).catch(() => {});
+      });
+    return { html: hubHtml(manifest), view: "hub", title: "Литература · ЕГЭ" };
+  }
   if (a === "archive") {
     if (!b) return { html: hubHtml(manifest), view: "hub", title: "Литература · ЕГЭ" };
     const file = extraFiles(manifest).find((f) => f.id === b);
     if (!file) return { html: missingHtml(), view: "missing", title: "Задание не найдено" };
+    if (!c) {
+      const list = await loadList(file.file);
+      prefetchBank(file.file);
+      return { html: listHtml({ file, bank: list, mode: "extra" }), view: "list", title: file.title };
+    }
     const bank = await loadBank(file.file);
-    if (!c) return { html: listHtml({ file, bank, mode: "extra" }), view: "list", title: file.title };
     const index = bank.problems.findIndex((p) => String(p.id) === String(c));
     if (index < 0) return { html: missingHtml(), view: "missing", title: "Задание не найдено" };
     return {
@@ -621,11 +666,13 @@ async function renderView(rest) {
   const task = Number(a);
   const file = egeFiles(manifest).find((f) => f.task === task);
   if (!file) return { html: missingHtml(), view: "missing", title: "Задание не найдено" };
-  const bank = await loadBank(file.file);
   if (!b) {
+    const list = await loadList(file.file);
+    prefetchBank(file.file);
     const [title] = TASK_COPY[task] || [file.title];
-    return { html: listHtml({ file, bank, mode: "ege" }), view: "list", title: `Задание ${task}. ${title}` };
+    return { html: listHtml({ file, bank: list, mode: "ege" }), view: "list", title: `Задание ${task}. ${title}` };
   }
+  const bank = await loadBank(file.file);
   const index = bank.problems.findIndex((p) => String(p.id) === String(b));
   if (index < 0) return { html: missingHtml(), view: "missing", title: "Задание не найдено" };
   const problem = bank.problems[index];
