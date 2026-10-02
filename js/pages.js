@@ -326,7 +326,7 @@ export function homePage(content) {
         </details>
         <details class="landing-faq-item">
           <summary>Есть ли занятия по литературе?</summary>
-          <p>Да, только индивидуально. На сайте пока есть материалы по русскому языку, раздел по литературе готовим.</p>
+          <p>Да, только индивидуально. На сайте уже есть сводный список тем сочинений ЕГЭ (задание 11).</p>
         </details>
         <details class="landing-faq-item">
           <summary>С чего начать?</summary>
@@ -432,9 +432,11 @@ export function homePage(content) {
             <a href="#/rules"><strong>Правила</strong><span>${ruleCount} ${ruleWord(ruleCount)}</span></a>
           </div>
         </div>
-        <div class="landing-learn-subject landing-learn-subject-soon">
+        <div class="landing-learn-subject">
           <p class="landing-learn-label">Литература</p>
-          <p class="landing-learn-soon">Раздел готовим.</p>
+          <div class="landing-learn-links">
+            <a href="#/literature"><strong>Задание 11</strong><span>400 тем сочинений ЕГЭ</span></a>
+          </div>
         </div>
       </div>
     </section>
@@ -512,15 +514,11 @@ export function ogePage() {
 
 export function literaturePage() {
   return `
-    <p class="eyebrow">Литература</p>
-    <h1>Материалы по литературе</h1>
-    <p class="lede">Раздел готовим. Пока на сайте есть материалы только по русскому языку.</p>
-    <div class="home-actions">
-      <a class="btn btn-lg" href="#/rules">К правилам по русскому</a>
-      <a class="btn btn-lg secondary" href="#/ege">К заданиям ЕГЭ</a>
-      <a class="btn btn-lg secondary" href="#/">О студии</a>
-    </div>
-  `;
+    <div class="lit-page lit-loading" id="lit-root">
+      <p class="eyebrow">ЕГЭ · задание 11</p>
+      <h1>Темы сочинений по литературе</h1>
+      <p class="lede muted">Загружаем список тем…</p>
+    </div>`;
 }
 
 export function rulesIndex(content, sectionId = "", q = "") {

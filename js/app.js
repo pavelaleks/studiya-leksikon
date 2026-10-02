@@ -1,13 +1,14 @@
-import { layout } from "./ui.js?v=land44";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land44";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex, ogePage, thanksPage, literaturePage } from "./pages.js?v=land44";
-import { bindApplyForm } from "./apply.js?v=land44";
-import { EGE_TITLES, egeByNumber } from "./ege.js?v=land44";
-import { renderExercise } from "./exercises.js?v=land44";
-import { mountTrainer } from "./trainers.js?v=land44";
-import { adminPage, bindAdmin } from "./admin.js?v=land44";
-import { applyBoard, keepBoardOnHash, parseRoute, setBoard } from "./route.js?v=land44";
-import { pickEgeVariant, touchEge } from "./progress.js?v=land44";
+import { layout } from "./ui.js?v=land45";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land45";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex, ogePage, thanksPage, literaturePage } from "./pages.js?v=land45";
+import { mountLiterature } from "./literature.js?v=land45";
+import { bindApplyForm } from "./apply.js?v=land45";
+import { EGE_TITLES, egeByNumber } from "./ege.js?v=land45";
+import { renderExercise } from "./exercises.js?v=land45";
+import { mountTrainer } from "./trainers.js?v=land45";
+import { adminPage, bindAdmin } from "./admin.js?v=land45";
+import { applyBoard, keepBoardOnHash, parseRoute, setBoard } from "./route.js?v=land45";
+import { pickEgeVariant, touchEge } from "./progress.js?v=land45";
 
 const app = document.getElementById("app");
 let content = null;
@@ -223,7 +224,9 @@ async function render() {
 
   if (a === "literature") {
     mountHtml(literaturePage(), "literature");
-    setTitle("Литература");
+    setTitle("Литература · задание 11");
+    const root = app.querySelector("#lit-root");
+    if (root) mountLiterature(root);
     return;
   }
 
