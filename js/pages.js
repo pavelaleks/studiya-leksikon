@@ -445,6 +445,7 @@ export function homePage(content) {
           </header>
           <div class="landing-learn-links landing-learn-links-lit">
             <a href="#/literature"><strong>Задания 1–11</strong><span>Фрагменты, ответы, пояснения</span></a>
+            <a href="#/literature/terms"><strong>Словарь терминов</strong><span>Поиск и тренажёр</span></a>
           </div>
         </article>
       </div>

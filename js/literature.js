@@ -4,6 +4,7 @@ import { escapeHtml } from "./ui.js";
 
 const MANIFEST_URL = new URL("js/literature-data/manifest.json", new URL(BASE, location.href));
 const TOPICS_URL = new URL("js/literature-data/ege-task-11-topics.json", new URL(BASE, location.href));
+const TERMS_URL = new URL("js/literature-data/terms.json", new URL(BASE, location.href));
 
 const WRITTEN = new Set([4, 5, 9, 10, 11]);
 
@@ -40,6 +41,7 @@ const ALLOWED = new Set([
 let manifestCache = null;
 const bankCache = new Map();
 let topicsCache = null;
+let termsCache = null;
 
 function ru(n, one, few, many) {
   const mod10 = n % 10;
@@ -96,6 +98,21 @@ async function loadTopics() {
   if (topicsCache) return topicsCache;
   topicsCache = await loadJson(TOPICS_URL.toString());
   return topicsCache;
+}
+
+async function loadTerms() {
+  if (termsCache) return termsCache;
+  termsCache = await loadJson(TERMS_URL.toString());
+  return termsCache;
+}
+
+function shuffle(list) {
+  const arr = [...list];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
 function egeFiles(manifest) {
@@ -212,6 +229,16 @@ function hubHtml(manifest) {
       <h1>Задания 1–11</h1>
       <p class="lede">Фрагмент, вопрос и пояснение. Краткий ответ проверяется на сайте. Письменные задания 4, 5, 9, 10 и 11 можно отправить преподавателю в Telegram.</p>
     </header>
+    <div class="lit-tools">
+      <a class="lit-tool-card" href="#/literature/terms">
+        <strong>Словарь терминов</strong>
+        <span>Алфавит, темы и поиск по литературоведческим понятиям</span>
+      </a>
+      <a class="lit-tool-card lit-tool-train" href="#/literature/terms/train">
+        <strong>Тренажёр терминов</strong>
+        <span>Определение → термин, карточки для повторения</span>
+      </a>
+    </div>
     <div class="lit-task-grid">${cards}</div>
     <details class="lit-archive">
       <summary>Дополнительные задания прежнего формата <span class="lit-count">${extraCount}</span></summary>
@@ -446,9 +473,115 @@ function missingHtml() {
   return `<div class="empty">Такого задания нет. <a href="#/literature">К списку</a></div>`;
 }
 
+function termsSourceNote() {
+  return `<p class="lit-source-note muted">Источники: <a href="https://www.literatura100.ru/termin" target="_blank" rel="noopener noreferrer">literatura100.ru</a>; недостающие позиции — из словаря терминов кодификатора ЕГЭ.</p>`;
+}
+
+function termsHtml(data, focusId = "") {
+  const letters = (data.letters || [])
+    .map((L) => `<a class="lit-letter" href="#letter-${escapeHtml(L)}" data-letter="${escapeHtml(L)}">${escapeHtml(L)}</a>`)
+    .join("");
+  const cats = (data.categories || [])
+    .map(
+      (c) =>
+        `<button type="button" class="lit-topic-chip" data-cat="${escapeHtml(c.id)}">${escapeHtml(c.title)}</button>`
+    )
+    .join("");
+  const byLetter = new Map();
+  (data.terms || []).forEach((t) => {
+    const L = t.letter || "#";
+    if (!byLetter.has(L)) byLetter.set(L, []);
+    byLetter.get(L).push(t);
+  });
+  const groups = [...byLetter.entries()]
+    .map(([L, items]) => {
+      const rows = items
+        .map((t) => {
+          const blob = norm([t.term, t.definition, t.categoryTitle].join(" "));
+          const open = focusId && t.id === focusId ? " open" : "";
+          return `
+            <details class="lit-term"${open} id="term-${escapeHtml(t.id)}" data-letter="${escapeHtml(L)}" data-cat="${escapeHtml(t.category)}" data-blob="${escapeHtml(blob)}">
+              <summary>
+                <strong>${escapeHtml(t.term)}</strong>
+                <span class="muted">${escapeHtml(t.categoryTitle || "")}</span>
+              </summary>
+              <p>${escapeHtml(t.definition)}</p>
+            </details>`;
+        })
+        .join("");
+      return `
+        <section class="lit-term-group" id="letter-${escapeHtml(L)}" data-letter="${escapeHtml(L)}">
+          <h2 class="lit-letter-head">${escapeHtml(L)}</h2>
+          <div class="lit-term-list">${rows}</div>
+        </section>`;
+    })
+    .join("");
+  return `
+    <p class="crumbs"><a href="#/literature">← К заданиям</a></p>
+    <header class="lit-head lit-terms-head">
+      <p class="eyebrow">Литература · ЕГЭ</p>
+      <h1>Словарь терминов</h1>
+      <p class="lede">${data.count} ${ru(data.count, "понятие", "понятия", "понятий")}. Поиск по названию и определению, алфавит и темы. <a href="#/literature/terms/train">Открыть тренажёр</a>.</p>
+      <label class="lit-search-wrap" for="lit-terms-q">
+        <span class="visually-hidden">Поиск по терминам</span>
+        <input class="search lit-search" id="lit-terms-q" type="search" placeholder="Метафора, ямб, конфликт…" autocomplete="off" />
+      </label>
+      <p class="lit-search-status muted" id="lit-terms-status" aria-live="polite"></p>
+      <nav class="lit-letter-nav" aria-label="Алфавит">${letters}</nav>
+      <div class="lit-topic-nav" aria-label="Темы">${cats}</div>
+    </header>
+    <div class="lit-terms-body" id="lit-terms-body">${groups}</div>
+    ${termsSourceNote()}`;
+}
+
+function termsTrainHtml(data) {
+  const cats = [`<option value="">Все темы</option>`]
+    .concat((data.categories || []).map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.title)}</option>`))
+    .join("");
+  return `
+    <p class="crumbs"><a href="#/literature/terms">← К словарю</a></p>
+    <header class="lit-head">
+      <p class="eyebrow">Тренажёр</p>
+      <h1>Литературоведческие термины</h1>
+      <p class="lede">По определению выберите термин или листайте карточки. Всего в словаре: ${data.count}.</p>
+      <div class="lit-train-toolbar">
+        <label>
+          <span class="visually-hidden">Тема</span>
+          <select id="lit-train-cat" class="lit-train-select">${cats}</select>
+        </label>
+        <div class="lit-train-modes" role="tablist" aria-label="Режим">
+          <button type="button" class="lit-topic-chip is-active" data-mode="quiz">Викторина</button>
+          <button type="button" class="lit-topic-chip" data-mode="cards">Карточки</button>
+        </div>
+      </div>
+    </header>
+    <div class="lit-train" id="lit-train" data-mode="quiz">
+      <p class="muted">Загрузка…</p>
+    </div>`;
+}
+
 async function renderView(rest) {
-  const manifest = await loadManifest();
   const [a, b, c] = rest;
+  if (a === "terms") {
+    const data = await loadTerms();
+    if (b === "train") {
+      return { html: termsTrainHtml(data), view: "terms-train", title: "Тренажёр терминов", terms: data };
+    }
+    if (b) {
+      const hit = (data.terms || []).find((t) => t.id === b);
+      if (!hit) {
+        return {
+          html: `<div class="empty">Термин не найден. <a href="#/literature/terms">К словарю</a></div>`,
+          view: "missing",
+          title: "Термин не найден",
+        };
+      }
+      return { html: termsHtml(data, hit.id), view: "terms", title: hit.term, terms: data, focusId: hit.id };
+    }
+    return { html: termsHtml(data), view: "terms", title: "Словарь терминов", terms: data };
+  }
+
+  const manifest = await loadManifest();
   if (!a) return { html: hubHtml(manifest), view: "hub", title: "Литература · ЕГЭ" };
   if (a === "archive") {
     if (!b) return { html: hubHtml(manifest), view: "hub", title: "Литература · ЕГЭ" };
@@ -486,6 +619,191 @@ async function renderView(rest) {
     title: `Задание ${task} · № ${problem.id}`,
     problem,
   };
+}
+
+function bindTerms(root, focusId = "") {
+  const search = root.querySelector("#lit-terms-q");
+  const status = root.querySelector("#lit-terms-status");
+  const terms = [...root.querySelectorAll(".lit-term")];
+  const groups = [...root.querySelectorAll(".lit-term-group")];
+  let cat = "";
+  const apply = () => {
+    const q = norm(search?.value || "");
+    const tokens = q ? q.split(" ") : [];
+    let visible = 0;
+    terms.forEach((el) => {
+      const okCat = !cat || el.dataset.cat === cat;
+      const blob = el.dataset.blob || "";
+      const okQ = tokens.every((token) => blob.includes(token));
+      const ok = okCat && okQ;
+      el.hidden = !ok;
+      if (ok) visible += 1;
+    });
+    groups.forEach((group) => {
+      const any = [...group.querySelectorAll(".lit-term")].some((el) => !el.hidden);
+      group.hidden = !any;
+    });
+    root.querySelectorAll(".lit-topic-chip[data-cat]").forEach((chip) => {
+      chip.classList.toggle("is-active", chip.dataset.cat === cat);
+    });
+    if (status) status.textContent = q || cat ? `Показано: ${visible}` : "";
+  };
+  search?.addEventListener("input", apply);
+  root.querySelectorAll(".lit-topic-chip[data-cat]").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      cat = cat === chip.dataset.cat ? "" : chip.dataset.cat;
+      apply();
+    });
+  });
+  root.querySelectorAll(".lit-letter").forEach((link) => {
+    link.addEventListener("click", (e) => {
+      const L = link.dataset.letter;
+      const target = root.querySelector(`#letter-${CSS.escape(L)}`);
+      if (!target || target.hidden) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+  apply();
+  if (focusId) {
+    const el = root.querySelector(`#term-${CSS.escape(focusId)}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+function bindTermsTrain(root, data) {
+  const panel = root.querySelector("#lit-train");
+  const catSelect = root.querySelector("#lit-train-cat");
+  let mode = "quiz";
+  let score = { ok: 0, bad: 0 };
+  let deck = [];
+  let index = 0;
+  let revealed = false;
+  let locked = false;
+
+  const pool = () => {
+    const cat = catSelect?.value || "";
+    return (data.terms || []).filter((t) => !cat || t.category === cat);
+  };
+
+  const optionsFor = (item, all) => {
+    const others = shuffle(all.filter((t) => t.id !== item.id)).slice(0, 3);
+    return shuffle([item, ...others]);
+  };
+
+  const render = () => {
+    const all = pool();
+    if (all.length < 2) {
+      panel.innerHTML = `<div class="empty">В этой теме мало терминов. Выберите другую.</div>`;
+      return;
+    }
+    if (!deck.length || index >= deck.length) {
+      deck = shuffle(all);
+      index = 0;
+    }
+    const item = deck[index];
+    const progress = `<p class="lit-train-score muted">Верно ${score.ok} · Ошибки ${score.bad} · Карточка ${index + 1} из ${deck.length}</p>`;
+
+    if (mode === "cards") {
+      panel.innerHTML = `
+        ${progress}
+        <article class="lit-train-card${revealed ? " is-open" : ""}" id="lit-card">
+          <p class="lit-train-prompt">${escapeHtml(item.term)}</p>
+          <p class="lit-train-def"${revealed ? "" : " hidden"}>${escapeHtml(item.definition)}</p>
+          <p class="muted"${revealed ? " hidden" : ""}>Нажмите, чтобы показать определение</p>
+        </article>
+        <div class="lit-train-actions">
+          <button type="button" class="btn secondary" id="lit-train-prev">Назад</button>
+          <button type="button" class="btn" id="lit-train-next">Дальше</button>
+        </div>`;
+      panel.querySelector("#lit-card")?.addEventListener("click", () => {
+        revealed = true;
+        render();
+      });
+      panel.querySelector("#lit-train-prev")?.addEventListener("click", () => {
+        index = Math.max(0, index - 1);
+        revealed = false;
+        render();
+      });
+      panel.querySelector("#lit-train-next")?.addEventListener("click", () => {
+        index += 1;
+        revealed = false;
+        render();
+      });
+      return;
+    }
+
+    const choices = optionsFor(item, all);
+    panel.innerHTML = `
+      ${progress}
+      <article class="lit-train-card">
+        <p class="eyebrow">Что это за термин?</p>
+        <p class="lit-train-def lit-train-def-quiz">${escapeHtml(item.definition)}</p>
+      </article>
+      <div class="lit-train-choices" id="lit-choices">
+        ${choices
+          .map(
+            (t) =>
+              `<button type="button" class="lit-train-choice" data-id="${escapeHtml(t.id)}">${escapeHtml(t.term)}</button>`
+          )
+          .join("")}
+      </div>
+      <p class="lit-train-feedback muted" id="lit-feedback" aria-live="polite"></p>
+      <div class="lit-train-actions">
+        <button type="button" class="btn" id="lit-train-next" hidden>Дальше</button>
+      </div>`;
+
+    locked = false;
+    const feedback = panel.querySelector("#lit-feedback");
+    const next = panel.querySelector("#lit-train-next");
+    panel.querySelectorAll(".lit-train-choice").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (locked) return;
+        locked = true;
+        const ok = btn.dataset.id === item.id;
+        btn.classList.add(ok ? "is-ok" : "is-bad");
+        panel.querySelectorAll(".lit-train-choice").forEach((other) => {
+          other.disabled = true;
+          if (other.dataset.id === item.id) other.classList.add("is-ok");
+        });
+        if (ok) {
+          score.ok += 1;
+          feedback.textContent = "Верно";
+        } else {
+          score.bad += 1;
+          feedback.textContent = `Правильный ответ: ${item.term}`;
+        }
+        next.hidden = false;
+      });
+    });
+    next?.addEventListener("click", () => {
+      index += 1;
+      render();
+    });
+  };
+
+  root.querySelectorAll(".lit-train-modes [data-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      mode = btn.dataset.mode;
+      root.querySelectorAll(".lit-train-modes [data-mode]").forEach((el) => {
+        el.classList.toggle("is-active", el.dataset.mode === mode);
+      });
+      panel.dataset.mode = mode;
+      deck = [];
+      index = 0;
+      revealed = false;
+      score = { ok: 0, bad: 0 };
+      render();
+    });
+  });
+  catSelect?.addEventListener("change", () => {
+    deck = [];
+    index = 0;
+    revealed = false;
+    score = { ok: 0, bad: 0 };
+    render();
+  });
+  render();
 }
 
 function bindList(root) {
@@ -651,11 +969,14 @@ export async function mountLiterature(host, rest = []) {
     if (view.view === "list") bindList(host);
     if (view.view === "problem") bindProblem(host, view.problem);
     if (view.view === "themes") bindThemes(host);
+    if (view.view === "terms") bindTerms(host, view.focusId || "");
+    if (view.view === "terms-train") bindTermsTrain(host, view.terms);
   } catch (err) {
     host.innerHTML = `<div class="empty">Не удалось загрузить задания. <button type="button" class="btn secondary" id="lit-retry">Повторить</button></div>`;
     host.querySelector("#lit-retry")?.addEventListener("click", () => {
       manifestCache = null;
       topicsCache = null;
+      termsCache = null;
       bankCache.clear();
       mountLiterature(host, rest);
     });
