@@ -28,13 +28,24 @@ PAST_NO_L = re.compile(
 )
 
 
+# Keep breve/diaeresis so «й»/«ё» survive NFD stripping; drop only stress marks.
+_KEEP_MARKS = {"\u0306", "\u0308"}  # COMBINING BREVE, COMBINING DIAERESIS
+
+
+def strip_stress(text: str) -> str:
+    """Remove stress accents but keep й and ё."""
+    text = unicodedata.normalize("NFD", text)
+    text = "".join(
+        ch for ch in text if unicodedata.category(ch) != "Mn" or ch in _KEEP_MARKS
+    )
+    return unicodedata.normalize("NFC", text)
+
+
 def clean_text(text: str) -> str:
     text = text.replace("\u00ad", "").replace("\u202f", " ").replace("\xa0", " ")
     text = text.replace("\u2060", "").replace("\ufeff", "")
-    # Remove combining stress marks so «о́рган» stays one token
-    text = unicodedata.normalize("NFD", text)
-    text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
-    text = unicodedata.normalize("NFC", text)
+    # Remove combining stress marks so «о́рган» stays one token (но не ломаем й/ё)
+    text = strip_stress(text)
     # PDF often inserts Latin accented letters into Cyrillic words (полóг)
     for lat, cyr in {
         "á": "а",
@@ -152,8 +163,7 @@ def extract_why_wrong(block: str, option_id: str) -> str:
 
 
 def normalize_label(label: str) -> str:
-    label = "".join(ch for ch in unicodedata.normalize("NFD", label) if unicodedata.category(ch) != "Mn")
-    label = unicodedata.normalize("NFC", label)
+    label = strip_stress(label)
     label = re.sub(r"\(\s*бы\s*\)", "бы", label)
     label = re.sub(r"\(\s*это\s*\)", "это", label)
     label = re.sub(r"\(\s*(как|так и|или)\s*\)", " ", label, flags=re.I)
@@ -333,12 +343,9 @@ def tokenize_sentence(s: str) -> list[str]:
 
 
 def _strip_accents(w: str) -> str:
+    # Для сопоставления токенов ё≈е; й сохраняем
     w = w.replace("ё", "е").replace("Ё", "Е")
-    parts = []
-    for ch in unicodedata.normalize("NFD", w):
-        if unicodedata.category(ch) != "Mn":
-            parts.append(ch)
-    return "".join(parts)
+    return strip_stress(w)
 
 
 def _norm_tok(w: str) -> str:

@@ -13,7 +13,8 @@ function shuffle(arr) {
 async function loadTrainer(slug) {
   const url = new URL(`js/trainers-data/${encodeURIComponent(slug)}.json`, new URL(BASE, location.href));
   url.searchParams.set("v", "basis38");
-  const res = await fetch(url.toString(), { cache: "no-store" });
+  url.searchParams.set("v", "osnova-yot1");
+  const res = await fetch(url.toString());
   if (!res.ok) throw new Error(`Не удалось загрузить тренажёр ${slug}`);
   return res.json();
 }
