@@ -304,16 +304,17 @@ def parse_attribution(line: str) -> tuple[str | None, str | None]:
     if not text:
         return None, None
     text = re.sub(r"^[\s(]+|[)\s]+$", "", text)
-    text = re.sub(r"\((?:перевод|пер\.)[^)]*\)", "", text, flags=re.I)
-    text = re.split(r",?\s*(?:перевод|пер\.)\b", text, maxsplit=1, flags=re.I)[0]
+    # Сначала год: иначе «По, 1829 (перевод …)» после split оставляет «По (»
+    text = re.sub(r",?\s*\d{4}\s*[–—-]\s*\d{4}", "", text)
+    text = re.sub(r",?\s*\d{4}\b", "", text)
+    text = re.sub(r"\([^)]*(?:перевод|пер\.)[^)]*\)", "", text, flags=re.I)
+    text = re.split(r"\(?\s*,?\s*(?:перевод|пер\.)\b", text, maxsplit=1, flags=re.I)[0]
     work = None
     match = re.search(r"[«\"]([^»\"]+)[»\"]", text)
     if match and text.count("«") + text.count('"') == 1:
         work = match.group(1).strip()
         text = f"{text[: match.start()]} {text[match.end() :]}"
-    text = re.sub(r",?\s*\d{4}\s*[–—-]\s*\d{4}", "", text)
-    text = re.sub(r",?\s*\d{4}\b", "", text)
-    author = norm_text(text).strip(" ,;.")
+    author = norm_text(text).strip(" ,;.(]")
     if not looks_like_name(author):
         author = None
     return author, work

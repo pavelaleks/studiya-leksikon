@@ -75,7 +75,7 @@ function dataUrl(path) {
   return new URL(path, new URL(BASE, location.href)).toString();
 }
 
-const DATA_VER = "lit54";
+const DATA_VER = "lit55";
 
 async function loadJson(url) {
   const u = new URL(url, location.href);
