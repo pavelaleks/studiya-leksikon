@@ -1,8 +1,8 @@
-import { layout } from "./ui.js?v=land53";
+import { layout } from "./ui.js?v=land59";
 import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land57";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land57";
-import { mountLiterature } from "./literature.js?v=land54";
-import { mountRussian } from "./russian.js?v=land58";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land59";
+import { mountLiterature } from "./literature.js?v=land59";
+import { mountRussian } from "./russian.js?v=land59";
 import { bindApplyForm } from "./apply.js?v=land46";
 import { EGE_TITLES } from "./ege.js?v=land57";
 import { renderExercise } from "./exercises.js?v=land46";

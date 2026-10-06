@@ -41,7 +41,7 @@ export function layout(content, active = "", { hideFooter = false } = {}) {
         </nav>
       </div>
     </header>
-    <main id="main"><div class="wrap">${content}</div></main>
+    <main id="main" class="${isHome ? "is-home" : "is-app"}"><div class="wrap">${content}</div></main>
     ${
       hideFooter
         ? ""

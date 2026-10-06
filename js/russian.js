@@ -223,7 +223,7 @@ function hubHtml(manifest) {
       <p class="crumbs"><a href="#/">← Студия</a></p>
       <p class="eyebrow">Русский язык · ЕГЭ</p>
       <h1>Задания 1–27</h1>
-      <p class="lede">Краткий ответ проверяется на сайте. Сочинение, задание 27, можно отправить преподавателю в Telegram.</p>
+      <p class="lede">Краткий ответ проверяется на сайте. Задание 27 — сочинение в Telegram.</p>
       ${continueLink()}
     </header>
     <div class="lit-task-grid">${cards}</div>
@@ -238,19 +238,20 @@ function listHtml({ file, bank }) {
     .filter((t) => t.count > 0)
     .map(
       (t) =>
-        `<button type="button" class="lit-topic-chip" data-topic="${t.id}">${escapeHtml(t.title)} <small>${t.count}</small></button>`
+        `<button type="button" class="lit-topic-chip" data-topic="${t.id}" title="${escapeHtml(t.title)}">${escapeHtml(clip(t.title, 36))} <small>${t.count}</small></button>`
     )
     .join("");
   const items = (bank.problems || [])
     .map((problem, i) => {
       const blob = norm([problem.questionText, problem.topic].join(" "));
       const solved = done.has(problem.id) || done.has(String(problem.id));
+      const q = clip(problem.questionText, 160) || `Вариант ${i + 1}`;
       return `
         <a class="lit-item${solved ? " is-done" : ""}" href="#/ege/${task}/${problem.id}" data-topic="${problem.topicId}" data-blob="${escapeHtml(blob)}">
           <span class="lit-item-n">${i + 1}</span>
           <span class="lit-item-body">
-            <strong>${escapeHtml(problem.topic || `Вариант ${i + 1}`)}</strong>
-            <span>${escapeHtml(clip(problem.questionText, 180))}</span>
+            <strong>${escapeHtml(q)}</strong>
+            ${problem.topic ? `<span>${escapeHtml(problem.topic)}</span>` : ""}
           </span>
         </a>`;
     })
@@ -259,16 +260,15 @@ function listHtml({ file, bank }) {
     <p class="crumbs"><a href="#/ege">← К заданиям 1–27</a></p>
     ${taskNav(task)}
     <header class="lit-head">
-      <p class="eyebrow">Задание ${task}</p>
+      <p class="eyebrow">Задание ${task} · ${file.count} ${ru(file.count, "задание", "задания", "заданий")}${essay ? " · в Telegram" : ""}</p>
       <h1>${escapeHtml(file.title)}</h1>
-      <p class="lede">${file.count} ${ru(file.count, "задание", "задания", "заданий")}${essay ? ". Текст сочинения можно отправить в Telegram." : "."}</p>
-      <div class="home-actions">
-        <a class="btn btn-lg" href="#/ege/${task}/random">Случайный вариант</a>
+      <div class="lit-toolbar">
+        <label class="lit-search-wrap" for="rus-q">
+          <span class="visually-hidden">Поиск по заданиям</span>
+          <input class="search lit-search" id="rus-q" type="search" placeholder="Слова из вопроса" autocomplete="off" />
+        </label>
+        <a class="btn" href="#/ege/${task}/random">Случайный</a>
       </div>
-      <label class="lit-search-wrap" for="rus-q">
-        <span class="visually-hidden">Поиск по заданиям</span>
-        <input class="search lit-search" id="rus-q" type="search" placeholder="Слова из вопроса" autocomplete="off" />
-      </label>
       <p class="lit-search-status muted" id="rus-status" aria-live="polite"></p>
       ${topics ? `<div class="lit-topic-nav" aria-label="Подборки">${topics}</div>` : ""}
     </header>

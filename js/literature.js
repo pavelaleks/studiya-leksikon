@@ -262,7 +262,7 @@ function hubHtml(manifest) {
       <p class="crumbs"><a href="#/">← Студия</a></p>
       <p class="eyebrow">Литература · ЕГЭ</p>
       <h1>Задания 1–11</h1>
-      <p class="lede">Фрагмент, вопрос и пояснение. Краткий ответ проверяется на сайте. Письменные задания 4, 5, 9, 10 и 11 можно отправить преподавателю в Telegram.</p>
+      <p class="lede">Краткий ответ проверяется на сайте. Задания 4, 5, 9, 10 и 11 — в Telegram.</p>
     </header>
     <div class="lit-tools">
       <a class="lit-tool-card" href="#/literature/terms">
@@ -326,10 +326,12 @@ function listHtml({ file, bank, mode }) {
     <header class="lit-head">
       ${head}
       ${themes}
-      <label class="lit-search-wrap" for="lit-q">
-        <span class="visually-hidden">Поиск по заданиям</span>
-        <input class="search lit-search" id="lit-q" type="search" placeholder="Автор, произведение или слова из вопроса" autocomplete="off" />
-      </label>
+      <div class="lit-toolbar">
+        <label class="lit-search-wrap" for="lit-q">
+          <span class="visually-hidden">Поиск по заданиям</span>
+          <input class="search lit-search" id="lit-q" type="search" placeholder="Автор, произведение или слова из вопроса" autocomplete="off" />
+        </label>
+      </div>
       <p class="lit-search-status muted" id="lit-status" aria-live="polite"></p>
       ${topics ? `<div class="lit-topic-nav" aria-label="Темы">${topics}</div>` : ""}
     </header>
