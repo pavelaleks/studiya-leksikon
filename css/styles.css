@@ -4045,3 +4045,62 @@ body.is-landing main {
     padding: 14px;
   }
 }
+
+.lit-item.is-done .lit-item-n {
+  color: #2f7d4a;
+}
+
+.lit-html img {
+  max-width: 100%;
+  height: auto;
+}
+
+.lit-html .wrap_flex_table {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 12px 0;
+}
+
+.lit-html .wrap_flex_table_col {
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+
+.lit-html .col_name {
+  margin-bottom: 8px;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.lit-html .rus_single {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.lit-html .rus_double {
+  border-bottom: 3px double #9a3b3b;
+}
+
+.lit-html .rus_wave {
+  text-decoration: underline wavy #2a5f8a;
+  text-underline-offset: 3px;
+}
+
+.lit-html .rus_dashed,
+.lit-html .rus_dotteddash {
+  text-decoration: underline dashed;
+  text-underline-offset: 3px;
+}
+
+.lit-html .rus_notes {
+  color: var(--ink-soft);
+}
+
+.lit-html .rus_example,
+.lit-html .mark {
+  font-weight: 700;
+}

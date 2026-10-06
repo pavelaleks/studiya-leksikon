@@ -1,7 +1,7 @@
 import { escapeHtml } from "./ui.js";
 import { legend, mark } from "./markup.js";
-import { EGE_TITLES, egeByNumber, egeTasks } from "./ege.js";
-import { doneIds, readProgress } from "./progress.js";
+import { EGE_TITLES } from "./ege.js";
+import { readProgress } from "./progress.js";
 import { STUDIO, studioTelegram, studioWhatsApp } from "./config.js";
 import { iconTelegram, iconWhatsApp } from "./icons.js";
 
@@ -109,12 +109,12 @@ function continueHtml(compact = false) {
   const variant = p.lastIndex ? ` · вариант ${p.lastIndex}` : "";
   if (compact) {
     return `
-    <a class="landing-continue" href="#/ege-item/${encodeURIComponent(p.lastId)}">
+    <a class="landing-continue" href="#/ege/${encodeURIComponent(p.lastTask)}/${encodeURIComponent(p.lastId)}">
       Продолжить задание ${p.lastTask}${variant}
     </a>`;
   }
   return `
-    <a class="card home-continue" href="#/ege-item/${encodeURIComponent(p.lastId)}">
+    <a class="card home-continue" href="#/ege/${encodeURIComponent(p.lastTask)}/${encodeURIComponent(p.lastId)}">
       <p class="kicker">Продолжить</p>
       <h2>Задание ${p.lastTask}${variant}</h2>
       <p>Вернуться к последнему бланку</p>
@@ -433,7 +433,7 @@ export function homePage(content) {
             <p class="landing-learn-subject-note">ОГЭ и ЕГЭ</p>
           </header>
           <div class="landing-learn-links landing-learn-links-ru">
-            <a href="#/ege"><strong>ЕГЭ</strong><span>Задания 4–22</span></a>
+            <a href="#/ege"><strong>ЕГЭ</strong><span>Задания 1–27</span></a>
             <a href="#/oge"><strong>ОГЭ</strong><span>${ogeCount} ${ogeWord}</span></a>
             <a href="#/rules"><strong>Правила</strong><span>${ruleCount} ${ruleWord(ruleCount)}</span></a>
           </div>
@@ -667,7 +667,7 @@ export function practiceIndex(content, filterId = "") {
   return `
     <p class="eyebrow">Тренировка</p>
     <h1>Задания</h1>
-    <p class="lede">Можно идти отдельно от теории: выберите раздел и решайте тесты и списывание. Тренажёр ЕГЭ (задания 4–22) — отдельным пунктом.</p>
+    <p class="lede">Можно идти отдельно от теории: выберите раздел и решайте тесты и списывание. Тренажёр ЕГЭ (задания 1–27) — отдельным пунктом.</p>
     <div class="filter-bar">
       <a class="pill ${!filterId ? "active" : ""}" href="#/practice">Все</a>
       ${content.sections.map((s) => `<a class="pill ${filterId === s.id ? "active" : ""}" href="#/practice/${s.id}">${escapeHtml(s.title)}</a>`).join("")}
@@ -697,62 +697,6 @@ export function practiceIndex(content, filterId = "") {
   `;
 }
 
-export function egeIndex(content, taskNum = "") {
-  const n = Number(taskNum);
-  const all = egeTasks(content);
-  const counts = {};
-  for (const ex of all) counts[ex.egeTask] = (counts[ex.egeTask] || 0) + 1;
-  const numbers = Object.keys(EGE_TITLES).map(Number);
-  if (!n) {
-    return `
-      <p class="crumbs"><a href="#/">← Студия</a></p>
-      <p class="eyebrow">Русский язык · ЕГЭ</p>
-      <h1>ЕГЭ по русскому</h1>
-      <p class="lede">Форма как на экзамене: слово или последовательность цифр. Задания 4–22.</p>
-      ${continueHtml()}
-      <div class="ege-task-list">
-        ${numbers
-          .map(
-            (num) => `
-          <a class="card ege-task-row" href="#/ege/${num}">
-            <span class="ege-num">${num}</span>
-            <span>
-              <strong>${escapeHtml(EGE_TITLES[num])}</strong>
-              <span class="muted">${counts[num] || 0} вариантов</span>
-            </span>
-          </a>`
-          )
-          .join("")}
-      </div>
-      <details class="card ege-missing">
-        <summary>Каких заданий нет</summary>
-        <ul>
-          <li><strong>1, 2, 3</strong> — микротекст: информация, средства связи, лексический анализ абзаца.</li>
-          <li><strong>23–26</strong> — связный текст: содержание, тип речи, лексика, связь предложений.</li>
-          <li><strong>27</strong> — сочинение.</li>
-        </ul>
-      </details>
-    `;
-  }
-  const list = egeByNumber(content, n);
-  const done = doneIds(n);
-  return `
-    <div class="crumbs"><a href="#/ege">ЕГЭ</a><span>/</span><span>задание ${n}</span></div>
-    <p class="eyebrow">ЕГЭ · задание ${n}</p>
-    <h1>${escapeHtml(EGE_TITLES[n] || "Задание")}</h1>
-    <p class="lede">${list.length} вариантов. Ответ вписывается так же, как в бланк № 1.</p>
-    <div class="home-actions">
-      <a class="btn btn-lg" href="#/ege/${n}/random">Случайный вариант</a>
-    </div>
-    ${
-      list.length
-        ? `<div class="ege-var-grid">${list
-            .map(
-              (ex, i) => `
-          <a class="ege-var${done.has(ex.id) ? " done" : ""}" href="#/ege-item/${encodeURIComponent(ex.id)}" aria-label="Вариант ${i + 1}">${i + 1}</a>`
-            )
-            .join("")}</div>`
-        : `<div class="empty">Этот номер ещё наполняется.</div>`
-    }
-  `;
+export function egePage() {
+  return `<div class="lit-page" id="rus-root"><p class="lede muted">Загружаем задания…</p></div>`;
 }

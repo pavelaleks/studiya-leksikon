@@ -1,14 +1,14 @@
 import { layout } from "./ui.js?v=land53";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land46";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egeIndex, ogePage, thanksPage, literaturePage } from "./pages.js?v=land54";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land57";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land57";
 import { mountLiterature } from "./literature.js?v=land54";
+import { mountRussian } from "./russian.js?v=land57";
 import { bindApplyForm } from "./apply.js?v=land46";
-import { EGE_TITLES, egeByNumber } from "./ege.js?v=land46";
+import { EGE_TITLES } from "./ege.js?v=land57";
 import { renderExercise } from "./exercises.js?v=land46";
 import { mountTrainer } from "./trainers.js?v=land55";
 import { adminPage, bindAdmin } from "./admin.js?v=land46";
 import { parseRoute } from "./route.js?v=land52";
-import { pickEgeVariant, touchEge } from "./progress.js?v=land46";
 
 const app = document.getElementById("app");
 let content = null;
@@ -217,48 +217,15 @@ async function render() {
   }
 
   if (a === "ege") {
-    if (parts[2] === "random") {
-      const list = egeByNumber(content, b);
-      const pick = pickEgeVariant(list);
-      if (!pick) {
-        mountHtml(`<div class="empty">Этот номер ещё наполняется. <a href="#/ege">К тренажёру</a></div>`, "ege");
-        setTitle("ЕГЭ");
-        return;
-      }
-      const href = `#/ege-item/${encodeURIComponent(pick.id)}`;
-      history.replaceState(null, "", location.pathname + location.search + href);
-      render();
-      return;
-    }
-    mountHtml(egeIndex(content, b || ""), "ege");
-    setTitle(b && EGE_TITLES[Number(b)] ? `Задание ${b}. ${EGE_TITLES[Number(b)]}` : "ЕГЭ по русскому");
+    mountHtml(egePage(), "ege");
+    setTitle("ЕГЭ по русскому");
+    const root = app.querySelector("#rus-root");
+    if (root) await mountRussian(root, parts.slice(1));
     return;
   }
 
   if (a === "ege-item") {
-    const ex = (content.ege || []).find((e) => e.id === b);
-    if (!ex) {
-      mountHtml(`<div class="empty">Задание не найдено. <a href="#/ege">К тренажёру ЕГЭ</a></div>`, "ege");
-      setTitle("Задание не найдено");
-      return;
-    }
-    const list = egeByNumber(content, ex.egeTask);
-    const index = Math.max(0, list.findIndex((e) => e.id === ex.id));
-    const nextEx = list.length > 1 ? list[(index + 1) % list.length] : null;
-    const rules = (ex.ruleIds || []).map((id) => findRule(content, id)).filter(Boolean);
-    touchEge(ex, index);
-    mountHtml("", "ege");
-    const wrap = app.querySelector("main .wrap");
-    wrap.innerHTML = `<div class="crumbs"><a href="#/ege/${ex.egeTask}">← Задание ${ex.egeTask}</a></div>`;
-    wrap.appendChild(
-      renderExercise(ex, null, {
-        index,
-        total: list.length,
-        nextId: nextEx?.id,
-        rules,
-      })
-    );
-    setTitle(`Задание ${ex.egeTask} · вариант ${index + 1}`);
+    location.hash = "#/ege";
     return;
   }
 
