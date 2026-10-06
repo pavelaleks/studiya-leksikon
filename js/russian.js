@@ -3,8 +3,8 @@ import { iconTelegram } from "./icons.js";
 import { doneIds, markEgeDone, pickEgeVariant, readProgress, touchEge } from "./progress.js";
 import { escapeHtml } from "./ui.js";
 
-const DATA_VER = "rus2";
-const MANIFEST_URL = new URL("data/russian/manifest.json", new URL(BASE, location.href));
+const DATA_VER = "rus3";
+const MANIFEST_URL = new URL("js/russian-data/manifest.json", new URL(BASE, location.href));
 
 const KEEP_CLASS = new Set([
   "left_margin",
@@ -42,7 +42,7 @@ function dataUrl(path) {
 function mediaUrl(src) {
   const clean = String(src || "").replace(/^\.?\//, "");
   if (!clean.startsWith("media/")) return "";
-  return new URL(`data/russian/${clean}`, new URL(BASE, location.href)).href;
+  return new URL(`js/russian-data/${clean}`, new URL(BASE, location.href)).href;
 }
 
 async function loadJson(url) {
@@ -66,7 +66,7 @@ function listPath(file) {
 async function loadList(file) {
   const key = `list:${file}`;
   if (bankCache.has(key)) return bankCache.get(key);
-  const data = await loadJson(dataUrl(`data/russian/${listPath(file)}`).toString());
+  const data = await loadJson(dataUrl(`js/russian-data/${listPath(file)}`).toString());
   bankCache.set(key, data);
   return data;
 }
@@ -78,7 +78,7 @@ function orderPath(file) {
 async function loadOrder(file) {
   const key = `order:${file}`;
   if (bankCache.has(key)) return bankCache.get(key);
-  const data = await loadJson(dataUrl(`data/russian/${orderPath(file)}`).toString());
+  const data = await loadJson(dataUrl(`js/russian-data/${orderPath(file)}`).toString());
   bankCache.set(key, data);
   return data;
 }
@@ -100,11 +100,11 @@ async function loadCached(key, path) {
 
 function loadProblem(task, id) {
   const nn = String(task).padStart(2, "0");
-  return loadCached(`problem:${id}`, `data/russian/problems/${nn}/${id}.json`);
+  return loadCached(`problem:${id}`, `js/russian-data/problems/${nn}/${id}.json`);
 }
 
 function loadPassage(id) {
-  return loadCached(`passage:${id}`, `data/russian/passages/${id}.json`);
+  return loadCached(`passage:${id}`, `js/russian-data/passages/${id}.json`);
 }
 
 function taskFiles(manifest) {

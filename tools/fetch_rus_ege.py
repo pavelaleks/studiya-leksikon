@@ -1123,7 +1123,7 @@ def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser()
     parser.add_argument("--parse-only", action="store_true", help="не ходить в сеть, если страница уже в кэше")
-    parser.add_argument("--out", default=str(ROOT / "data" / "russian"), help="каталог базы")
+    parser.add_argument("--out", default=str(ROOT / "js" / "russian-data"), help="каталог базы")
     parser.add_argument("--topics", default="", help="только эти id тем, через запятую")
     parser.add_argument("--cards-only", action="store_true", help="только разложить уже скачанную базу на карточки")
     args = parser.parse_args()

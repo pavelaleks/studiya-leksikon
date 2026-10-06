@@ -17,8 +17,8 @@ tools/ege_texts.py
 tools/__pycache__/
 tools/_sdamgia_cache/
 tools/_sdamgia_cache_rus/
-data/russian/bank/ege-??.json
-data/russian/index.json
+js/russian-data/bank/ege-??.json
+js/russian-data/index.json
 *.doc
 tools/spravochnik.txt
 tools/spravochnik_utf8.txt
