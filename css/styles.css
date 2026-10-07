@@ -4168,3 +4168,32 @@ body.is-landing main {
 .lit-html .mark {
   font-weight: 700;
 }
+
+/* Подписи частей речи / оборотов — плашка перед словом, не сливается с текстом */
+.lit-html .sup_cont {
+  display: inline;
+}
+
+.lit-html .sup_word {
+  display: inline-block;
+  position: relative;
+  z-index: 1;
+  max-width: min(14em, 70vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0 0.55em 0.1em 0.08em;
+  padding: 2px 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: 0 0 0 3px var(--paper);
+  color: var(--accent);
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  white-space: nowrap;
+  vertical-align: 0.18em;
+  text-decoration: none !important;
+}

@@ -194,6 +194,12 @@ function sanitizeHtml(html) {
       else if (!/^https?:/i.test(src)) node.remove();
     }
   });
+  root.querySelectorAll(".sup_word").forEach((label) => {
+    const next = label.nextSibling;
+    if (next && next.nodeType === Node.TEXT_NODE && next.textContent && !/^\s/.test(next.textContent)) {
+      label.after(doc.createTextNode("\u00a0"));
+    }
+  });
   return root.innerHTML;
 }
 
