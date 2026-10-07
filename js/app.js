@@ -1,8 +1,9 @@
 import { layout } from "./ui.js?v=land59";
 import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land57";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land59";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land60";
 import { mountLiterature } from "./literature.js?v=land59";
 import { mountRussian } from "./russian.js?v=land59";
+import { mountOge } from "./oge.js?v=land60";
 import { bindApplyForm } from "./apply.js?v=land46";
 import { EGE_TITLES } from "./ege.js?v=land57";
 import { renderExercise } from "./exercises.js?v=land46";
@@ -191,6 +192,8 @@ async function render() {
   if (a === "oge") {
     mountHtml(ogePage(), "oge");
     setTitle("ОГЭ по русскому");
+    const root = app.querySelector("#oge-root");
+    if (root) await mountOge(root, parts.slice(1));
     return;
   }
 

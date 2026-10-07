@@ -1136,6 +1136,15 @@ body.is-loading .site-footer {
   margin: 8px 0 28px;
 }
 
+.oge-trainers-block,
+.oge-bank-block {
+  margin: 18px 0 0;
+}
+
+.oge-trainers-block .lede {
+  margin-bottom: 12px;
+}
+
 .oge-trainer-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

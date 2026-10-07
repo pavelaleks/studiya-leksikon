@@ -188,9 +188,7 @@ export function homePage(content) {
     (a, s) => a + s.chapters.reduce((b, c) => b + c.rules.length, 0),
     0
   );
-  const ogeCount = (STUDIO.trainers || []).length;
-  const ogeWord =
-    ogeCount === 1 ? "тренажёр" : ogeCount >= 2 && ogeCount <= 4 ? "тренажёра" : "тренажёров";
+  const ogeTrainers = (STUDIO.trainers || []).length;
   return `
     <section class="landing-hero" aria-label="Студия Лексикон">
       <div class="landing-hero-copy">
@@ -434,7 +432,7 @@ export function homePage(content) {
           </header>
           <div class="landing-learn-links landing-learn-links-ru">
             <a href="#/ege"><strong>ЕГЭ</strong><span>Задания 1–27</span></a>
-            <a href="#/oge"><strong>ОГЭ</strong><span>${ogeCount} ${ogeWord}</span></a>
+            <a href="#/oge"><strong>ОГЭ</strong><span>Задания 1–13 · ${ogeTrainers} тренажёра</span></a>
             <a href="#/rules"><strong>Правила</strong><span>${ruleCount} ${ruleWord(ruleCount)}</span></a>
           </div>
         </article>
@@ -496,31 +494,7 @@ export function thanksPage() {
 }
 
 export function ogePage() {
-  const trainers = (STUDIO.trainers || [])
-    .map(
-      (t) => `
-      <a class="card oge-trainer-card" href="#/trainer/${escapeHtml(t.slug)}">
-        <span class="oge-trainer-tag">${escapeHtml(t.tag)}</span>
-        <strong>${escapeHtml(t.title)}</strong>
-        <span class="muted">${escapeHtml(t.blurb)}</span>
-        <span class="oge-trainer-go">Открыть →</span>
-      </a>`
-    )
-    .join("");
-  return `
-    <p class="crumbs"><a href="#/">← Студия</a></p>
-    <p class="eyebrow">Русский язык · ОГЭ</p>
-    <h1>ОГЭ по русскому</h1>
-    <p class="lede">Тренажёры: грамматическая основа, Н и НН, запятые при оборотах. Остальные задания добавим.</p>
-    <div class="oge-trainer-list">
-      ${trainers}
-    </div>
-    <div class="home-actions">
-      <a class="btn btn-lg secondary" href="#/ege">К заданиям ЕГЭ</a>
-      <a class="btn btn-lg secondary" href="#/rules">К правилам</a>
-      <a class="btn btn-lg secondary" href="#/">О студии</a>
-    </div>
-  `;
+  return `<div class="lit-page" id="oge-root"><p class="lede muted">Загружаем задания…</p></div>`;
 }
 
 export function literaturePage() {

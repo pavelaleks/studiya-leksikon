@@ -1,0 +1,297 @@
+{
+  "schema": 1,
+  "exam": "ОГЭ",
+  "subject": "русский язык",
+  "tasks": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13
+  ],
+  "fetchedAt": "2026-10-07",
+  "source": {
+    "site": "https://rus-oge.sdamgia.ru/",
+    "catalog": "https://rus-oge.sdamgia.ru/prob_catalog",
+    "name": "Решу ОГЭ",
+    "note": "Задания и пояснения собраны с rus-oge.sdamgia.ru для учебной базы студии «Лексикон». При размещении на сайте указывайте источник."
+  },
+  "howToUse": {
+    "index": "index.json — карточки без полных текстов: фильтр по номеру задания, теме, типу ответа, источнику, актуальности.",
+    "bank": "bank/oge-01.json … oge-13.json — полная локальная база номера. Сайт её не качает: карточка лежит в problems/NN/id.json, общий текст — в passages/id.json, порядок для «следующее» — в bank/oge-NN.order.json.",
+    "links": "links.json — какие задания делят один текст и какие входят в один вариант (testId источника).",
+    "rules": "rules/{id}.json — справочная статья к заданию. В карточке это ruleId и ruleUrl.",
+    "check": "answerMode=word: сравнивать answerNorm без пробелов, ё и е равны, годятся answerAlts. digits-any: цифры в любом порядке, эталон — answerNumbers или отсортированный answerNorm. digits-fixed: порядок цифр важен (соответствие, например задание 4). numbers: номера предложений, в том числе двузначные; если разобраны, они в answerNumbers, порядок не важен. essay и open: развёрнутый ответ (изложение 1, сочинение 13), ориентир в solutionHtml."
+  },
+  "answerModes": {
+    "word": "слово или несколько допустимых слов",
+    "digits-any": "номера, порядок не важен",
+    "digits-fixed": "последовательность цифр, порядок важен",
+    "numbers": "номера предложений, среди которых есть двузначные",
+    "essay": "сочинение",
+    "open": "развёрнутый ответ без краткого ключа"
+  },
+  "counts": {
+    "problems": 1146,
+    "withSolution": 1146,
+    "withAnswer": 992,
+    "withPassage": 641,
+    "withoutQuestion": 0,
+    "texts": 234,
+    "sharedTexts": 189,
+    "variants": 101,
+    "fullVariants": 0,
+    "rules": 0,
+    "duplicatesSkipped": 0,
+    "byAnswerMode": {
+      "essay": 154,
+      "digits-any": 644,
+      "digits-fixed": 80,
+      "word": 268
+    },
+    "byAnswerKind": {
+      "essay": 154,
+      "digits": 644,
+      "sequence": 80,
+      "short": 268
+    }
+  },
+  "files": [
+    {
+      "file": "bank/oge-01.json",
+      "id": "oge-01",
+      "task": 1,
+      "title": "Изложение",
+      "count": 45,
+      "passageCount": 45,
+      "topics": [
+        {
+          "id": 85,
+          "title": "Задания открытого банка ФИПИ часть 1",
+          "count": 18
+        },
+        {
+          "id": 100,
+          "title": "Задания открытого банка ФИПИ часть 2",
+          "count": 27
+        }
+      ]
+    },
+    {
+      "file": "bank/oge-02.json",
+      "id": "oge-02",
+      "task": 2,
+      "title": "Синтаксический анализ (грамматическая основа)",
+      "count": 80,
+      "passageCount": 80,
+      "topics": [
+        {
+          "id": 142,
+          "title": "Задания открытого банка ФИПИ",
+          "count": 80
+        }
+      ]
+    },
+    {
+      "file": "bank/oge-03.json",
+      "id": "oge-03",
+      "task": 3,
+      "title": "Синтаксический анализ предложений (характеристика предложений)",
+      "count": 80,
+      "passageCount": 80,
+      "topics": [
+        {
+          "id": 151,
+          "title": "Задания открытого банка ФИПИ",
+          "count": 80
+        }
+      ]
+    },
+    {
+      "file": "bank/oge-04.json",
+      "id": "oge-04",
+      "task": 4,
+      "title": "Пунктуационный анализ предложений (установление соответствий)",
+      "count": 80,
+      "passageCount": 0,
+      "topics": [
+        {
+          "id": 153,
+          "title": "Задания открытого банка ФИПИ",
+          "count": 80
+        }
+      ]
+    },
+    {
+      "file": "bank/oge-05.json",
+      "id": "oge-05",
+      "task": 5,
+      "title": "Пунктуационный анализ (предложение)",
+      "count": 76,
+      "passageCount": 0,
+      "topics": [
+        {
+          "id": 143,
+          "title": "Задания открытого банка ФИПИ",
+          "count": 76
+        }
+      ]
+    },
+    {
+      "file": "bank/oge-06.json",
+      "id": "oge-06",
+      "task": 6,
+      "title": "Орфографический анализ слов",
+      "count": 100,
+      "passageCount": 0,
+      "topics": [
+        {
+          "id": 145,
+          "title": "Задания открытого банка ФИПИ",
+          "count": 100
+        }
+      ]
+    },
+    {
+      "file": "bank/oge-07.json",
+      "id": "oge-07",
+      "task": 7,
+      "title": "Орфографический анализ слов (орфограммы в тексте)",
+      "count": 90,
+      "passageCount": 0,
+      "topics": [
+        {
+          "id": 154,
+          "title": "Задания открытого банка ФИПИ",
+          "count": 90
+        }
+      ]
+    },
+    {
+      "file": "bank/oge-08.json",
+      "id": "oge-08",
+      "task": 8,
+      "title": "Грамматические (морфологические) нормы",
+      "count": 90,
+      "passageCount": 0,
+      "topics": [
+        {
+          "id": 155,
+          "title": "Задания открытого банка ФИПИ",
+          "count": 90
+        }
+      ]
+    },
+    {
+      "file": "bank/oge-09.json",
+      "id": "oge-09",
+      "task": 9,
+      "title": "Грамматическая синонимия словосочетаний",
+      "count": 69,
+      "passageCount": 0,
+      "topics": [
+        {
+          "id": 160,
+          "title": "Задания открытого банка ФИПИ",
+          "count": 69
+        }
+      ]
+    },
+    {
+      "file": "bank/oge-10.json",
+      "id": "oge-10",
+      "task": 10,
+      "title": "Анализ содержания текста",
+      "count": 109,
+      "passageCount": 109,
+      "topics": [
+        {
+          "id": 19,
+          "title": "Задания открытого банка ФИПИ часть 1",
+          "count": 51
+        },
+        {
+          "id": 20,
+          "title": "Задания открытого банка ФИПИ часть 2",
+          "count": 58
+        }
+      ]
+    },
+    {
+      "file": "bank/oge-11.json",
+      "id": "oge-11",
+      "task": 11,
+      "title": "Анализ средств выразительности",
+      "count": 109,
+      "passageCount": 109,
+      "topics": [
+        {
+          "id": 136,
+          "title": "Задания открытого банка ФИПИ часть 1",
+          "count": 50
+        },
+        {
+          "id": 137,
+          "title": "Задания открытого банка ФИПИ часть 2",
+          "count": 59
+        }
+      ]
+    },
+    {
+      "file": "bank/oge-12.json",
+      "id": "oge-12",
+      "task": 12,
+      "title": "Лексический анализ",
+      "count": 109,
+      "passageCount": 109,
+      "topics": [
+        {
+          "id": 139,
+          "title": "Задания открытого банка ФИПИ часть 1",
+          "count": 50
+        },
+        {
+          "id": 138,
+          "title": "Задания открытого банка ФИПИ часть 2",
+          "count": 59
+        }
+      ]
+    },
+    {
+      "file": "bank/oge-13.json",
+      "id": "oge-13",
+      "task": 13,
+      "title": "Сочинение",
+      "count": 109,
+      "passageCount": 109,
+      "topics": [
+        {
+          "id": 159,
+          "title": "Задания открытого банка ФИПИ часть 1",
+          "count": 36
+        },
+        {
+          "id": 158,
+          "title": "Задания открытого банка ФИПИ часть 2",
+          "count": 37
+        },
+        {
+          "id": 157,
+          "title": "Задания открытого банка ФИПИ часть 3",
+          "count": 36
+        }
+      ]
+    }
+  ],
+  "mismatches": [],
+  "errors": [],
+  "weirdAnswers": []
+}

@@ -46,3 +46,52 @@ export function pickEgeVariant(list) {
   const pool = open.length ? open : list;
   return pool[Math.floor(Math.random() * pool.length)];
 }
+
+const OGE_KEY = "leksikon-oge-progress";
+
+function readOge() {
+  try {
+    return JSON.parse(localStorage.getItem(OGE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function writeOge(data) {
+  localStorage.setItem(OGE_KEY, JSON.stringify(data));
+}
+
+export function readOgeProgress() {
+  return readOge();
+}
+
+export function touchOge(ex, index) {
+  const p = readOge();
+  p.lastId = ex.id;
+  p.lastTask = ex.ogeTask;
+  p.lastIndex = index + 1;
+  writeOge(p);
+}
+
+export function markOgeDone(ex) {
+  const p = readOge();
+  p.done = p.done || {};
+  const k = String(ex.ogeTask);
+  const set = new Set(p.done[k] || []);
+  set.add(ex.id);
+  p.done[k] = [...set];
+  writeOge(p);
+}
+
+export function doneOgeIds(task) {
+  const p = readOge();
+  return new Set((p.done && p.done[String(task)]) || []);
+}
+
+export function pickOgeVariant(list) {
+  if (!list.length) return null;
+  const done = doneOgeIds(list[0].ogeTask);
+  const open = list.filter((x) => !done.has(x.id));
+  const pool = open.length ? open : list;
+  return pool[Math.floor(Math.random() * pool.length)];
+}

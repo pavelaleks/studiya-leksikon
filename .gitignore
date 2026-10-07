@@ -17,6 +17,9 @@ tools/ege_texts.py
 tools/__pycache__/
 tools/_sdamgia_cache/
 tools/_sdamgia_cache_rus/
+tools/_sdamgia_cache_oge/
+js/oge-data/bank/oge-??.json
+js/oge-data/index.json
 js/russian-data/bank/ege-??.json
 js/russian-data/index.json
 *.doc
