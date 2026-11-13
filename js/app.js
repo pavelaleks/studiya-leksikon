@@ -1,15 +1,17 @@
-import { layout } from "./ui.js?v=land59";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land57";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land60";
-import { mountLiterature } from "./literature.js?v=land59";
-import { mountRussian } from "./russian.js?v=land61";
-import { mountOge } from "./oge.js?v=land61";
-import { bindApplyForm } from "./apply.js?v=land46";
-import { EGE_TITLES } from "./ege.js?v=land57";
-import { renderExercise } from "./exercises.js?v=land46";
-import { mountTrainer } from "./trainers.js?v=land55";
-import { adminPage, bindAdmin } from "./admin.js?v=land46";
-import { parseRoute } from "./route.js?v=land52";
+import { layout } from "./ui.js?v=land63";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land63";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land63";
+import { mountLiterature } from "./literature.js?v=land63";
+import { mountRussian } from "./russian.js?v=land63";
+import { mountOge } from "./oge.js?v=land63";
+import { bindApplyForm } from "./apply.js?v=land63";
+import { EGE_TITLES } from "./ege.js?v=land63";
+import { renderExercise } from "./exercises.js?v=land63";
+import { mountTrainer } from "./trainers.js?v=land63";
+import { parseRoute } from "./route.js?v=land63";
+import { initAuth, onAuthChange } from "./supa.js";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js";
+import { mountTeacher, teacherPage } from "./teacher.js";
 
 const app = document.getElementById("app");
 let content = null;
@@ -247,9 +249,34 @@ async function render() {
   }
 
   if (a === "admin") {
-    mountHtml(adminPage(content), "admin");
-    bindAdmin(content, app);
-    setTitle("Модератор");
+    location.hash = "#/teacher";
+    return;
+  }
+
+  if (a === "login") {
+    mountHtml(loginPage(), "login");
+    bindLogin(app);
+    setTitle("Вход");
+    return;
+  }
+
+  if (a === "me") {
+    if (b === "password") {
+      mountHtml(passwordPage(), "me");
+      bindPassword(app);
+      setTitle("Новый пароль");
+      return;
+    }
+    mountHtml(mePage(), "me");
+    setTitle("Личный кабинет");
+    await mountMe(app);
+    return;
+  }
+
+  if (a === "teacher") {
+    mountHtml(teacherPage(), "teacher");
+    setTitle("Кабинет преподавателя");
+    await mountTeacher(app, parts.slice(1));
     return;
   }
 
@@ -258,6 +285,7 @@ async function render() {
 }
 
 window.addEventListener("hashchange", render);
+onAuthChange(() => render());
 
 app.addEventListener("click", (e) => {
   const link = e.target.closest('a[href^="#"]');
@@ -274,4 +302,6 @@ app.addEventListener("click", (e) => {
   }
 });
 
-render();
+initAuth()
+  .catch((err) => console.warn("auth", err))
+  .finally(render);

@@ -30,7 +30,8 @@ export async function loadContent() {
     loadJson("data/orthography.json"),
     loadJson("data/punctuation.json"),
     loadJson("data/stylistics.json"),
-    loadJson("data/exercises.json"),
+    // exercises.json собирается из зашифрованного bank.enc при публикации; локально его может не быть.
+    loadJson("data/exercises.json").catch(() => []),
   ]);
 
   const extra = overlay();

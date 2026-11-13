@@ -3,7 +3,6 @@ export const SITE = {
   subtitle: "Русский язык и литература",
   githubUser: "pavelaleks",
   repo: "studiya-leksikon",
-  adminPassword: "leksikon",
 };
 
 export const BASE = (() => {

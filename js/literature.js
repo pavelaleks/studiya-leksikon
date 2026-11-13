@@ -1,6 +1,13 @@
-import { BASE, studioTelegram } from "./config.js";
-import { iconTelegram } from "./icons.js";
+import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
+import { accessState, bankFull, bankList, clearBankCache } from "./supa.js";
+import { bindCheck, bindWritten, checkBlockHtml, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js";
+
+const SOURCE = "ege-lit";
+
+function bankId(file) {
+  return String(file).replace(/^bank\//, "").replace(/\.json$/i, "");
+}
 
 const MANIFEST_URL = new URL("js/literature-data/manifest.json", new URL(BASE, location.href));
 const TOPICS_URL = new URL("js/literature-data/ege-task-11-topics.json", new URL(BASE, location.href));
@@ -96,35 +103,16 @@ function listPath(file) {
 }
 
 async function loadList(file) {
-  const key = `list:${file}`;
-  if (bankCache.has(key)) return bankCache.get(key);
-  try {
-    const data = await loadJson(dataUrl(`js/literature-data/${listPath(file)}`));
-    bankCache.set(key, data);
-    return data;
-  } catch {
-    // запасной путь: полный банк, если list ещё не собран
-    return loadBank(file);
-  }
+  const problems = await bankList(SOURCE, bankId(file));
+  return { problems };
 }
 
 async function loadBank(file) {
-  if (bankCache.has(file)) return bankCache.get(file);
-  const pending = loadJson(dataUrl(`js/literature-data/${file}`)).then((data) => {
-    bankCache.set(file, data);
-    return data;
-  });
-  bankCache.set(file, pending);
-  try {
-    return await pending;
-  } catch (err) {
-    bankCache.delete(file);
-    throw err;
-  }
+  return bankFull(SOURCE, bankId(file));
 }
 
 function prefetchBank(file) {
-  if (!file || bankCache.has(file)) return;
+  if (!file) return;
   loadBank(file).catch(() => {});
 }
 
@@ -239,7 +227,7 @@ function hubHtml(manifest) {
             <span>${file.count} ${ru(file.count, "задание", "задания", "заданий")}</span>
             ${
               written
-                ? `<span class="lit-write-mark">${iconTelegram("msg-icon msg-icon-sm")} письменно</span>`
+                ? `<span class="lit-write-mark">письменно</span>`
                 : ""
             }
           </span>
@@ -262,7 +250,7 @@ function hubHtml(manifest) {
       <p class="crumbs"><a href="#/">← Студия</a></p>
       <p class="eyebrow">Литература · ЕГЭ</p>
       <h1>Задания 1–11</h1>
-      <p class="lede">Краткий ответ проверяется на сайте. Задания 4, 5, 9, 10 и 11 — в Telegram.</p>
+      <p class="lede">Краткий ответ проверяется на сайте. Задания 4, 5, 9, 10 и 11 сдаются на проверку в личный кабинет. Полный банк с разборами открыт ученикам студии.</p>
     </header>
     <div class="lit-tools">
       <a class="lit-tool-card" href="#/literature/terms">
@@ -305,6 +293,7 @@ function listHtml({ file, bank, mode }) {
           <span class="lit-item-body">
             <strong>${escapeHtml(cardTitle(problem))}</strong>
             <span>${escapeHtml(clip(decodeEntities(problem.questionText), 180))}</span>
+            ${problem._demo && accessState() !== "student" && accessState() !== "teacher" ? `<span class="demo-tag">демо</span>` : ""}
           </span>
         </a>`;
     })
@@ -316,7 +305,7 @@ function listHtml({ file, bank, mode }) {
   const head =
     mode === "extra"
       ? `<p class="eyebrow">Дополнительно</p><h1>${escapeHtml(file.title)}</h1>`
-      : `<p class="eyebrow">Задание ${task}</p><h1>${escapeHtml(title)}</h1><p class="lede">${escapeHtml(hint)}. ${file.count} ${ru(file.count, "задание", "задания", "заданий")}${written ? ". Ответ можно отправить в Telegram." : "."}</p>`;
+      : `<p class="eyebrow">Задание ${task}</p><h1>${escapeHtml(title)}</h1><p class="lede">${escapeHtml(hint)}. ${file.count} ${ru(file.count, "задание", "задания", "заданий")}${written ? ". Ответ сдаётся на проверку в личный кабинет." : "."}</p>`;
   const back =
     mode === "extra"
       ? `<p class="crumbs"><a href="#/literature">← К заданиям 1–11</a></p>`
@@ -335,6 +324,7 @@ function listHtml({ file, bank, mode }) {
       <p class="lit-search-status muted" id="lit-status" aria-live="polite"></p>
       ${topics ? `<div class="lit-topic-nav" aria-label="Темы">${topics}</div>` : ""}
     </header>
+    ${demoBannerHtml(file.count, (bank.problems || []).length)}
     <div class="lit-list" id="lit-list">${items}</div>
     ${sourceNote()}`;
 }
@@ -345,36 +335,9 @@ function passageLabel(problem) {
   return "Фрагмент";
 }
 
-function fitTelegramUrl(text) {
-  const tg = studioTelegram();
-  if (!tg.url) return "";
-  let body = text;
-  let url = `${tg.url}?text=${encodeURIComponent(body)}`;
-  while (url.length > 3900 && body.length > 180) {
-    body = `${body.slice(0, Math.floor(body.length * 0.82)).trim()}…`;
-    url = `${tg.url}?text=${encodeURIComponent(body)}`;
-  }
-  return url;
-}
-
-function telegramText(problem, answer, listHref) {
-  const lines = [
-    "Студия «Лексикон». ЕГЭ по литературе",
-    `Задание ${problem.task}, № ${problem.id}`,
-  ];
-  const who = workLine(problem);
-  if (who) lines.push(who);
-  const question = clip(problem.questionText, 700);
-  if (question) lines.push("", question);
-  lines.push("", "Ответ ученика:", String(answer || "").trim() || "(напишу в чате или пришлю фото)");
-  const link = `${location.origin}${location.pathname}${location.search}${listHref}`;
-  lines.push("", link);
-  return lines.join("\n");
-}
-
 function problemHtml({ file, bank, problem, index, total, mode }) {
   const task = problem.task;
-  const written = WRITTEN.has(task) && (problem.answerKind === "open" || problem.answerKind === "essay");
+  const written = problem.answerKind === "open" || problem.answerKind === "essay";
   const passage = problem.passageId ? bank.passages?.[problem.passageId] : null;
   const listHref = mode === "extra" ? `#/literature/archive/${file.id}` : `#/literature/${task}`;
   const prev = index > 0 ? bank.problems[index - 1] : null;
@@ -394,28 +357,8 @@ function problemHtml({ file, bank, problem, index, total, mode }) {
     ? `<section class="lit-passage"><p class="lit-kicker">${passageLabel(problem)}</p><div class="lit-html">${sanitizeHtml(passage.html)}</div></section>`
     : "";
   const answerBlock = written
-    ? `
-      <section class="lit-write">
-        <label for="lit-essay">Ваш ответ</label>
-        <textarea id="lit-essay" class="lit-essay" placeholder="Напишите ответ здесь — или оставьте поле пустым, если хотите прислать фото тетради."></textarea>
-        <button type="button" class="lit-send" id="lit-send">
-          ${iconTelegram("msg-icon msg-icon-lg")}
-          <span><strong>Отправить задание</strong><small>Откроется Telegram с текстом сообщения</small></span>
-        </button>
-        <p class="lit-send-hint muted">Фото приложите уже в чате Telegram: скрепка или кнопка вложения рядом с полем ввода.</p>
-        <p class="lit-send-status muted" id="lit-send-status" aria-live="polite"></p>
-      </section>`
-    : problem.answer
-      ? `
-      <section class="lit-check">
-        <label for="lit-answer">${escapeHtml(kindLabel)}</label>
-        <div class="lit-check-row">
-          <input id="lit-answer" class="search" type="text" autocomplete="off" placeholder="${problem.answerKind === "match" ? "Например: 243" : "Введите ответ"}" />
-          <button type="button" class="btn" id="lit-check">Проверить</button>
-        </div>
-        <p class="lit-result" id="lit-result" aria-live="polite"></p>
-      </section>`
-      : "";
+    ? writtenBlockHtml()
+    : checkBlockHtml({ label: kindLabel, placeholder: problem.answerKind === "match" ? "Например: 243" : "Введите ответ" });
   const nav = `
     <div class="lit-pager">
       ${prev ? `<a href="${hrefOf(prev)}">← Предыдущее</a>` : `<span></span>`}
@@ -429,7 +372,7 @@ function problemHtml({ file, bank, problem, index, total, mode }) {
     </p>
     ${mode === "extra" ? "" : taskNav(task)}
     <article class="lit-problem">
-      <p class="eyebrow">${escapeHtml(kindLabel)} · № ${problem.id}</p>
+      <p class="eyebrow">${escapeHtml(kindLabel)} · № ${problem.id}${problem._demo ? " · демо" : ""}</p>
       <h1>${escapeHtml(who || file.title)}</h1>
       <p class="lit-meta muted">${escapeHtml(decodeEntities(problem.topic || ""))}${
         problem.source ? ` · ${escapeHtml(decodeEntities(problem.source))}` : ""
@@ -437,11 +380,6 @@ function problemHtml({ file, bank, problem, index, total, mode }) {
       ${passageBlock}
       <section class="lit-question"><div class="lit-html">${sanitizeHtml(problem.questionHtml)}</div></section>
       ${answerBlock}
-      ${
-        problem.solutionHtml
-          ? `<details class="lit-solution"><summary>Пояснение</summary><div class="lit-html">${sanitizeHtml(problem.solutionHtml)}</div></details>`
-          : ""
-      }
       ${nav}
     </article>
     ${sourceNote()}`;
@@ -653,7 +591,7 @@ async function renderView(rest) {
     }
     const bank = await loadBank(file.file);
     const index = bank.problems.findIndex((p) => String(p.id) === String(c));
-    if (index < 0) return { html: missingHtml(), view: "missing", title: "Задание не найдено" };
+    if (index < 0) return { html: `<p class="crumbs"><a href="#/literature">← Литература</a></p>${gateHtml("#/literature")}`, view: "gate", title: "Только для учеников" };
     return {
       html: problemHtml({ file, bank, problem: bank.problems[index], index, total: bank.problems.length, mode: "extra" }),
       view: "problem",
@@ -676,7 +614,7 @@ async function renderView(rest) {
   }
   const bank = await loadBank(file.file);
   const index = bank.problems.findIndex((p) => String(p.id) === String(b));
-  if (index < 0) return { html: missingHtml(), view: "missing", title: "Задание не найдено" };
+  if (index < 0) return { html: `<p class="crumbs"><a href="#/literature">← Литература</a></p>${gateHtml("#/literature")}`, view: "gate", title: "Только для учеников" };
   const problem = bank.problems[index];
   return {
     html: problemHtml({ file, bank, problem, index, total: bank.problems.length, mode: "ege" }),
@@ -903,72 +841,12 @@ function bindList(root) {
   });
 }
 
-function answersMatch(problem, raw) {
-  const got = answerKey(raw);
-  if (!got) return false;
-  const keys = [problem.answerNorm, ...(problem.answerAlts || [])].filter(Boolean).map(answerKey);
-  if (problem.answerKind === "match") {
-    const digits = (s) => String(s).replace(/\D/g, "");
-    return keys.some((k) => digits(k) && digits(k) === digits(got));
-  }
-  return keys.some((k) => k === got);
-}
-
 function bindProblem(root, problem) {
-  const input = root.querySelector("#lit-answer");
-  const result = root.querySelector("#lit-result");
-  const check = root.querySelector("#lit-check");
-  const solution = root.querySelector(".lit-solution");
-  const run = () => {
-    if (!input || !result) return;
-    const value = input.value.trim();
-    if (!value) {
-      result.textContent = "Введите ответ.";
-      result.className = "lit-result";
-      return;
-    }
-    const ok = answersMatch(problem, value);
-    result.className = `lit-result ${ok ? "is-ok" : "is-bad"}`;
-    result.textContent = ok ? "Верно." : "Пока не совпало. Можно проверить формулировку или открыть пояснение.";
-    if (ok && solution) solution.open = true;
-  };
-  check?.addEventListener("click", run);
-  input?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      run();
-    }
-  });
-
-  const area = root.querySelector("#lit-essay");
-  const send = root.querySelector("#lit-send");
-  const status = root.querySelector("#lit-send-status");
-  const draftKey = `lit-draft-${problem.id}`;
-  if (area) {
-    try {
-      const saved = sessionStorage.getItem(draftKey);
-      if (saved) area.value = saved;
-    } catch {
-      /* ignore */
-    }
-    area.addEventListener("input", () => {
-      try {
-        sessionStorage.setItem(draftKey, area.value);
-      } catch {
-        /* ignore */
-      }
-    });
+  if (problem.answerKind === "open" || problem.answerKind === "essay") {
+    bindWritten(root, problem, { sanitize: sanitizeHtml, label: problem.answerKind === "essay" ? "Сочинение" : "Ваш ответ" });
+    return;
   }
-  send?.addEventListener("click", () => {
-    const href = `#/literature/${problem.task}/${problem.id}`;
-    const url = fitTelegramUrl(telegramText(problem, area?.value || "", href));
-    if (!url) {
-      if (status) status.textContent = "Telegram не настроен.";
-      return;
-    }
-    if (status) status.textContent = "Открываю Telegram. Нажмите «Отправить» в чате; фото добавьте скрепкой рядом с сообщением.";
-    window.open(url, "_blank", "noopener");
-  });
+  bindCheck(root, problem, { sanitize: sanitizeHtml });
 }
 
 function bindThemes(root) {
@@ -1048,6 +926,7 @@ export async function mountLiterature(host, rest = []) {
       topicsCache = null;
       termsCache = null;
       bankCache.clear();
+      clearBankCache();
       mountLiterature(host, rest);
     });
     console.error(err);

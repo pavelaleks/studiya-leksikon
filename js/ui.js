@@ -1,3 +1,12 @@
+import { accessState } from "./supa.js";
+
+function accountLink(active) {
+  const state = accessState();
+  if (state === "guest") return `<a href="#/login" class="nav-account ${active === "login" ? "active" : ""}">Войти</a>`;
+  if (state === "teacher") return `<a href="#/teacher" class="nav-account ${active === "teacher" ? "active" : ""}">Кабинет</a>`;
+  return `<a href="#/me" class="nav-account ${active === "me" ? "active" : ""}">Кабинет</a>`;
+}
+
 export function el(html) {
   const t = document.createElement("template");
   t.innerHTML = html.trim();
@@ -19,13 +28,15 @@ export function layout(content, active = "", { hideFooter = false } = {}) {
           <a href="#about">Программы</a>
           <a href="#teacher">Команда</a>
           <a href="#apply">Запись</a>
-          <a href="#learn">Материалы</a>`
+          <a href="#learn">Материалы</a>
+          ${accountLink(active)}`
     : `
           <a href="#/">Студия</a>
           <a href="#/rules" class="${active === "rules" ? "active" : ""}">Правила</a>
           <a href="#/ege" class="${active === "ege" ? "active" : ""}">ЕГЭ</a>
           <a href="#/oge" class="${active === "oge" ? "active" : ""}">ОГЭ</a>
-          <a href="#/literature" class="${active === "literature" ? "active" : ""}">Литература</a>`;
+          <a href="#/literature" class="${active === "literature" ? "active" : ""}">Литература</a>
+          ${accountLink(active)}`;
   return `
     <button type="button" class="skip-link">К содержанию</button>
     <header class="site-header">
@@ -54,7 +65,7 @@ export function layout(content, active = "", { hideFooter = false } = {}) {
           <span> (вход со стороны ул. Головина)</span>
         </p>
         <p class="footer-note">Русский язык и литература для 8–11 классов. Очно и онлайн.</p>
-        <p class="footer-admin"><a href="#/admin">Модератору</a></p>
+        <p class="footer-admin"><a href="#/teacher">Преподавателю</a></p>
       </div>
     </footer>`
     }

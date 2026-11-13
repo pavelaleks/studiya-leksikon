@@ -1,7 +1,10 @@
-import { BASE, studioTelegram } from "./config.js";
-import { iconTelegram } from "./icons.js";
+import { BASE } from "./config.js";
 import { doneIds, markEgeDone, pickEgeVariant, readProgress, touchEge } from "./progress.js";
 import { escapeHtml } from "./ui.js";
+import { accessState, bankList, bankProblem, clearBankCache } from "./supa.js";
+import { bindCheck, bindWritten, checkBlockHtml, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js";
+
+const SOURCE = "ege-rus";
 
 const DATA_VER = "rus3";
 const MANIFEST_URL = new URL("js/russian-data/manifest.json", new URL(BASE, location.href));
@@ -64,11 +67,8 @@ function listPath(file) {
 }
 
 async function loadList(file) {
-  const key = `list:${file}`;
-  if (bankCache.has(key)) return bankCache.get(key);
-  const data = await loadJson(dataUrl(`js/russian-data/${listPath(file)}`).toString());
-  bankCache.set(key, data);
-  return data;
+  const problems = await bankList(SOURCE, bankId(file));
+  return { problems };
 }
 
 function orderPath(file) {
@@ -76,35 +76,12 @@ function orderPath(file) {
 }
 
 async function loadOrder(file) {
-  const key = `order:${file}`;
-  if (bankCache.has(key)) return bankCache.get(key);
-  const data = await loadJson(dataUrl(`js/russian-data/${orderPath(file)}`).toString());
-  bankCache.set(key, data);
-  return data;
+  const list = await bankList(SOURCE, bankId(file));
+  return list.map((p) => p.id);
 }
 
-async function loadCached(key, path) {
-  if (bankCache.has(key)) return bankCache.get(key);
-  const pending = loadJson(dataUrl(path).toString()).then((data) => {
-    bankCache.set(key, data);
-    return data;
-  });
-  bankCache.set(key, pending);
-  try {
-    return await pending;
-  } catch (err) {
-    bankCache.delete(key);
-    throw err;
-  }
-}
-
-function loadProblem(task, id) {
-  const nn = String(task).padStart(2, "0");
-  return loadCached(`problem:${id}`, `js/russian-data/problems/${nn}/${id}.json`);
-}
-
-function loadPassage(id) {
-  return loadCached(`passage:${id}`, `js/russian-data/passages/${id}.json`);
+function bankId(file) {
+  return String(file).replace(/^bank\//, "").replace(/\.json$/i, "");
 }
 
 function taskFiles(manifest) {
@@ -217,7 +194,7 @@ function hubHtml(manifest) {
             ${solved ? `<span>решено ${solved}</span>` : ""}
             ${
               essay
-                ? `<span class="lit-write-mark">${iconTelegram("msg-icon msg-icon-sm")} в Telegram</span>`
+                ? `<span class="lit-write-mark">письменно</span>`
                 : ""
             }
           </span>
@@ -229,7 +206,7 @@ function hubHtml(manifest) {
       <p class="crumbs"><a href="#/">← Студия</a></p>
       <p class="eyebrow">Русский язык · ЕГЭ</p>
       <h1>Задания 1–27</h1>
-      <p class="lede">Краткий ответ проверяется на сайте. Задание 27 — сочинение в Telegram.</p>
+      <p class="lede">Краткий ответ проверяется на сайте. Задание 27 — сочинение сдаётся на проверку в личный кабинет. Полный банк с разборами открыт ученикам студии.</p>
       ${continueLink()}
     </header>
     <div class="lit-task-grid">${cards}</div>
@@ -258,6 +235,7 @@ function listHtml({ file, bank }) {
           <span class="lit-item-body">
             <strong>${escapeHtml(q)}</strong>
             ${problem.topic ? `<span>${escapeHtml(problem.topic)}</span>` : ""}
+            ${problem._demo && accessState() !== "student" && accessState() !== "teacher" ? `<span class="demo-tag">демо</span>` : ""}
           </span>
         </a>`;
     })
@@ -266,7 +244,7 @@ function listHtml({ file, bank }) {
     <p class="crumbs"><a href="#/ege">← К заданиям 1–27</a></p>
     ${taskNav(task)}
     <header class="lit-head">
-      <p class="eyebrow">Задание ${task} · ${file.count} ${ru(file.count, "задание", "задания", "заданий")}${essay ? " · в Telegram" : ""}</p>
+      <p class="eyebrow">Задание ${task} · ${file.count} ${ru(file.count, "задание", "задания", "заданий")}${essay ? " · письменно" : ""}</p>
       <h1>${escapeHtml(file.title)}</h1>
       <div class="lit-toolbar">
         <label class="lit-search-wrap" for="rus-q">
@@ -278,6 +256,7 @@ function listHtml({ file, bank }) {
       <p class="lit-search-status muted" id="rus-status" aria-live="polite"></p>
       ${topics ? `<div class="lit-topic-nav" aria-label="Подборки">${topics}</div>` : ""}
     </header>
+    ${demoBannerHtml(file.count, (bank.problems || []).length)}
     <div class="lit-list" id="rus-list">${items}</div>
     ${sourceNote()}`;
 }
@@ -301,33 +280,6 @@ function sourceLine(problem) {
   return titles.slice(0, 2).join("; ");
 }
 
-function fitTelegramUrl(text) {
-  const tg = studioTelegram();
-  if (!tg.url) return "";
-  let body = text;
-  let url = `${tg.url}?text=${encodeURIComponent(body)}`;
-  while (url.length > 3900 && body.length > 180) {
-    body = `${body.slice(0, Math.floor(body.length * 0.82)).trim()}…`;
-    url = `${tg.url}?text=${encodeURIComponent(body)}`;
-  }
-  return url;
-}
-
-function telegramText(problem, answer) {
-  const lines = [
-    "Студия «Лексикон». ЕГЭ по русскому языку",
-    `Задание ${problem.task}, № ${problem.id}`,
-  ];
-  const source = sourceLine(problem);
-  if (source) lines.push(source);
-  const question = clip(problem.questionText, 500);
-  if (question) lines.push("", question);
-  lines.push("", "Сочинение:", String(answer || "").trim() || "(напишу в чате или пришлю фото тетради)");
-  const link = `${location.origin}${location.pathname}${location.search}#/ege/${problem.task}/${problem.id}`;
-  lines.push("", link);
-  return lines.join("\n");
-}
-
 function problemHtml({ file, problem, passage, index, total, prevId, nextId }) {
   const task = problem.task;
   const essay = problem.answerMode === "essay" || problem.answerKind === "essay";
@@ -340,28 +292,8 @@ function problemHtml({ file, problem, passage, index, total, prevId, nextId }) {
     ? `<section class="lit-passage"><p class="lit-kicker">${essay ? "Исходный текст" : "Текст"}</p><div class="lit-html">${sanitizeHtml(passage.html)}</div></section>`
     : "";
   const answerBlock = essay
-    ? `
-      <section class="lit-write">
-        <label for="rus-essay">Сочинение</label>
-        <textarea id="rus-essay" class="lit-essay" placeholder="Напишите сочинение здесь — или оставьте поле пустым, если хотите прислать фото тетради."></textarea>
-        <button type="button" class="lit-send" id="rus-send">
-          ${iconTelegram("msg-icon msg-icon-lg")}
-          <span><strong>Отправить сочинение</strong><small>Откроется Telegram с текстом сообщения</small></span>
-        </button>
-        <p class="lit-send-hint muted">Фото приложите уже в чате Telegram: скрепка или кнопка вложения рядом с полем ввода.</p>
-        <p class="lit-send-status muted" id="rus-send-status" aria-live="polite"></p>
-      </section>`
-    : problem.answer
-      ? `
-      <section class="lit-check">
-        <label for="rus-answer">${escapeHtml(label)}</label>
-        <div class="lit-check-row">
-          <input id="rus-answer" class="search" type="text" autocomplete="off" ${numeric ? 'inputmode="numeric"' : ""} placeholder="${escapeHtml(placeholder(problem))}" />
-          <button type="button" class="btn" id="rus-check">Проверить</button>
-        </div>
-        <p class="lit-result" id="rus-result" aria-live="polite"></p>
-      </section>`
-      : "";
+    ? writtenBlockHtml()
+    : checkBlockHtml({ label, placeholder: placeholder(problem), numeric });
   const where = sourceLine(problem);
   return `
     <p class="crumbs">
@@ -370,17 +302,12 @@ function problemHtml({ file, problem, passage, index, total, prevId, nextId }) {
     </p>
     ${taskNav(task)}
     <article class="lit-problem">
-      <p class="eyebrow">${escapeHtml(label)} · № ${problem.id}</p>
+      <p class="eyebrow">${escapeHtml(label)} · № ${problem.id}${problem._demo ? " · демо" : ""}</p>
       <h1>${escapeHtml(file.title)}</h1>
       ${where ? `<p class="lit-meta muted">${escapeHtml(where)}</p>` : ""}
       ${passageBlock}
       <section class="lit-question"><div class="lit-html">${sanitizeHtml(problem.questionHtml)}</div></section>
       ${answerBlock}
-      ${
-        problem.solutionHtml
-          ? `<details class="lit-solution"><summary>Пояснение</summary><div class="lit-html">${sanitizeHtml(problem.solutionHtml)}</div></details>`
-          : ""
-      }
       <div class="lit-pager">
         ${prev ? `<a href="${hrefOf(prev)}">← Предыдущее</a>` : `<span></span>`}
         <span class="muted">${index + 1} из ${total}</span>
@@ -392,88 +319,6 @@ function problemHtml({ file, problem, passage, index, total, prevId, nextId }) {
 
 function missingHtml() {
   return `<div class="empty">Такого задания нет. <a href="#/ege">К заданиям 1–27</a></div>`;
-}
-
-function normWord(value) {
-  return String(value ?? "")
-    .trim()
-    .toLowerCase()
-    .replaceAll("ё", "е")
-    .replace(/[«»"]/g, "")
-    .replace(/[–—]/g, "-")
-    .replace(/\s+/g, "")
-    .replace(/[.,;:]+$/g, "");
-}
-
-function digitsOf(value) {
-  return String(value ?? "").replace(/\D/g, "");
-}
-
-function canCover(digits, numbers) {
-  function walk(rest, pool) {
-    if (!rest) return pool.length === 0;
-    if (!pool.length) return false;
-    for (let i = 0; i < pool.length; i += 1) {
-      const token = String(pool[i]);
-      if (!rest.startsWith(token)) continue;
-      const next = pool.slice(0, i).concat(pool.slice(i + 1));
-      if (walk(rest.slice(token.length), next)) return true;
-    }
-    return false;
-  }
-  return walk(digits, [...numbers]);
-}
-
-function sameNumbers(raw, expected) {
-  const exp = [...expected].filter((n) => Number.isInteger(n) && n > 0).sort((a, b) => a - b);
-  if (!exp.length) return false;
-  const text = String(raw ?? "").trim();
-  if (/[\s,;]/.test(text)) {
-    const got = text
-      .split(/[\s,;]+/)
-      .filter(Boolean)
-      .map((part) => Number(part))
-      .filter((n) => Number.isInteger(n) && n > 0)
-      .sort((a, b) => a - b);
-    return got.length === exp.length && got.every((n, i) => n === exp[i]);
-  }
-  const digits = digitsOf(text);
-  if (!digits) return false;
-  if (exp.every((n) => n < 10)) {
-    const got = [...digits].map(Number).sort((a, b) => a - b);
-    return got.length === exp.length && got.every((n, i) => n === exp[i]);
-  }
-  return canCover(digits, exp);
-}
-
-function answersMatch(problem, raw) {
-  const mode = problem.answerMode;
-  if (mode === "word") {
-    const got = normWord(raw);
-    if (!got) return false;
-    const keys = [problem.answerNorm, ...(problem.answerAlts || [])].map(normWord).filter(Boolean);
-    return keys.some((key) => key === got);
-  }
-  if (mode === "digits-fixed") {
-    const got = digitsOf(raw);
-    if (!got) return false;
-    const keys = [problem.answerNorm, problem.answer, ...(problem.answerAlts || [])].map(digitsOf).filter(Boolean);
-    return keys.some((key) => key === got);
-  }
-  if (mode === "digits-any") {
-    const got = [...digitsOf(raw)].sort().join("");
-    const normDigits = problem.answerNorm || [...digitsOf(problem.answer || "")].sort().join("");
-    return Boolean(got) && got === normDigits;
-  }
-  if (mode === "numbers") {
-    if (Array.isArray(problem.answerNumbers) && problem.answerNumbers.length) {
-      return sameNumbers(raw, problem.answerNumbers);
-    }
-    const got = digitsOf(raw);
-    const keys = [problem.answer, problem.answerNorm, ...(problem.answerAlts || [])].map(digitsOf).filter(Boolean);
-    return Boolean(got) && keys.some((key) => key === got);
-  }
-  return false;
 }
 
 function bindList(root) {
@@ -508,61 +353,14 @@ function bindList(root) {
 
 function bindProblem(root, problem, index) {
   touchEge({ id: problem.id, egeTask: problem.task }, index);
-  const input = root.querySelector("#rus-answer");
-  const result = root.querySelector("#rus-result");
-  const check = root.querySelector("#rus-check");
-  const solution = root.querySelector(".lit-solution");
-  const run = () => {
-    if (!input || !result) return;
-    const value = input.value.trim();
-    if (!value) {
-      result.textContent = "Введите ответ.";
-      result.className = "lit-result";
-      return;
-    }
-    const ok = answersMatch(problem, value);
-    result.className = `lit-result ${ok ? "is-ok" : "is-bad"}`;
-    result.textContent = ok ? "Верно." : "Пока не совпало. Можно проверить запись или открыть пояснение.";
-    if (ok) {
-      markEgeDone({ id: problem.id, egeTask: problem.task });
-      if (solution) solution.open = true;
-    }
-  };
-  check?.addEventListener("click", run);
-  input?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      run();
-    }
-  });
-
-  const area = root.querySelector("#rus-essay");
-  const send = root.querySelector("#rus-send");
-  const status = root.querySelector("#rus-send-status");
-  const draftKey = `rus-draft-${problem.id}`;
-  if (area) {
-    try {
-      const saved = sessionStorage.getItem(draftKey);
-      if (saved) area.value = saved;
-    } catch {
-      /* черновик необязателен */
-    }
-    area.addEventListener("input", () => {
-      try {
-        sessionStorage.setItem(draftKey, area.value);
-      } catch {
-        /* хранилище может быть закрыто */
-      }
-    });
+  const essay = problem.answerMode === "essay" || problem.answerKind === "essay";
+  if (essay) {
+    bindWritten(root, problem, { sanitize: sanitizeHtml, label: "Сочинение" });
+    return;
   }
-  send?.addEventListener("click", () => {
-    const url = fitTelegramUrl(telegramText(problem, area?.value || ""));
-    if (!url) {
-      if (status) status.textContent = "Telegram не настроен.";
-      return;
-    }
-    if (status) status.textContent = "Открываю Telegram. Нажмите «Отправить» в чате; фото добавьте скрепкой рядом с сообщением.";
-    window.open(url, "_blank", "noopener");
+  bindCheck(root, problem, {
+    sanitize: sanitizeHtml,
+    onCorrect: () => markEgeDone({ id: problem.id, egeTask: problem.task }),
   });
 }
 
@@ -585,10 +383,13 @@ async function renderView(rest) {
     const list = await loadList(file.file);
     return { html: listHtml({ file, bank: list }), view: "list", title: `Задание ${task}. ${file.title}` };
   }
-  const [ids, problem] = await Promise.all([loadOrder(file.file), loadProblem(task, b)]);
-  const index = ids.findIndex((id) => String(id) === String(b));
-  if (index < 0) return { html: missingHtml(), view: "missing", title: "Задание не найдено" };
-  const passage = problem.passageId ? await loadPassage(problem.passageId) : null;
+  const [ids, found] = await Promise.all([loadOrder(file.file), bankProblem(SOURCE, b)]);
+  if (!found) {
+    return { html: `<p class="crumbs"><a href="#/ege/${task}">← Задание ${task}</a></p>${gateHtml(`#/ege/${task}`)}`, view: "gate", title: "Только для учеников" };
+  }
+  const { problem, passage } = found;
+  let index = ids.findIndex((id) => String(id) === String(b));
+  if (index < 0) index = 0;
   return {
     html: problemHtml({
       file,
@@ -623,6 +424,7 @@ export async function mountRussian(host, rest = []) {
     host.querySelector("#rus-retry")?.addEventListener("click", () => {
       manifestCache = null;
       bankCache.clear();
+      clearBankCache();
       mountRussian(host, rest);
     });
     console.error(err);
