@@ -1,9 +1,9 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land73";
+import { taskHref } from "./account.js?v=land74";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land73";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land74";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */

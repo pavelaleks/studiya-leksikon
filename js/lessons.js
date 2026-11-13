@@ -5,10 +5,13 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land73";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land73";
-import { SOURCES, bankFiles } from "./teacher.js?v=land73";
+import { taskHref } from "./account.js?v=land74";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land74";
+import { SOURCES, bankFiles } from "./teacher.js?v=land74";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
+import {
+  EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
+} from "./exams.js?v=land74";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -104,60 +107,194 @@ export function sanitizeFor(source) {
 /* ПРЕПОДАВАТЕЛЬ                                                        */
 /* ================================================================== */
 
+export const WORK_KIND = { lesson: "Занятие", test: "Контрольная работа", exam: "Пробный экзамен" };
+const SHOW_RESULTS = { after_finish: "сразу после сдачи", manual: "когда я открою" };
+
+function targetPickerHtml(groups, students, { groupId = "", picked = new Set() } = {}) {
+  return `
+    <label>Группа<select name="group_id"><option value="">— без группы —</option>${(groups || [])
+      .map((g) => `<option value="${g.id}" ${g.id === groupId ? "selected" : ""}>${escapeHtml(g.title)}</option>`)
+      .join("")}</select></label>
+    <details class="l-pick" ${picked.size ? "open" : ""}>
+      <summary>Отдельные ученики <span class="muted" data-pick-count>${picked.size ? `· выбрано ${picked.size}` : "(можно вместе с группой)"}</span></summary>
+      <div class="l-pick-list">${(students || [])
+        .map(
+          (s) => `<label class="t-inline"><input type="checkbox" name="student" value="${s.id}" ${picked.has(s.id) ? "checked" : ""}/> ${escapeHtml(s.full_name || s.email)}</label>`
+        )
+        .join("") || '<span class="muted">Нет подтверждённых учеников.</span>'}</div>
+    </details>`;
+}
+
+function bindPicker(form) {
+  const count = form.querySelector("[data-pick-count]");
+  form.querySelectorAll('input[name="student"]').forEach((cb) =>
+    cb.addEventListener("change", () => {
+      const n = form.querySelectorAll('input[name="student"]:checked').length;
+      if (count) count.textContent = n ? `· выбрано ${n}` : "(можно вместе с группой)";
+    })
+  );
+}
+
+const pickedStudents = (form) => [...form.querySelectorAll('input[name="student"]:checked')].map((c) => c.value);
+
+async function groupMemberIds(groupId) {
+  if (!groupId) return [];
+  const { data } = await supa.from("group_members").select("student_id").eq("group_id", groupId);
+  return (data || []).map((r) => r.student_id);
+}
+
+async function insertItems(lessonId, tasks, opts, startPos = 0) {
+  let pos = startPos;
+  const rows = tasks.map((t) => ({
+    lesson_id: lessonId,
+    task_id: t.id,
+    position: ++pos,
+    kind: opts.kind,
+    reveal: opts.kind === "test" ? "after_due" : TEACHER_CHECKED.has(t.answer_mode) && opts.reveal === "after_correct" ? "after_review" : opts.reveal,
+    attempts_limit: opts.kind === "test" || TEACHER_CHECKED.has(t.answer_mode) ? null : opts.attempts,
+    due_at: opts.due || null,
+    hidden: Boolean(opts.hidden),
+  }));
+  if (!rows.length) return 0;
+  const { error } = await supa.from("lesson_items").insert(rows);
+  if (error) throw humanError(error);
+  return rows.length;
+}
+
 export async function lessonsListView(host, render) {
-  const [{ data: lessons, error }, { data: groups }, { data: students }, { data: items }] = await Promise.all([
+  const [{ data: lessons, error }, { data: groups }, { data: students }, { data: items }, { data: assignees }] = await Promise.all([
     supa
       .from("lessons")
-      .select("id, title, status, starts_at, created_at, group_id, student_id, groups(title), profiles(full_name, email)")
+      .select("id, title, status, kind, exam_code, duration_minutes, starts_at, created_at, group_id, student_id, groups(title), profiles(full_name, email)")
       .order("starts_at", { ascending: false, nullsFirst: true })
       .order("created_at", { ascending: false }),
     supa.from("groups").select("id, title").eq("archived", false).order("title"),
     supa.from("profiles").select("id, full_name, email").neq("role", "teacher").eq("status", "active").order("full_name"),
     supa.from("lesson_items").select("lesson_id"),
+    supa.from("lesson_assignees").select("lesson_id"),
   ]);
   if (error) throw humanError(error);
   const count = (id) => (items || []).filter((i) => i.lesson_id === id).length;
+  const extra = (id) => (assignees || []).filter((a) => a.lesson_id === id).length;
   const rows = (lessons || [])
-    .map(
-      (l) => `
+    .map((l) => {
+      const who = [l.groups?.title ? `группа «${l.groups.title}»` : "", l.profiles?.full_name || l.profiles?.email || "", extra(l.id) ? `${extra(l.id)} уч.` : ""]
+        .filter(Boolean)
+        .join(" + ");
+      return `
       <a class="lit-item" href="#/cabinet/lesson/${l.id}">
         <span class="lit-item-n">${count(l.id)}</span>
         <span class="lit-item-body">
           <strong>${escapeHtml(l.title)}</strong>
-          <span>${escapeHtml(l.groups?.title || l.profiles?.full_name || l.profiles?.email || "")}${l.starts_at ? ` · ${fmtDT(l.starts_at)}` : ""}</span>
+          <span>${escapeHtml(WORK_KIND[l.kind] || "Занятие")}${l.duration_minutes ? ` · ${durationText(l.duration_minutes)}` : ""} · ${escapeHtml(who || "никому не назначено")}${l.starts_at ? ` · ${fmtDT(l.starts_at)}` : ""}</span>
           <span class="lesson-status lesson-${l.status}">${LESSON_STATUS[l.status]}</span>
         </span>
-      </a>`
-    )
+      </a>`;
+    })
     .join("");
-  const groupOpts = (groups || []).map((g) => `<option value="g:${g.id}">Группа: ${escapeHtml(g.title)}</option>`).join("");
-  const studentOpts = (students || [])
-    .map((s) => `<option value="s:${s.id}">Ученик: ${escapeHtml(s.full_name || s.email)}</option>`)
-    .join("");
+  const examOpts = Object.entries(EXAMS).map(([k, v]) => `<option value="${k}">${escapeHtml(v.title)} — ${durationText(v.minutes)}</option>`).join("");
   render(`
-    <h1>Занятия</h1>
-    <form id="l-new" class="card t-filter">
-      <label>Тема занятия<input name="title" required placeholder="Задание 16: запятые при однородных членах" /></label>
-      <label>Для кого<select name="target" required><option value="">— выберите —</option>${groupOpts}${studentOpts}</select></label>
-      <label>Когда<input type="datetime-local" name="starts_at" /></label>
-      <button class="btn" type="submit">Создать занятие</button>
+    <h1>Занятия и работы</h1>
+    <form id="l-new" class="card stack l-new">
+      <div class="grid-2">
+        <label>Вид работы<select name="kind">${Object.entries(WORK_KIND).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label>
+        <label>Название<input name="title" placeholder="Задание 16: запятые при однородных членах" /></label>
+      </div>
+      <div class="grid-2" data-for="exam" hidden>
+        <label>Экзамен<select name="exam_code">${examOpts}</select></label>
+        <label class="t-inline"><input type="checkbox" name="compose" checked /> сразу собрать полный вариант (задания по одному тексту — вместе)</label>
+      </div>
+      <p class="muted" data-for="exam" hidden id="l-exam-note"></p>
+      <div class="grid-2" data-for="timed" hidden>
+        <label>Время на работу, мин<input type="number" name="duration" min="5" max="600" placeholder="без ограничения" /></label>
+        <label>Результат ученику<select name="show_results">${Object.entries(SHOW_RESULTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label>
+      </div>
+      ${targetPickerHtml(groups, students)}
+      <div class="grid-2">
+        <label>Когда (открыть с)<input type="datetime-local" name="starts_at" /></label>
+        <label data-for="timed" hidden>Начать можно до<input type="datetime-local" name="closes_at" /></label>
+      </div>
+      <button class="btn" type="submit">Создать</button>
+      <p class="lit-result" id="l-new-status"></p>
     </form>
-    ${!groupOpts && !studentOpts ? `<p class="muted">Сначала создайте группу или подтвердите ученика — занятие привязывается к группе или к одному ученику.</p>` : ""}
-    <p class="muted">Новое занятие — черновик: ученики увидят его, когда вы нажмёте «Открыть ученикам».</p>
-    <div class="lit-list">${rows || '<p class="muted">Занятий пока нет.</p>'}</div>`);
-  host.querySelector("#l-new").addEventListener("submit", async (e) => {
+    <p class="muted">Новая работа — черновик: ученики увидят её, когда вы нажмёте «Открыть ученикам».</p>
+    <div class="lit-list">${rows || '<p class="muted">Пока ничего нет.</p>'}</div>`);
+
+  const form = host.querySelector("#l-new");
+  bindPicker(form);
+  const kindSel = form.querySelector('[name="kind"]');
+  const examSel = form.querySelector('[name="exam_code"]');
+  const dur = form.querySelector('[name="duration"]');
+  const sync = () => {
+    const kind = kindSel.value;
+    form.querySelectorAll('[data-for="exam"]').forEach((el) => (el.hidden = kind !== "exam"));
+    form.querySelectorAll('[data-for="timed"]').forEach((el) => (el.hidden = kind === "lesson"));
+    if (kind === "exam") {
+      const ex = EXAMS[examSel.value];
+      dur.value = ex.minutes;
+      form.querySelector("#l-exam-note").textContent = `Время по умолчанию: ${ex.note}. Задания: ${ex.numbers[0]}–${ex.numbers.at(-1)}.`;
+      form.querySelector('[name="title"]').placeholder = `Пробный ${ex.title}`;
+    } else if (kind === "test") {
+      if (!dur.value || Object.values(EXAMS).some((x) => String(x.minutes) === dur.value)) dur.value = 45;
+      form.querySelector('[name="title"]').placeholder = "Контрольная: пунктуация";
+    } else {
+      dur.value = "";
+    }
+  };
+  kindSel.addEventListener("change", sync);
+  examSel.addEventListener("change", sync);
+  sync();
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const f = new FormData(e.target);
-    const [kind, id] = String(f.get("target")).split(":");
-    const row = {
-      title: String(f.get("title")).trim(),
-      starts_at: fromLocalInput(f.get("starts_at")),
-      group_id: kind === "g" ? id : null,
-      student_id: kind === "s" ? id : null,
-    };
-    const { data, error: err } = await supa.from("lessons").insert(row).select("id").single();
-    if (err) return alert(humanError(err).message);
-    location.hash = `#/cabinet/lesson/${data.id}`;
+    const f = new FormData(form);
+    const st = form.querySelector("#l-new-status");
+    const kind = f.get("kind");
+    const groupId = f.get("group_id") || null;
+    const picked = pickedStudents(form);
+    if (!groupId && !picked.length) {
+      st.className = "lit-result is-bad";
+      st.textContent = "Выберите группу и/или отдельных учеников.";
+      return;
+    }
+    const code = kind === "exam" ? f.get("exam_code") : null;
+    const title = String(f.get("title") || "").trim() || (code ? `Пробный ${EXAMS[code].title}` : kind === "test" ? "Контрольная работа" : "Занятие");
+    const btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    st.className = "lit-result";
+    st.textContent = "Создаём…";
+    try {
+      const { data: lesson, error: err } = await supa
+        .from("lessons")
+        .insert({
+          title,
+          kind,
+          exam_code: code,
+          duration_minutes: kind === "lesson" ? null : Number(f.get("duration")) || null,
+          show_results: f.get("show_results") || "manual",
+          starts_at: fromLocalInput(f.get("starts_at")),
+          closes_at: kind === "lesson" ? null : fromLocalInput(f.get("closes_at")),
+          group_id: groupId,
+        })
+        .select("id")
+        .single();
+      if (err) throw humanError(err);
+      if (picked.length) {
+        const { error: e2 } = await supa.from("lesson_assignees").insert(picked.map((sid) => ({ lesson_id: lesson.id, student_id: sid })));
+        if (e2) throw humanError(e2);
+      }
+      if (code && f.get("compose")) {
+        st.textContent = "Собираем вариант…";
+        const roster = [...new Set([...(await groupMemberIds(groupId)), ...picked])];
+        const tasks = await composeVariant(code, roster);
+        await insertItems(lesson.id, tasks, { kind: "test" });
+      }
+      location.hash = `#/cabinet/lesson/${lesson.id}`;
+    } catch (err) {
+      st.className = "lit-result is-bad";
+      st.textContent = err.message;
+      btn.disabled = false;
+    }
   });
 }
 
@@ -169,21 +306,25 @@ async function loadLesson(id) {
     .maybeSingle();
   if (error) throw humanError(error);
   if (!lesson) return null;
-  const [{ data: items }, roster] = await Promise.all([
+  const [{ data: items }, members, { data: assignees }, { data: sessions }] = await Promise.all([
     supa
       .from("lesson_items")
-      .select("*, tasks(id, source, bank_file, source_ref, task_no, topic, answer_mode, list_item, is_published)")
+      .select("*, tasks(id, source, bank_file, source_ref, task_no, topic, answer_mode, list_item, is_published, passage_id)")
       .eq("lesson_id", id)
       .order("position")
       .order("added_at"),
     lesson.group_id
       ? supa.from("group_members").select("student_id, profiles(full_name, email)").eq("group_id", lesson.group_id)
-      : Promise.resolve({ data: [{ student_id: lesson.student_id, profiles: lesson.profiles }] }),
+      : Promise.resolve({ data: [] }),
+    supa.from("lesson_assignees").select("student_id, profiles(full_name, email)").eq("lesson_id", id),
+    supa.from("exam_sessions").select("*").eq("lesson_id", id),
   ]);
-  const students = (roster.data || [])
-    .map((m) => ({ id: m.student_id, name: m.profiles?.full_name || m.profiles?.email || "ученик" }))
-    .sort((a, b) => a.name.localeCompare(b.name, "ru"));
-  return { lesson, items: items || [], students };
+  const map = new Map();
+  [...(members.data || []), ...(assignees || []), ...(lesson.student_id ? [{ student_id: lesson.student_id, profiles: lesson.profiles }] : [])].forEach((m) =>
+    map.set(m.student_id, { id: m.student_id, name: m.profiles?.full_name || m.profiles?.email || "ученик", extra: (assignees || []).some((a) => a.student_id === m.student_id) })
+  );
+  const students = [...map.values()].sort((a, b) => a.name.localeCompare(b.name, "ru"));
+  return { lesson, items: items || [], students, assigneeIds: new Set((assignees || []).map((a) => a.student_id)), sessions: sessions || [] };
 }
 
 async function loadBoard(items) {
@@ -196,12 +337,30 @@ async function loadBoard(items) {
   return { attempts: a.data || [], works: w.data || [] };
 }
 
-function boardHtml({ items, students }, { attempts, works }) {
+function sessionCell(lesson, sessions, st) {
+  if (!lesson.duration_minutes) return "";
+  const s = sessions.find((x) => x.student_id === st.id);
+  if (!s) return `<td class="b-empty">не начинал</td>`;
+  const ends = new Date(s.started_at).getTime() + lesson.duration_minutes * 60000;
+  if (s.finished_at) return `<td class="b-ok">сдал ${new Date(s.finished_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</td>`;
+  if (Date.now() > ends) return `<td class="b-bad">время вышло</td>`;
+  const left = Math.round((ends - Date.now()) / 60000);
+  return `<td class="b-work b-submitted">идёт · ${left} мин</td>`;
+}
+
+function boardHtml({ lesson, items, students, sessions }, { attempts, works }) {
   if (!items.length) return `<p class="muted">Добавьте задания — здесь появится таблица ответов.</p>`;
-  if (!students.length) return `<p class="muted">В группе пока нет учеников.</p>`;
+  if (!students.length) return `<p class="muted">Работа пока никому не назначена.</p>`;
+  const timed = Boolean(lesson.duration_minutes);
   const head = items
-    .map((it, i) => `<th title="${escapeHtml(snippet(it.tasks, 200))}">${i + 1}${it.hidden ? "<small> скр.</small>" : ""}</th>`)
+    .map((it, i) => `<th title="${escapeHtml(snippet(it.tasks, 200))}">${lesson.kind === "exam" ? it.tasks?.task_no ?? i + 1 : i + 1}${it.hidden ? "<small> скр.</small>" : ""}</th>`)
     .join("");
+  const lastOnly = (it) => it.kind === "test";
+  const mine = (st, it) => attempts.filter((x) => x.student_id === st.id && x.item_id === it.id);
+  const isOk = (st, it) => {
+    const list = mine(st, it);
+    return lastOnly(it) ? Boolean(list.at(-1)?.is_correct) : list.some((x) => x.is_correct);
+  };
   const cell = (st, it) => {
     if (TEACHER_CHECKED.has(it.tasks?.answer_mode)) {
       const w = works.find((x) => x.student_id === st.id && x.item_id === it.id);
@@ -209,9 +368,9 @@ function boardHtml({ items, students }, { attempts, works }) {
       const txt = w.status === "graded" ? `${w.score ?? "✓"}` : w.status === "returned" ? "дораб." : "сдано";
       return `<td class="b-work b-${w.status}"><a href="#/cabinet/works/${w.id}">${txt}</a></td>`;
     }
-    const list = attempts.filter((x) => x.student_id === st.id && x.item_id === it.id);
+    const list = mine(st, it);
     if (!list.length) return `<td class="b-empty">·</td>`;
-    const ok = list.some((x) => x.is_correct);
+    const ok = isOk(st, it);
     const title = list.map((x) => `${x.answer}${x.is_correct ? " ✓" : " ✗"}`).join(", ");
     return `<td class="${ok ? "b-ok" : "b-bad"}" title="${escapeHtml(title)}">${ok ? "✓" : "✗"}${list.length > 1 ? `<small>${list.length}</small>` : ""}</td>`;
   };
@@ -220,9 +379,9 @@ function boardHtml({ items, students }, { attempts, works }) {
       const solved = items.filter((it) =>
         TEACHER_CHECKED.has(it.tasks?.answer_mode)
           ? works.some((w) => w.student_id === st.id && w.item_id === it.id && w.status !== "draft")
-          : attempts.some((x) => x.student_id === st.id && x.item_id === it.id && x.is_correct)
+          : isOk(st, it)
       ).length;
-      return `<tr><th><a href="#/cabinet/student/${st.id}">${escapeHtml(st.name)}</a></th>${items.map((it) => cell(st, it)).join("")}<td class="b-sum">${solved}/${items.length}</td></tr>`;
+      return `<tr><th><a href="#/cabinet/student/${st.id}">${escapeHtml(st.name)}</a></th>${sessionCell(lesson, sessions, st)}${items.map((it) => cell(st, it)).join("")}<td class="b-sum">${solved}/${items.length}</td></tr>`;
     })
     .join("");
   const foot = items
@@ -231,27 +390,28 @@ function boardHtml({ items, students }, { attempts, works }) {
         const n = new Set(works.filter((w) => w.item_id === it.id && w.status !== "draft").map((w) => w.student_id)).size;
         return `<td>${n}</td>`;
       }
-      const tried = new Set(attempts.filter((x) => x.item_id === it.id).map((x) => x.student_id)).size;
-      const ok = new Set(attempts.filter((x) => x.item_id === it.id && x.is_correct).map((x) => x.student_id)).size;
-      return `<td title="решили / пробовали">${ok}/${tried}</td>`;
+      const tried = students.filter((st) => mine(st, it).length).length;
+      const ok = students.filter((st) => isOk(st, it)).length;
+      return `<td title="решили / отвечали">${ok}/${tried}</td>`;
     })
     .join("");
   return `
     <div class="t-table-wrap"><table class="t-table board">
-      <thead><tr><th>Ученик</th>${head}<th>Итого</th></tr></thead>
+      <thead><tr><th>Ученик</th>${timed ? "<th>Работа</th>" : ""}${head}<th>Итого</th></tr></thead>
       <tbody>${rows}</tbody>
-      <tfoot><tr><th>Решили</th>${foot}<td></td></tr></tfoot>
+      <tfoot><tr><th>Решили</th>${timed ? "<td></td>" : ""}${foot}<td></td></tr></tfoot>
     </table></div>
-    <p class="muted">✓ — решено (маленькая цифра — сколько было попыток), ✗ — пока неверно, · — не приступал. Наведите на клетку, чтобы увидеть ответы. Таблица обновляется сама.</p>`;
+    <p class="muted">${lesson.kind === "lesson" ? "✓ — решено (маленькая цифра — сколько было попыток), ✗ — пока неверно" : "✓ / ✗ — последний сохранённый ответ ученика (ученик результат пока не видит, если вы его не открыли)"}, · — не отвечал. Наведите на клетку, чтобы увидеть ответы. Таблица обновляется сама.</p>`;
 }
 
-function itemsTableHtml(items) {
-  if (!items.length) return `<p class="muted">В занятии пока нет заданий. Добавьте их из банка ниже.</p>`;
+function itemsTableHtml(items, lesson) {
+  if (!items.length) return `<p class="muted">Заданий пока нет. Добавьте их вручную или автоподбором ниже.</p>`;
   const sel = (name, map, value) =>
     `<select data-f="${name}">${Object.entries(map).map(([k, v]) => `<option value="${k}" ${k === value ? "selected" : ""}>${v}</option>`).join("")}</select>`;
+  const isWork = lesson.kind !== "lesson";
   return `
     <div class="t-table-wrap"><table class="t-table l-items">
-      <thead><tr><th>#</th><th>Задание</th><th>Тип</th><th>Разбор открыть</th><th>Попыток</th><th>Срок</th><th>Показ</th><th></th></tr></thead>
+      <thead><tr><th>#</th><th>Задание</th>${isWork ? "" : "<th>Тип</th><th>Разбор открыть</th><th>Попыток</th><th>Срок</th>"}<th>Показ</th><th></th></tr></thead>
       <tbody>${items
         .map(
           (it, i) => `
@@ -260,16 +420,21 @@ function itemsTableHtml(items) {
           <td><a href="${taskHref(it.tasks)}" target="_blank">${shortSource(it.tasks?.source)} № ${it.tasks?.task_no ?? ""} · ${escapeHtml(String(it.tasks?.source_ref || ""))}</a>
               ${it.tasks?.is_published ? "" : ' <span class="badge">не в банке</span>'}
               <br><small class="muted">${escapeHtml(snippet(it.tasks))}</small></td>
-          <td>${sel("kind", KIND, it.kind)}</td>
+          ${
+            isWork
+              ? ""
+              : `<td>${sel("kind", KIND, it.kind)}</td>
           <td>${sel("reveal", REVEAL, it.reveal)}${it.revealed ? '<br><small class="t-okc">открыт</small>' : ""}</td>
           <td><input type="number" min="1" max="20" data-f="attempts_limit" value="${it.attempts_limit ?? ""}" placeholder="∞" style="width:64px" /></td>
-          <td><input type="datetime-local" data-f="due_at" value="${toLocalInput(it.due_at)}" /></td>
+          <td><input type="datetime-local" data-f="due_at" value="${toLocalInput(it.due_at)}" /></td>`
+          }
           <td><label class="t-inline"><input type="checkbox" data-f="hidden" ${it.hidden ? "" : "checked"} /> видно</label></td>
           <td class="l-row-actions">
             <button class="btn secondary" data-act="up" title="Выше">↑</button>
             <button class="btn secondary" data-act="down" title="Ниже">↓</button>
-            <button class="btn secondary" data-act="reveal" title="Открыть разбор сейчас">${it.revealed ? "Закрыть разбор" : "Открыть разбор"}</button>
-            <button class="btn secondary" data-act="remove" title="Убрать из занятия">✕</button>
+            ${lesson.kind === "exam" ? `<button class="btn secondary" data-act="replace" title="Другое задание этого номера">Заменить</button>` : ""}
+            <button class="btn secondary" data-act="reveal" title="Открыть ученикам результат и разбор">${it.revealed ? "Закрыть разбор" : "Открыть разбор"}</button>
+            <button class="btn secondary" data-act="remove" title="Убрать">✕</button>
           </td>
         </tr>`
         )
@@ -277,30 +442,59 @@ function itemsTableHtml(items) {
     </table></div>`;
 }
 
-async function addPanelHtml(defaults) {
-  const files = await bankFiles("ege-rus");
+function numbersHtml(files) {
+  return files
+    .filter((f) => f.kind !== "extra")
+    .map((f) => `<label class="l-num" title="${escapeHtml(f.title)}"><input type="checkbox" name="num" value="${f.bank}" data-task="${f.task}" /> ${f.task}</label>`)
+    .join("");
+}
+
+async function addPanelHtml(lesson, defaults) {
+  const source = lesson.exam_code || JSON.parse(sessionStorage.getItem("lesson-search") || "{}").source || "ege-rus";
+  const files = await bankFiles(SOURCES[source] ? source : "ege-rus");
+  const srcOpts = (sel) => Object.entries(SOURCES).map(([k, v]) => `<option value="${k}" ${k === sel ? "selected" : ""}>${v.title}</option>`).join("");
+  const isWork = lesson.kind !== "lesson";
   const kindSel = Object.entries(KIND).map(([k, v]) => `<option value="${k}" ${k === defaults.kind ? "selected" : ""}>${v}</option>`).join("");
   const revealSel = Object.entries(REVEAL).map(([k, v]) => `<option value="${k}" ${k === defaults.reveal ? "selected" : ""}>${v}</option>`).join("");
   return `
-    <form id="l-search" class="card t-filter">
-      <label>Экзамен<select name="source">${Object.entries(SOURCES).map(([k, v]) => `<option value="${k}">${v.title}</option>`).join("")}</select></label>
-      <label>Номер<select name="bank">${files.map((f) => `<option value="${f.bank}" data-task="${f.task}">${f.kind === "extra" ? "доп. · " : `№ ${f.task} · `}${escapeHtml(f.title)}</option>`).join("")}</select></label>
-      <label>Слова из условия<input name="q" placeholder="необязательно" /></label>
-      <label class="t-inline"><input type="checkbox" name="fresh" checked /> только нерешённые учениками этого занятия</label>
-      <label class="t-inline"><input type="checkbox" name="own" /> только мои задания</label>
-      <button class="btn secondary" type="submit">Найти</button>
-    </form>
-    <div class="card t-filter l-defaults">
+    ${
+      isWork
+        ? ""
+        : `<div class="card t-filter l-defaults">
       <label>Тип новых заданий<select id="l-def-kind">${kindSel}</select></label>
       <label>Разбор открыть<select id="l-def-reveal">${revealSel}</select></label>
       <label>Попыток<input id="l-def-attempts" type="number" min="1" max="20" value="${defaults.attempts ?? ""}" placeholder="∞" /></label>
       <label>Срок<input id="l-def-due" type="datetime-local" /></label>
-      <label class="t-inline"><input type="checkbox" id="l-def-hidden" /> добавить скрытыми (открою на уроке)</label>
-    </div>
-    <div class="actions l-random">
-      <label class="t-inline">Случайные <input id="l-rand-n" type="number" min="1" max="30" value="5" style="width:64px" /> из выбранного номера</label>
-      <button class="btn secondary" id="l-rand">Добавить случайные</button>
-      <a class="btn secondary" href="#/cabinet/bank/new" target="_blank">Создать своё задание</a>
+      <label class="t-inline"><input type="checkbox" id="l-def-hidden" /> добавлять скрытыми (открою на уроке)</label>
+    </div>`
+    }
+    <div class="l-add-grid">
+      <section class="card l-add-card">
+        <h3>Автоподбор</h3>
+        <form id="l-auto" class="stack">
+          <label>Экзамен<select name="source">${srcOpts(SOURCES[source] ? source : "ege-rus")}</select></label>
+          <div><p class="l-label">Номера заданий <button type="button" class="linklike" id="l-num-all">все</button> · <button type="button" class="linklike" id="l-num-none">снять</button></p>
+            <div class="l-nums" id="l-nums">${numbersHtml(files)}</div></div>
+          <label>Сколько на каждый номер<input type="number" name="per" min="1" max="20" value="1" style="width:90px" /></label>
+          <label class="t-inline"><input type="checkbox" name="fresh" checked /> только ещё не отработанные с этими учениками</label>
+          <button class="btn" type="submit">Подобрать и добавить</button>
+          ${lesson.exam_code ? `<button class="btn secondary" type="button" id="l-recompose">Пересобрать полный вариант ${escapeHtml(EXAMS[lesson.exam_code].title)}</button>` : ""}
+          <p class="lit-result" id="l-auto-status"></p>
+        </form>
+      </section>
+      <section class="card l-add-card">
+        <h3>Выбрать вручную</h3>
+        <form id="l-search" class="stack">
+          <div class="grid-2">
+            <label>Экзамен<select name="source">${srcOpts(SOURCES[source] ? source : "ege-rus")}</select></label>
+            <label>Номер<select name="bank">${files.map((f) => `<option value="${f.bank}" data-task="${f.task}">${f.kind === "extra" ? "доп. · " : `№ ${f.task} · `}${escapeHtml(f.title)}</option>`).join("")}</select></label>
+          </div>
+          <label>Слова из условия или № задания<input name="q" placeholder="необязательно" /></label>
+          <label class="t-inline"><input type="checkbox" name="hideworked" /> скрыть уже отработанные с этими учениками</label>
+          <label class="t-inline"><input type="checkbox" name="own" /> только мои задания</label>
+          <button class="btn secondary" type="submit">Показать задания</button>
+        </form>
+      </section>
     </div>
     <div id="l-results"></div>`;
 }
@@ -319,49 +513,65 @@ window.addEventListener("hashchange", () => {
 export async function lessonEditView(host, render, id) {
   stopLive();
   const state = await loadLesson(id);
-  if (!state) return render(`<div class="empty">Занятие не найдено. <a href="#/cabinet/lessons">К занятиям</a></div>`);
+  if (!state) return render(`<div class="empty">Не найдено. <a href="#/cabinet/lessons">К занятиям</a></div>`);
   const { lesson } = state;
-  const target = lesson.groups?.title ? `группа «${lesson.groups.title}»` : `ученик ${lesson.profiles?.full_name || lesson.profiles?.email || ""}`;
-  const defaults = JSON.parse(sessionStorage.getItem("lesson-defaults") || '{"kind":"classwork","reveal":"after_correct","attempts":3}');
-  const [{ data: groups }, { data: students }] = await Promise.all([
+  const isWork = lesson.kind !== "lesson";
+  const defaults = isWork
+    ? { kind: "test", reveal: "after_due", attempts: null }
+    : JSON.parse(sessionStorage.getItem("lesson-defaults") || '{"kind":"classwork","reveal":"after_correct","attempts":3}');
+  const [{ data: groups }, { data: allStudents }] = await Promise.all([
     supa.from("groups").select("id, title").eq("archived", false).order("title"),
     supa.from("profiles").select("id, full_name, email").neq("role", "teacher").eq("status", "active").order("full_name"),
   ]);
+  const who = [lesson.groups?.title ? `группа «${lesson.groups.title}»` : "", state.assigneeIds.size ? `${state.assigneeIds.size} уч. отдельно` : "", lesson.profiles?.full_name || ""]
+    .filter(Boolean)
+    .join(" + ");
 
   render(`
-    <p class="crumbs"><a href="#/cabinet/lessons">← Все занятия</a></p>
+    <p class="crumbs"><a href="#/cabinet/lessons">← Все занятия и работы</a></p>
     <form id="l-head" class="l-head">
-      <input name="title" class="l-title" value="${escapeHtml(lesson.title)}" aria-label="Тема занятия" />
-      <p class="lede">${escapeHtml(target)} · <span class="lesson-status lesson-${lesson.status}">${LESSON_STATUS[lesson.status]}</span></p>
+      <input name="title" class="l-title" value="${escapeHtml(lesson.title)}" aria-label="Название" />
+      <p class="lede">${escapeHtml(WORK_KIND[lesson.kind])}${lesson.exam_code ? ` · ${escapeHtml(EXAMS[lesson.exam_code]?.title || "")}` : ""} · ${escapeHtml(who || "никому не назначено")} · <span class="lesson-status lesson-${lesson.status}">${LESSON_STATUS[lesson.status]}</span></p>
       <div class="t-filter card">
-        <label>Когда<input type="datetime-local" name="starts_at" value="${toLocalInput(lesson.starts_at)}" /></label>
-        <label>Заметка к занятию (ученики видят)<input name="notes" value="${escapeHtml(lesson.notes || "")}" placeholder="Например: повторить § 25 перед уроком" /></label>
+        <label>Открыть с<input type="datetime-local" name="starts_at" value="${toLocalInput(lesson.starts_at)}" /></label>
+        ${
+          isWork
+            ? `<label>Начать можно до<input type="datetime-local" name="closes_at" value="${toLocalInput(lesson.closes_at)}" /></label>
+        <label>Время, мин<input type="number" name="duration" min="5" max="600" value="${lesson.duration_minutes ?? ""}" placeholder="без ограничения" /></label>
+        <label>Результат ученику<select name="show_results">${Object.entries(SHOW_RESULTS).map(([k, v]) => `<option value="${k}" ${k === lesson.show_results ? "selected" : ""}>${v}</option>`).join("")}</select></label>`
+            : ""
+        }
+        <label>Заметка (ученики видят)<input name="notes" value="${escapeHtml(lesson.notes || "")}" placeholder="Например: повторить § 25" /></label>
         <button class="btn secondary" type="submit">Сохранить</button>
       </div>
       <div class="actions">
         ${lesson.status !== "live" ? `<button class="btn" type="button" data-status="live">Открыть ученикам</button>` : ""}
         ${lesson.status === "live" ? `<button class="btn secondary" type="button" data-status="done">Завершить</button><button class="btn secondary" type="button" data-status="draft">Скрыть (черновик)</button>` : ""}
         ${lesson.status === "done" ? `<button class="btn secondary" type="button" data-status="draft">В черновик</button>` : ""}
-        <button class="btn secondary" type="button" id="l-reveal-all">Открыть все разборы</button>
-        <button class="btn secondary" type="button" id="l-show-all">Показать все скрытые</button>
+        <button class="btn secondary" type="button" id="l-reveal-all">${isWork ? "Открыть результаты и разборы" : "Открыть все разборы"}</button>
+        ${isWork ? "" : `<button class="btn secondary" type="button" id="l-show-all">Показать все скрытые</button>`}
         <a class="btn secondary" href="#/lesson/${lesson.id}" target="_blank">Как видит ученик</a>
       </div>
     </form>
-    <section class="me-section"><h2>Ход занятия <span class="live-dot" id="l-live" title="обновляется в реальном времени"></span></h2><div id="l-board"><p class="muted">Загружаем…</p></div></section>
-    <section class="me-section"><h2>Задания занятия · ${state.items.length}</h2><div id="l-items">${itemsTableHtml(state.items)}</div></section>
-    <section class="me-section"><h2>Добавить из банка</h2>${await addPanelHtml(defaults)}</section>
     <section class="me-section">
-      <h2>Скопировать занятие</h2>
-      <form id="l-copy" class="card t-filter">
-        <label>Для кого<select name="target" required><option value="">— выберите —</option>
-          ${(groups || []).map((g) => `<option value="g:${g.id}">Группа: ${escapeHtml(g.title)}</option>`).join("")}
-          ${(students || []).map((s) => `<option value="s:${s.id}">Ученик: ${escapeHtml(s.full_name || s.email)}</option>`).join("")}
-        </select></label>
+      <details class="card l-who" ${state.students.length ? "" : "open"}>
+        <summary><strong>Кому назначено:</strong> ${escapeHtml(who || "никому")} · всего ${state.students.length}</summary>
+        <form id="l-targets" class="stack">${targetPickerHtml(groups, allStudents, { groupId: lesson.group_id || "", picked: state.assigneeIds })}
+          <button class="btn secondary" type="submit">Сохранить, кому назначено</button></form>
+      </details>
+    </section>
+    <section class="me-section"><h2>Ход работы <span class="live-dot" id="l-live" title="обновляется в реальном времени"></span></h2><div id="l-board"><p class="muted">Загружаем…</p></div></section>
+    <section class="me-section"><h2>Задания · ${state.items.length}</h2><div id="l-items">${itemsTableHtml(state.items, lesson)}</div></section>
+    <section class="me-section"><h2>Добавить задания</h2>${await addPanelHtml(lesson, defaults)}</section>
+    <section class="me-section">
+      <h2>Скопировать</h2>
+      <form id="l-copy" class="card stack">
+        ${targetPickerHtml(groups, allStudents)}
         <button class="btn secondary" type="submit">Создать копию (черновик)</button>
       </form>
     </section>
     <section class="me-section">
-      <button class="btn secondary" id="l-delete">Удалить занятие</button>
+      <button class="btn secondary" id="l-delete">Удалить</button>
     </section>`);
 
   const reload = () => lessonEditView(host, render, id);
@@ -371,16 +581,16 @@ export async function lessonEditView(host, render, id) {
     const board = await loadBoard(fresh.items);
     const box = host.querySelector("#l-board");
     if (box) box.innerHTML = boardHtml(fresh, board);
-    return fresh;
   };
   await refreshBoard();
 
-  // Живое обновление: ответы и сданные работы учеников.
   const itemIds = new Set(state.items.map((i) => i.id));
   let pending = null;
   const bump = (payload) => {
     const itemId = payload.new?.item_id || payload.old?.item_id;
+    const lessonId = payload.new?.lesson_id || payload.old?.lesson_id;
     if (itemId && !itemIds.has(itemId)) return;
+    if (lessonId && lessonId !== id) return;
     clearTimeout(pending);
     pending = setTimeout(refreshBoard, 400);
   };
@@ -388,42 +598,67 @@ export async function lessonEditView(host, render, id) {
     .channel(`lesson-${id}`)
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "attempts" }, bump)
     .on("postgres_changes", { event: "*", schema: "public", table: "written_works" }, bump)
+    .on("postgres_changes", { event: "*", schema: "public", table: "exam_sessions" }, bump)
     .subscribe((status) => {
       const dot = host.querySelector("#l-live");
       if (dot) dot.classList.toggle("on", status === "SUBSCRIBED");
     });
+  if (lesson.duration_minutes) {
+    const timer = setInterval(() => (location.hash.includes(id) ? refreshBoard() : clearInterval(timer)), 60000);
+  }
 
   // Шапка
   const head = host.querySelector("#l-head");
   head.addEventListener("submit", async (e) => {
     e.preventDefault();
     const f = new FormData(head);
-    const { error } = await supa
-      .from("lessons")
-      .update({ title: String(f.get("title")).trim(), starts_at: fromLocalInput(f.get("starts_at")), notes: String(f.get("notes") || "").trim() || null })
-      .eq("id", id);
+    const row = { title: String(f.get("title")).trim(), starts_at: fromLocalInput(f.get("starts_at")), notes: String(f.get("notes") || "").trim() || null };
+    if (isWork) {
+      row.closes_at = fromLocalInput(f.get("closes_at"));
+      row.duration_minutes = Number(f.get("duration")) || null;
+      row.show_results = f.get("show_results");
+    }
+    const { error } = await supa.from("lessons").update(row).eq("id", id);
     if (error) alert(humanError(error).message);
     else reload();
   });
   head.querySelector(".l-title").addEventListener("change", () => head.requestSubmit());
   head.querySelectorAll("[data-status]").forEach((b) =>
     b.addEventListener("click", async () => {
+      if (b.dataset.status === "live" && !state.students.length) return alert("Сначала назначьте работу группе или ученикам.");
+      if (b.dataset.status === "live" && !state.items.length) return alert("Сначала добавьте задания.");
       const { error } = await supa.from("lessons").update({ status: b.dataset.status }).eq("id", id);
       if (error) alert(humanError(error).message);
       else reload();
     })
   );
   host.querySelector("#l-reveal-all").addEventListener("click", async () => {
-    if (!confirm("Открыть разборы всех заданий занятия для учеников?")) return;
+    if (!confirm(isWork ? "Открыть ученикам результаты и разборы всех заданий?" : "Открыть разборы всех заданий для учеников?")) return;
     await supa.from("lesson_items").update({ revealed: true }).eq("lesson_id", id);
     reload();
   });
-  host.querySelector("#l-show-all").addEventListener("click", async () => {
+  host.querySelector("#l-show-all")?.addEventListener("click", async () => {
     await supa.from("lesson_items").update({ hidden: false }).eq("lesson_id", id);
     reload();
   });
 
-  // Задания занятия: настройки, порядок, удаление
+  // Кому назначено
+  const targets = host.querySelector("#l-targets");
+  bindPicker(targets);
+  targets.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const groupId = new FormData(targets).get("group_id") || null;
+    const picked = new Set(pickedStudents(targets));
+    const { error } = await supa.from("lessons").update({ group_id: groupId, student_id: null }).eq("id", id);
+    if (error) return alert(humanError(error).message);
+    const add = [...picked].filter((s) => !state.assigneeIds.has(s)).map((s) => ({ lesson_id: id, student_id: s }));
+    const del = [...state.assigneeIds].filter((s) => !picked.has(s));
+    if (add.length) await supa.from("lesson_assignees").insert(add);
+    if (del.length) await supa.from("lesson_assignees").delete().eq("lesson_id", id).in("student_id", del);
+    reload();
+  });
+
+  // Задания: настройки, порядок, замена, удаление
   const items = state.items;
   host.querySelectorAll("#l-items tr[data-id]").forEach((tr) => {
     const itemId = tr.dataset.id;
@@ -441,12 +676,20 @@ export async function lessonEditView(host, render, id) {
     tr.querySelectorAll("[data-act]").forEach((b) =>
       b.addEventListener("click", async () => {
         const i = items.findIndex((x) => x.id === itemId);
+        const it = items[i];
         const act = b.dataset.act;
         if (act === "remove") {
-          if (!confirm("Убрать задание из занятия? Ответы учеников на него в занятии останутся в их истории без привязки к уроку.")) return;
+          if (!confirm("Убрать задание? Ответы учеников на него останутся в их истории без привязки к работе.")) return;
           await supa.from("lesson_items").delete().eq("id", itemId);
         } else if (act === "reveal") {
-          await supa.from("lesson_items").update({ revealed: !items[i].revealed }).eq("id", itemId);
+          await supa.from("lesson_items").update({ revealed: !it.revealed }).eq("id", itemId);
+        } else if (act === "replace") {
+          const answered = await supa.from("attempts").select("id", { count: "exact", head: true }).eq("item_id", itemId);
+          if (answered.count && !confirm("На это задание уже отвечали. Заменить всё равно? Их ответы останутся в истории.")) return;
+          const alt = await alternativeTask(lesson.exam_code, it.tasks.task_no, it.tasks.passage_id, items.map((x) => x.task_id));
+          if (!alt) return alert("Другого подходящего задания в банке нет.");
+          const { error } = await supa.from("lesson_items").update({ task_id: alt }).eq("id", itemId);
+          if (error) return alert(humanError(error).message);
         } else {
           const j = act === "up" ? i - 1 : i + 1;
           if (j < 0 || j >= items.length) return;
@@ -459,7 +702,135 @@ export async function lessonEditView(host, render, id) {
     );
   });
 
-  // Добавление из банка
+  // Общие помощники добавления
+  const rosterIds = state.students.map((s) => s.id);
+  const nameOf = new Map(state.students.map((s) => [s.id, s.name]));
+  const readDefaults = () => {
+    if (isWork) return { kind: "test", reveal: "after_due", attempts: null, due: null, hidden: false };
+    const d = {
+      kind: host.querySelector("#l-def-kind").value,
+      reveal: host.querySelector("#l-def-reveal").value,
+      attempts: host.querySelector("#l-def-attempts").value ? Number(host.querySelector("#l-def-attempts").value) : null,
+      due: fromLocalInput(host.querySelector("#l-def-due").value),
+      hidden: host.querySelector("#l-def-hidden").checked,
+    };
+    sessionStorage.setItem("lesson-defaults", JSON.stringify({ kind: d.kind, reveal: d.reveal, attempts: d.attempts }));
+    return d;
+  };
+  const addTasks = async (tasks) => {
+    const fresh = tasks.filter((t) => !items.some((it) => it.task_id === t.id));
+    if (!fresh.length) return alert("Эти задания уже есть.");
+    try {
+      await insertItems(id, fresh, readDefaults(), items.length);
+      reload();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+  /** Кто из учеников этой работы уже решал задания: Map task_id → [{name, ok}]. */
+  const workedMap = async (taskIds) => {
+    const out = new Map();
+    if (!rosterIds.length || !taskIds.length) return out;
+    for (let i = 0; i < taskIds.length; i += 300) {
+      const chunk = taskIds.slice(i, i + 300);
+      const [{ data: att }, { data: works }] = await Promise.all([
+        supa.from("attempts").select("task_id, student_id, is_correct").in("student_id", rosterIds).in("task_id", chunk),
+        supa.from("written_works").select("task_id, student_id, status").in("student_id", rosterIds).in("task_id", chunk).neq("status", "draft"),
+      ]);
+      (att || []).forEach((a) => {
+        const list = out.get(a.task_id) || [];
+        const ex = list.find((x) => x.sid === a.student_id);
+        if (ex) ex.ok = ex.ok || a.is_correct;
+        else list.push({ sid: a.student_id, ok: a.is_correct });
+        out.set(a.task_id, list);
+      });
+      (works || []).forEach((w) => {
+        const list = out.get(w.task_id) || [];
+        if (!list.some((x) => x.sid === w.student_id)) list.push({ sid: w.student_id, ok: null });
+        out.set(w.task_id, list);
+      });
+    }
+    return out;
+  };
+  const workedBadge = (list) => {
+    if (!list?.length) return `<span class="l-fresh">ещё не решали</span>`;
+    return `<span class="l-worked">уже решали: ${list
+      .map((x) => `${escapeHtml(nameOf.get(x.sid) || "ученик")} ${x.ok === null ? "(сдано)" : x.ok ? "✓" : "✗"}`)
+      .join(", ")}</span>`;
+  };
+
+  // Автоподбор
+  const auto = host.querySelector("#l-auto");
+  const autoStatus = host.querySelector("#l-auto-status");
+  const autoSrc = auto.querySelector('[name="source"]');
+  const nums = host.querySelector("#l-nums");
+  autoSrc.addEventListener("change", async () => {
+    nums.innerHTML = numbersHtml(await bankFiles(autoSrc.value));
+  });
+  host.querySelector("#l-num-all").addEventListener("click", () => nums.querySelectorAll("input").forEach((c) => (c.checked = true)));
+  host.querySelector("#l-num-none").addEventListener("click", () => nums.querySelectorAll("input").forEach((c) => (c.checked = false)));
+  auto.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = new FormData(auto);
+    const banks = [...nums.querySelectorAll("input:checked")].map((c) => c.value);
+    if (!banks.length) {
+      autoStatus.textContent = "Отметьте хотя бы один номер (или «все»).";
+      return;
+    }
+    const per = Math.max(1, Math.min(20, Number(f.get("per")) || 1));
+    autoStatus.className = "lit-result";
+    autoStatus.textContent = "Подбираем…";
+    try {
+      const chosen = [];
+      for (const bank of banks) {
+        const { data, error } = await supa
+          .from("tasks")
+          .select("id, answer_mode")
+          .eq("source", f.get("source"))
+          .eq("bank_file", bank)
+          .eq("is_published", true)
+          .limit(1000);
+        if (error) throw humanError(error);
+        let pool = (data || []).filter((t) => !items.some((it) => it.task_id === t.id) && !chosen.some((c) => c.id === t.id));
+        if (f.get("fresh")) {
+          const worked = await workedMap(pool.map((t) => t.id));
+          const fresh = pool.filter((t) => !worked.has(t.id));
+          if (fresh.length >= per) pool = fresh;
+          else if (fresh.length) pool = [...fresh, ...pool.filter((t) => worked.has(t.id))].slice(0, Math.max(per, fresh.length));
+        }
+        for (let i = pool.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        chosen.push(...pool.slice(0, per));
+      }
+      if (!chosen.length) {
+        autoStatus.textContent = "Подходящих заданий не нашлось.";
+        return;
+      }
+      await insertItems(id, chosen, readDefaults(), items.length);
+      reload();
+    } catch (err) {
+      autoStatus.className = "lit-result is-bad";
+      autoStatus.textContent = err.message;
+    }
+  });
+  host.querySelector("#l-recompose")?.addEventListener("click", async () => {
+    if (items.length && !confirm("Убрать текущие задания и собрать новый полный вариант? Если ученики уже отвечали, их ответы останутся в истории.")) return;
+    autoStatus.className = "lit-result";
+    autoStatus.textContent = "Собираем вариант…";
+    try {
+      const tasks = await composeVariant(lesson.exam_code, rosterIds);
+      if (items.length) await supa.from("lesson_items").delete().eq("lesson_id", id);
+      await insertItems(id, tasks, { kind: "test" });
+      reload();
+    } catch (err) {
+      autoStatus.className = "lit-result is-bad";
+      autoStatus.textContent = err.message;
+    }
+  });
+
+  // Ручной выбор
   const search = host.querySelector("#l-search");
   const resultsBox = host.querySelector("#l-results");
   const srcSel = search.querySelector('[name="source"]');
@@ -478,96 +849,72 @@ export async function lessonEditView(host, render, id) {
   bankSel.addEventListener("change", remember);
   try {
     const saved = JSON.parse(sessionStorage.getItem("lesson-search") || "null");
-    if (saved?.source && SOURCES[saved.source]) {
-      srcSel.value = saved.source;
-      await fillBanks();
-      if ([...bankSel.options].some((o) => o.value === saved.bank)) bankSel.value = saved.bank;
-    }
+    if (saved?.source === srcSel.value && [...bankSel.options].some((o) => o.value === saved.bank)) bankSel.value = saved.bank;
   } catch {
     /* фильтр необязателен */
   }
-  const readDefaults = () => {
-    const d = {
-      kind: host.querySelector("#l-def-kind").value,
-      reveal: host.querySelector("#l-def-reveal").value,
-      attempts: host.querySelector("#l-def-attempts").value ? Number(host.querySelector("#l-def-attempts").value) : null,
-      due: fromLocalInput(host.querySelector("#l-def-due").value),
-      hidden: host.querySelector("#l-def-hidden").checked,
-    };
-    sessionStorage.setItem("lesson-defaults", JSON.stringify({ kind: d.kind, reveal: d.reveal, attempts: d.attempts }));
-    return d;
-  };
-  const addTasks = async (tasks) => {
-    if (!tasks.length) return;
-    const d = readDefaults();
-    let pos = items.length;
-    const rows = tasks
-      .filter((t) => !items.some((it) => it.task_id === t.id))
-      .map((t) => ({
-        lesson_id: id,
-        task_id: t.id,
-        position: ++pos,
-        kind: d.kind,
-        reveal: TEACHER_CHECKED.has(t.answer_mode) && d.reveal === "after_correct" ? "after_review" : d.reveal,
-        attempts_limit: TEACHER_CHECKED.has(t.answer_mode) ? null : d.attempts,
-        due_at: d.due,
-        hidden: d.hidden,
-      }));
-    if (!rows.length) return alert("Эти задания уже есть в занятии.");
-    const { error } = await supa.from("lesson_items").insert(rows);
-    if (error) return alert(humanError(error).message);
-    reload();
-  };
-  const seenByStudents = async (taskIds) => {
-    if (!state.students.length || !taskIds.length) return new Set();
-    const { data } = await supa
-      .from("attempts")
-      .select("task_id")
-      .in("student_id", state.students.map((s) => s.id))
-      .in("task_id", taskIds);
-    return new Set((data || []).map((r) => r.task_id));
-  };
-  const findTasks = async (limit) => {
-    const f = new FormData(search);
-    let q = supa
-      .from("tasks")
-      .select("id, source, bank_file, source_ref, task_no, topic, answer_mode, list_item, is_published")
-      .eq("source", f.get("source"))
-      .eq("bank_file", f.get("bank"))
-      .order("position")
-      .limit(limit);
-    if (f.get("own")) q = q.eq("is_own", true);
-    const text = String(f.get("q") || "").trim();
-    if (text) q = /^L?\d+$/.test(text) ? q.eq("source_ref", text) : q.ilike("list_item->>questionText", `%${text}%`);
-    const { data, error } = await q;
-    if (error) throw humanError(error);
-    let list = data || [];
-    if (f.get("fresh")) {
-      const seen = await seenByStudents(list.map((t) => t.id));
-      list = list.filter((t) => !seen.has(t.id));
-    }
-    return list.filter((t) => !items.some((it) => it.task_id === t.id));
-  };
   search.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const f = new FormData(search);
     resultsBox.innerHTML = `<p class="muted">Ищем…</p>`;
     try {
-      const list = (await findTasks(400)).slice(0, 40);
+      let q = supa
+        .from("tasks")
+        .select("id, source, bank_file, source_ref, task_no, topic, answer_mode, list_item, is_published")
+        .eq("source", f.get("source"))
+        .eq("bank_file", f.get("bank"))
+        .order("position")
+        .limit(400);
+      if (f.get("own")) q = q.eq("is_own", true);
+      const text = String(f.get("q") || "").trim();
+      if (text) q = /^L?\d+$/.test(text) ? q.eq("source_ref", text) : q.ilike("list_item->>questionText", `%${text}%`);
+      const { data, error } = await q;
+      if (error) throw humanError(error);
+      let list = (data || []).filter((t) => !items.some((it) => it.task_id === t.id));
+      const worked = await workedMap(list.map((t) => t.id));
+      if (f.get("hideworked")) list = list.filter((t) => !worked.has(t.id));
+      const total = list.length;
+      list = list.slice(0, 60);
+      let added = 0;
       resultsBox.innerHTML = list.length
-        ? `<div class="lit-list l-results">${list
+        ? `<p class="l-added card" id="l-added" hidden><span></span> <button type="button" class="btn secondary" id="l-added-reload">Обновить список заданий</button></p>
+          <p class="muted">Показано ${list.length} из ${total}. «Уже решали» — кто из учеников этой работы отвечал на задание раньше (✓ верно, ✗ неверно).</p>
+          <div class="lit-list l-results">${list
             .map(
               (t) => `
             <div class="lit-item">
-              <span class="lit-item-n"><input type="checkbox" data-pick="${t.id}" /></span>
+              <span class="lit-item-n"><input type="checkbox" data-pick="${t.id}" aria-label="Отметить" /></span>
               <span class="lit-item-body">
                 <strong><a href="${taskHref(t)}" target="_blank">№ ${escapeHtml(String(t.source_ref))}</a> · ${escapeHtml(MODE_LABEL[t.answer_mode] || "")}</strong>
                 <span>${escapeHtml(snippet(t, 220))}</span>
+                ${workedBadge(worked.get(t.id))}
               </span>
+              <button class="btn secondary l-add-one" data-add="${t.id}" type="button">Добавить</button>
             </div>`
             )
             .join("")}</div>
           <p class="actions"><button class="btn" id="l-add-picked">Добавить отмеченные</button></p>`
-        : `<p class="muted">Ничего не нашлось${new FormData(search).get("fresh") ? " (или всё уже решено учениками этого занятия)" : ""}.</p>`;
+        : `<p class="muted">Ничего не нашлось.</p>`;
+      resultsBox.querySelectorAll("[data-add]").forEach((b) =>
+        b.addEventListener("click", async () => {
+          b.disabled = true;
+          b.textContent = "Добавлено";
+          const t = list.find((x) => x.id === Number(b.dataset.add));
+          try {
+            await insertItems(id, [t], readDefaults(), items.length);
+            items.push({ task_id: t.id });
+            added += 1;
+            const note = resultsBox.querySelector("#l-added");
+            note.hidden = false;
+            note.querySelector("span").textContent = `Добавлено: ${added}.`;
+          } catch (err) {
+            alert(err.message);
+            b.disabled = false;
+            b.textContent = "Добавить";
+          }
+        })
+      );
+      resultsBox.querySelector("#l-added-reload")?.addEventListener("click", reload);
       resultsBox.querySelector("#l-add-picked")?.addEventListener("click", () => {
         const picked = new Set([...resultsBox.querySelectorAll("[data-pick]:checked")].map((c) => Number(c.dataset.pick)));
         addTasks(list.filter((t) => picked.has(t.id)));
@@ -576,31 +923,25 @@ export async function lessonEditView(host, render, id) {
       resultsBox.innerHTML = `<p class="lit-result is-bad">${escapeHtml(err.message)}</p>`;
     }
   });
-  host.querySelector("#l-rand").addEventListener("click", async () => {
-    const n = Math.max(1, Math.min(30, Number(host.querySelector("#l-rand-n").value) || 5));
-    try {
-      const pool = await findTasks(1000);
-      for (let i = pool.length - 1; i > 0; i -= 1) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [pool[i], pool[j]] = [pool[j], pool[i]];
-      }
-      if (!pool.length) return alert("Подходящих заданий не нашлось.");
-      addTasks(pool.slice(0, n));
-    } catch (err) {
-      alert(err.message);
-    }
-  });
 
   // Копия и удаление
-  host.querySelector("#l-copy").addEventListener("submit", async (e) => {
+  const copyForm = host.querySelector("#l-copy");
+  bindPicker(copyForm);
+  copyForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const [kind, tid] = String(new FormData(e.target).get("target")).split(":");
+    const groupId = new FormData(copyForm).get("group_id") || null;
+    const picked = pickedStudents(copyForm);
+    if (!groupId && !picked.length) return alert("Выберите группу и/или учеников.");
     const { data: copy, error } = await supa
       .from("lessons")
-      .insert({ title: lesson.title, notes: lesson.notes, starts_at: lesson.starts_at, group_id: kind === "g" ? tid : null, student_id: kind === "s" ? tid : null })
+      .insert({
+        title: lesson.title, notes: lesson.notes, starts_at: lesson.starts_at, closes_at: lesson.closes_at, kind: lesson.kind,
+        exam_code: lesson.exam_code, duration_minutes: lesson.duration_minutes, show_results: lesson.show_results, group_id: groupId,
+      })
       .select("id")
       .single();
     if (error) return alert(humanError(error).message);
+    if (picked.length) await supa.from("lesson_assignees").insert(picked.map((s) => ({ lesson_id: copy.id, student_id: s })));
     if (items.length) {
       const rows = items.map((it) => ({
         lesson_id: copy.id, task_id: it.task_id, position: it.position, kind: it.kind, reveal: it.reveal,
@@ -612,7 +953,7 @@ export async function lessonEditView(host, render, id) {
     location.hash = `#/cabinet/lesson/${copy.id}`;
   });
   host.querySelector("#l-delete").addEventListener("click", async () => {
-    if (!confirm("Удалить занятие целиком? Задания останутся в банке, ответы учеников — в их истории. Отменить нельзя.")) return;
+    if (!confirm("Удалить целиком? Задания останутся в банке, ответы учеников — в их истории. Отменить нельзя.")) return;
     const { error } = await supa.from("lessons").delete().eq("id", id);
     if (error) return alert(humanError(error).message);
     location.hash = "#/cabinet/lessons";
@@ -623,22 +964,23 @@ export async function lessonEditView(host, render, id) {
 /* УЧЕНИК                                                               */
 /* ================================================================== */
 
-/** Блок «Мои занятия» для личного кабинета. */
+const KIND_LABEL = { lesson: "Занятие", test: "Контрольная работа", exam: "Пробный экзамен" };
+
+/** Блок «Мои занятия и работы» для личного кабинета. */
 export async function myLessonsHtml() {
   const { data: lessons } = await supa
     .from("lessons")
-    .select("id, title, status, starts_at, notes, lesson_items(id, due_at, kind)")
+    .select("id, title, status, kind, duration_minutes, starts_at, closes_at, notes, lesson_items(id, due_at, kind)")
     .order("starts_at", { ascending: false, nullsFirst: true })
-    .limit(30);
+    .limit(40);
   if (!lessons?.length) return "";
   const ids = lessons.flatMap((l) => (l.lesson_items || []).map((i) => i.id));
   const uid = currentUser()?.id;
-  const [{ data: att }, { data: works }] = ids.length
-    ? await Promise.all([
-        supa.from("attempts").select("item_id, is_correct").eq("student_id", uid).in("item_id", ids),
-        supa.from("written_works").select("item_id, status").eq("student_id", uid).in("item_id", ids),
-      ])
-    : [{ data: [] }, { data: [] }];
+  const [{ data: att }, { data: works }, { data: sessions }] = await Promise.all([
+    ids.length ? supa.from("attempts").select("item_id, is_correct").eq("student_id", uid).in("item_id", ids) : { data: [] },
+    ids.length ? supa.from("written_works").select("item_id, status").eq("student_id", uid).in("item_id", ids) : { data: [] },
+    supa.from("exam_sessions").select("lesson_id, started_at, finished_at").eq("student_id", uid),
+  ]);
   const done = (itemId) =>
     (att || []).some((a) => a.item_id === itemId) || (works || []).some((w) => w.item_id === itemId && w.status !== "draft");
   const rows = lessons
@@ -646,21 +988,32 @@ export async function myLessonsHtml() {
       const its = l.lesson_items || [];
       const n = its.filter((i) => done(i.id)).length;
       const due = its.map((i) => i.due_at).filter(Boolean).sort()[0];
+      const s = (sessions || []).find((x) => x.lesson_id === l.id);
+      let state = "";
+      if (l.duration_minutes) {
+        const ends = s ? new Date(s.started_at).getTime() + l.duration_minutes * 60000 : 0;
+        state = !s ? `не начата · ${durationText(l.duration_minutes)}` : s.finished_at || Date.now() > ends ? "сдана" : "идёт — вернитесь к работе";
+      }
       return `
-      <a class="lit-item${n === its.length && its.length ? " is-done" : ""}" href="#/lesson/${l.id}">
-        <span class="lit-item-n">${n}/${its.length}</span>
+      <a class="lit-item${(l.duration_minutes ? state === "сдана" : n === its.length && its.length) ? " is-done" : ""}" href="#/lesson/${l.id}">
+        <span class="lit-item-n">${l.duration_minutes ? "⏱" : `${n}/${its.length}`}</span>
         <span class="lit-item-body">
           <strong>${escapeHtml(l.title)}</strong>
-          <span>${l.starts_at ? fmtDT(l.starts_at) : ""}${due ? ` · сдать до ${fmtDT(due)}` : ""}${l.status === "done" ? " · завершено" : ""}</span>
+          <span>${escapeHtml(KIND_LABEL[l.kind] || "Занятие")}${l.starts_at ? ` · ${fmtDT(l.starts_at)}` : ""}${due ? ` · сдать до ${fmtDT(due)}` : ""}${l.closes_at && !s ? ` · начать до ${fmtDT(l.closes_at)}` : ""}${l.status === "done" ? " · завершено" : ""}</span>
+          ${state ? `<span class="l-st ${state === "сдана" ? "is-ok" : "is-wait"}">${escapeHtml(state)}</span>` : ""}
         </span>
       </a>`;
     })
     .join("");
-  return `<section class="me-section"><h2>Мои занятия</h2><div class="lit-list">${rows}</div></section>`;
+  return `<section class="me-section"><h2>Мои занятия и работы</h2><div class="lit-list">${rows}</div></section>`;
 }
 
 async function loadMyLesson(id) {
-  const { data: lesson, error } = await supa.from("lessons").select("id, title, status, starts_at, notes").eq("id", id).maybeSingle();
+  const { data: lesson, error } = await supa
+    .from("lessons")
+    .select("id, title, status, kind, exam_code, duration_minutes, starts_at, closes_at, show_results, notes")
+    .eq("id", id)
+    .maybeSingle();
   if (error) throw humanError(error);
   if (!lesson) return null;
   const { data: items } = await supa
@@ -672,20 +1025,22 @@ async function loadMyLesson(id) {
   return { lesson, items: items || [] };
 }
 
-function itemStatus(it, att, works) {
+function itemStatus(it, att, works, timed) {
   if (TEACHER_CHECKED.has(it.tasks?.answer_mode)) {
     const w = works.find((x) => x.item_id === it.id);
     if (!w) return ["", "не начато"];
     return {
-      draft: ["", "черновик"],
+      draft: ["is-wait", timed ? "сохранено (сдастся при завершении)" : "черновик"],
       submitted: ["is-wait", "на проверке"],
       returned: ["is-bad", "вернули на доработку"],
       graded: ["is-ok", `оценено${w.score != null ? `: ${w.score}${w.max_score ? `/${w.max_score}` : ""}` : ""}`],
     }[w.status];
   }
   const list = att.filter((a) => a.item_id === it.id);
-  if (!list.length) return ["", "не начато"];
-  if (it.kind === "test" && !it.revealed && (!it.due_at || new Date(it.due_at) > new Date())) return ["is-wait", "ответ принят"];
+  if (!list.length) return ["", timed ? "нет ответа" : "не начато"];
+  if (it.kind === "test" && !it.revealed && (!it.due_at || new Date(it.due_at) > new Date())) {
+    return ["is-wait", timed ? `ответ: ${list.at(-1).answer}` : "ответ принят"];
+  }
   if (list.some((a) => a.is_correct)) return ["is-ok", "решено"];
   const left = it.attempts_limit ? it.attempts_limit - list.length : null;
   return ["is-bad", left === 0 ? "неверно, попытки закончились" : `неверно${left ? `, осталось попыток: ${left}` : ""}`];
@@ -699,10 +1054,11 @@ export async function mountLesson(root, parts) {
     location.hash = `#/login?next=${encodeURIComponent(location.hash)}`;
     return;
   }
+  const again = () => mountLesson(root, parts);
   try {
     const st = await loadMyLesson(id);
     if (!st) {
-      host.innerHTML = `<div class="empty">Занятие не найдено или ещё не открыто. <a href="#/me">В кабинет</a></div>`;
+      host.innerHTML = `<div class="empty">Не найдено или ещё не открыто. <a href="#/me">В кабинет</a></div>`;
       return;
     }
     const uid = currentUser().id;
@@ -713,22 +1069,49 @@ export async function mountLesson(root, parts) {
           supa.from("written_works").select("item_id, status, score, max_score").eq("student_id", uid).in("item_id", ids),
         ])
       : [{ data: [] }, { data: [] }];
-    if (!itemId) return lessonOverview(host, st, att || [], works || []);
-    return lessonTask(host, st, itemId, att || []);
+
+    // Работа на время: старт → таймер → итог
+    if (st.lesson.duration_minutes) {
+      const state = await examState(id);
+      if (!state.started_at) {
+        host.innerHTML = introHtml(st.lesson, st.items.length);
+        bindIntro(host, st.lesson, again);
+        return;
+      }
+      if (state.over) {
+        const visible = st.lesson.show_results === "after_finish" || (st.items.length && st.items.every((i) => i.revealed));
+        if (itemId) return lessonTask(host, st, itemId, att || [], { mode: "over", visible });
+        host.innerHTML = resultsHtml(st.lesson, st.items, att || [], works || [], visible);
+        return;
+      }
+      if (itemId) {
+        await lessonTask(host, st, itemId, att || [], { mode: "timed" });
+      } else {
+        lessonOverview(host, st, att || [], works || [], true);
+      }
+      host.insertAdjacentHTML("afterbegin", timerHtml(st.lesson));
+      bindTimer(host, st.lesson, st.items, state, () => {
+        location.hash = `#/lesson/${id}`;
+        again();
+      });
+      return;
+    }
+    if (!itemId) return lessonOverview(host, st, att || [], works || [], false);
+    return lessonTask(host, st, itemId, att || [], { mode: "normal" });
   } catch (err) {
     host.innerHTML = `<div class="empty">${escapeHtml(err.message)}</div>`;
   }
 }
 
-function lessonOverview(host, { lesson, items }, att, works) {
+function lessonOverview(host, { lesson, items }, att, works, timed) {
   const rows = items
     .map((it, i) => {
-      const [cls, text] = itemStatus(it, att, works);
+      const [cls, text] = itemStatus(it, att, works, timed);
       return `
       <a class="lit-item ${cls === "is-ok" ? "is-done" : ""}" href="#/lesson/${lesson.id}/${it.id}">
-        <span class="lit-item-n">${i + 1}</span>
+        <span class="lit-item-n">${lesson.kind === "exam" ? it.tasks?.task_no ?? i + 1 : i + 1}</span>
         <span class="lit-item-body">
-          <strong>${escapeHtml(SOURCES[it.tasks?.source]?.title || "")}, задание ${it.tasks?.task_no ?? ""} · ${escapeHtml(KIND[it.kind])}</strong>
+          <strong>${escapeHtml(SOURCES[it.tasks?.source]?.title || "")}, задание ${it.tasks?.task_no ?? ""}${lesson.kind === "lesson" ? ` · ${escapeHtml(KIND[it.kind])}` : ""}</strong>
           <span>${escapeHtml(snippet(it.tasks, 160))}</span>
           <span class="l-st ${cls}">${escapeHtml(text)}${it.due_at ? ` · до ${fmtDT(it.due_at)}` : ""}</span>
         </span>
@@ -737,22 +1120,22 @@ function lessonOverview(host, { lesson, items }, att, works) {
     .join("");
   host.innerHTML = `
     <p class="crumbs"><a href="#/me">← Личный кабинет</a></p>
-    <p class="eyebrow">Занятие${lesson.starts_at ? ` · ${fmtDT(lesson.starts_at)}` : ""}${lesson.status === "done" ? " · завершено" : ""}</p>
+    <p class="eyebrow">${escapeHtml(KIND_LABEL[lesson.kind] || "Занятие")}${lesson.starts_at ? ` · ${fmtDT(lesson.starts_at)}` : ""}${lesson.status === "done" ? " · завершено" : ""}</p>
     <h1>${escapeHtml(lesson.title)}</h1>
     ${lesson.notes ? `<p class="lede">${escapeHtml(lesson.notes)}</p>` : ""}
-    <div class="lit-list">${rows || '<p class="muted">Заданий пока нет — преподаватель добавит их на уроке.</p>'}</div>`;
+    <div class="lit-list">${rows || '<p class="muted">Заданий пока нет — преподаватель добавит их.</p>'}</div>`;
 }
 
-async function lessonTask(host, { lesson, items }, itemId, att) {
+async function lessonTask(host, { lesson, items }, itemId, att, { mode = "normal", visible = false } = {}) {
   const i = items.findIndex((x) => x.id === itemId);
   if (i < 0) {
-    host.innerHTML = `<div class="empty">Задание не найдено. <a href="#/lesson/${lesson.id}">К занятию</a></div>`;
+    host.innerHTML = `<div class="empty">Задание не найдено. <a href="#/lesson/${lesson.id}">Ко всем заданиям</a></div>`;
     return;
   }
   const it = items[i];
   const t = it.tasks;
   if (!t) {
-    host.innerHTML = `<div class="empty">Задание недоступно. <a href="#/lesson/${lesson.id}">К занятию</a></div>`;
+    host.innerHTML = `<div class="empty">Задание недоступно. <a href="#/lesson/${lesson.id}">Ко всем заданиям</a></div>`;
     return;
   }
   const sanitize = sanitizeFor(t.source);
@@ -764,32 +1147,33 @@ async function lessonTask(host, { lesson, items }, itemId, att) {
   const written = TEACHER_CHECKED.has(t.answer_mode);
   const mine = att.filter((a) => a.item_id === it.id);
   const solved = mine.some((a) => a.is_correct);
-  const hiddenTest = it.kind === "test" && !it.revealed && (!it.due_at || new Date(it.due_at) > new Date());
+  const hiddenTest = it.kind === "test" && !it.revealed && (!it.due_at || new Date(it.due_at) > new Date()) && !(mode === "over" && visible);
   const exhausted = it.attempts_limit != null && mine.length >= it.attempts_limit;
   const label = MODE_LABEL[t.answer_mode] || "Ответ";
   const numeric = ["digits-any", "digits-fixed", "numbers", "lit-match"].includes(t.answer_mode);
   const prev = items[i - 1];
   const next = items[i + 1];
-  const history = mine.length && !written
-    ? `<p class="muted l-history">Ваши ответы: ${mine
-        .map((a) => `${escapeHtml(a.answer)}${hiddenTest ? "" : a.is_correct ? " ✓" : " ✗"}`)
-        .join(", ")}${it.attempts_limit ? ` · попыток ${mine.length} из ${it.attempts_limit}` : ""}</p>`
-    : "";
+  const timed = mode === "timed";
+  const over = mode === "over";
+  const history =
+    mine.length && !written
+      ? timed || (hiddenTest && lesson.kind !== "lesson")
+        ? `<p class="l-history"><strong>Ваш ответ:</strong> ${escapeHtml(mine.at(-1).answer)}${timed ? ' <span class="muted">— можно изменить до конца времени</span>' : ""}</p>`
+        : `<p class="muted l-history">Ваши ответы: ${mine
+            .map((a) => `${escapeHtml(a.answer)}${hiddenTest ? "" : a.is_correct ? " ✓" : " ✗"}`)
+            .join(", ")}${it.attempts_limit ? ` · попыток ${mine.length} из ${it.attempts_limit}` : ""}</p>`
+      : "";
+  const lastOk = Boolean(mine.at(-1)?.is_correct);
+  const showCheck = !written && !over && !(solved && !hiddenTest && !timed) && !exhausted;
   host.innerHTML = `
     <p class="crumbs"><a href="#/lesson/${lesson.id}">← ${escapeHtml(lesson.title)}</a></p>
     <article class="lit-problem">
-      <p class="eyebrow">${escapeHtml(KIND[it.kind])} · ${i + 1} из ${items.length}${it.due_at ? ` · сдать до ${fmtDT(it.due_at)}` : ""}</p>
+      <p class="eyebrow">${lesson.kind === "lesson" ? escapeHtml(KIND[it.kind]) : escapeHtml(KIND_LABEL[lesson.kind])} · ${i + 1} из ${items.length}${it.due_at ? ` · сдать до ${fmtDT(it.due_at)}` : ""}</p>
       <h1>${escapeHtml(SOURCES[t.source]?.title || "")}, задание ${t.task_no ?? ""}</h1>
       ${passage ? `<section class="lit-passage"><p class="lit-kicker">Текст</p><div class="lit-html">${sanitize(passage)}</div></section>` : ""}
       <section class="lit-question"><div class="lit-html">${sanitize(t.data?.questionHtml || "")}</div></section>
       ${history}
-      ${
-        written
-          ? writtenBlockHtml()
-          : solved || exhausted || hiddenTest && exhausted
-            ? `<div id="pr-solution"></div>`
-            : checkBlockHtml({ label, placeholder: numeric ? "Например: 24" : "Введите ответ", numeric })
-      }
+      ${written ? writtenBlockHtml() : showCheck ? checkBlockHtml({ label, placeholder: numeric ? "Например: 24" : "Введите ответ", numeric }) : `<div id="pr-solution"></div>`}
       <div class="lit-pager">
         ${prev ? `<a href="#/lesson/${lesson.id}/${prev.id}">← Предыдущее</a>` : "<span></span>"}
         <a href="#/lesson/${lesson.id}" class="muted">Все задания</a>
@@ -798,27 +1182,41 @@ async function lessonTask(host, { lesson, items }, itemId, att) {
     </article>`;
   const problem = { ...t.data, _tid: t.id };
   if (written) {
-    bindWritten(host, problem, { sanitize, item: it, label: t.answer_mode === "essay" ? "Сочинение" : "Ваш ответ" });
+    bindWritten(host, problem, {
+      sanitize,
+      item: it,
+      label: t.answer_mode === "essay" ? "Сочинение" : "Ваш ответ",
+      noSubmit: timed,
+      readOnly: over,
+    });
     return;
   }
-  if (solved || exhausted) {
-    const box = host.querySelector("#pr-solution");
-    if (hiddenTest) {
-      box.innerHTML = `<p class="lit-result">Ответ принят. Результат появится после проверки контрольной.</p>`;
-      return;
-    }
-    try {
-      const res = await showSolution(t.id, it.id);
-      box.innerHTML = res.locked
-        ? `<p class="lit-result">${solved ? "Решено верно." : "Попытки закончились."} ${escapeHtml(REVEAL_HINT_STUDENT[it.reveal] || "")}</p>`
-        : `<p class="lit-result ${solved ? "is-ok" : "is-bad"}">${solved ? "Решено верно." : "Попытки закончились."}</p>
-           <details class="lit-solution" open><summary>Разбор</summary>${res.answer && !res.solution ? `<p class="pr-answer-key"><strong>Ответ:</strong> ${escapeHtml(String(res.answer).replace(/\|/g, " или "))}</p>` : ""}<div class="lit-html">${sanitize(res.solution || "")}</div></details>`;
-    } catch (err) {
-      box.innerHTML = `<p class="lit-result is-bad">${escapeHtml(err.message)}</p>`;
-    }
+  if (showCheck) {
+    bindCheck(host, problem, {
+      sanitize,
+      item: it,
+      examMode: timed,
+    });
     return;
   }
-  bindCheck(host, problem, { sanitize, item: it });
+  const box = host.querySelector("#pr-solution");
+  if (hiddenTest) {
+    box.innerHTML = `<p class="lit-result">${mine.length ? "Ответ сохранён." : "Ответа нет."} Результат появится после проверки.</p>`;
+    return;
+  }
+  try {
+    const res = await showSolution(t.id, it.id);
+    const verdict = over || lesson.kind !== "lesson"
+      ? mine.length ? (lastOk ? "Верно." : "Неверно.") : "Ответа не было."
+      : solved ? "Решено верно." : "Попытки закончились.";
+    const ok = over || lesson.kind !== "lesson" ? lastOk : solved;
+    box.innerHTML = res.locked
+      ? `<p class="lit-result">${escapeHtml(verdict)} ${escapeHtml(REVEAL_HINT_STUDENT[it.reveal] || "")}</p>`
+      : `<p class="lit-result ${ok ? "is-ok" : "is-bad"}">${escapeHtml(verdict)}</p>
+         <details class="lit-solution" open><summary>Разбор</summary>${res.answer && !res.solution ? `<p class="pr-answer-key"><strong>Ответ:</strong> ${escapeHtml(String(res.answer).replace(/\|/g, " или "))}</p>` : ""}<div class="lit-html">${sanitize(res.solution || "")}</div></details>`;
+  } catch (err) {
+    box.innerHTML = `<p class="lit-result is-bad">${escapeHtml(err.message)}</p>`;
+  }
 }
 
 const REVEAL_HINT_STUDENT = {
@@ -828,6 +1226,5 @@ const REVEAL_HINT_STUDENT = {
 };
 
 export function lessonPage() {
-  return `<div id="lesson-root"><p class="lede muted">Загружаем занятие…</p></div>`;
+  return `<div id="lesson-root"><p class="lede muted">Загружаем…</p></div>`;
 }
-

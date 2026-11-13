@@ -4680,3 +4680,132 @@ tr.l-hidden td {
 .learn-access .actions {
   margin: 8px 0 0;
 }
+
+/* ===================== Контрольные и пробные экзамены ===================== */
+.exam-bar {
+  position: sticky;
+  top: 64px;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--ink);
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+.exam-bar strong {
+  font-variant-numeric: tabular-nums;
+  font-size: 18px;
+}
+.exam-bar .btn {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+.exam-bar.is-low {
+  background: var(--bad);
+}
+.exam-intro {
+  padding: 20px 22px;
+}
+.exam-intro ul {
+  padding-left: 20px;
+  line-height: 1.6;
+}
+.l-new .grid-2 {
+  align-items: end;
+}
+.l-pick summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.l-pick-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px 14px;
+  margin-top: 10px;
+  max-height: 240px;
+  overflow: auto;
+}
+.l-who {
+  padding: 14px 18px;
+}
+.l-who summary {
+  cursor: pointer;
+}
+.l-add-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+.l-add-card {
+  padding: 16px 18px;
+}
+.l-add-card h3 {
+  margin: 0 0 10px;
+  font-family: var(--serif);
+}
+.l-label {
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+.l-nums {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.l-num {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+.l-num input {
+  width: auto;
+  margin: 0;
+}
+.linklike {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+.l-worked {
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 600;
+}
+.l-fresh {
+  color: var(--ok);
+  font-size: 13px;
+}
+.l-results .lit-item {
+  align-items: center;
+}
+.l-add-one {
+  flex: none;
+  padding: 6px 12px;
+}
+.l-added {
+  position: sticky;
+  top: 70px;
+  z-index: 5;
+  padding: 10px 14px;
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}

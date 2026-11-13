@@ -125,7 +125,7 @@ const REVEAL_HINT = {
   manual: "Разбор откроет преподаватель.",
 };
 
-export function bindCheck(root, problem, { sanitize, onCorrect, item = null } = {}) {
+export function bindCheck(root, problem, { sanitize, onCorrect, item = null, examMode = false } = {}) {
   const input = root.querySelector("#pr-answer");
   const result = root.querySelector("#pr-result");
   const btn = root.querySelector("#pr-check");
@@ -157,7 +157,12 @@ export function bindCheck(root, problem, { sanitize, onCorrect, item = null } = 
       tries += 1;
       const left = res.attempts_left != null ? ` Осталось попыток: ${res.attempts_left}.` : "";
       if (res.hidden) {
-        setResult(`Ответ принят. Результат и разбор появятся после проверки контрольной.${left}`, "");
+        setResult(
+          examMode
+            ? `Ответ сохранён: ${value}. Его можно изменить до конца времени.`
+            : `Ответ принят. Результат и разбор появятся после проверки.${left}`,
+          "is-ok"
+        );
         revealRow.hidden = true;
         if (res.attempts_left === 0) (input.disabled = true), (btn.disabled = true);
         onCorrect?.("submitted");
@@ -237,7 +242,11 @@ function criteriaHtml(criteria) {
   return rows ? `<p class="pr-crits">${rows}</p>` : "";
 }
 
-export function bindWritten(root, problem, { sanitize, label = "Ваш ответ", solutionTitle = "Пояснение и образец", item = null } = {}) {
+export function bindWritten(
+  root,
+  problem,
+  { sanitize, label = "Ваш ответ", solutionTitle = "Пояснение и образец", item = null, noSubmit = false, readOnly = false } = {}
+) {
   const box = root.querySelector("#pr-work");
   const solution = root.querySelector("#pr-solution");
   if (!box) return;
@@ -279,7 +288,7 @@ export function bindWritten(root, problem, { sanitize, label = "Ваш отве�
 
   const render = async () => {
     const status = work?.status || "draft";
-    const editable = status === "draft" || status === "returned";
+    const editable = !readOnly && (status === "draft" || status === "returned");
     files = work?.files || files;
     let saved = "";
     try {
@@ -309,9 +318,10 @@ export function bindWritten(root, problem, { sanitize, label = "Ваш отве�
           ? `
         <div class="pr-work-actions">
           <label class="btn secondary pr-file-btn">Приложить фото<input type="file" id="pr-file" accept="image/*,application/pdf" multiple hidden /></label>
-          <button type="button" class="btn secondary" id="pr-save">Сохранить черновик</button>
-          <button type="button" class="btn" id="pr-submit">Сдать на проверку</button>
-        </div>`
+          <button type="button" class="btn ${noSubmit ? "" : "secondary"}" id="pr-save">${noSubmit ? "Сохранить ответ" : "Сохранить черновик"}</button>
+          ${noSubmit ? "" : `<button type="button" class="btn" id="pr-submit">Сдать на проверку</button>`}
+        </div>
+        ${noSubmit ? `<p class="muted">Ответ сдастся автоматически, когда вы завершите работу или выйдет время. Сохраняйте почаще.</p>` : ""}`
           : ""
       }
       <p class="lit-send-status muted" id="pr-status" aria-live="polite"></p>`;
@@ -319,11 +329,16 @@ export function bindWritten(root, problem, { sanitize, label = "Ваш отве�
     const area = box.querySelector("#pr-essay");
     const statusEl = box.querySelector("#pr-status");
     const say = (t) => (statusEl.textContent = t);
+    let autosave = null;
     area?.addEventListener("input", () => {
       try {
         localStorage.setItem(draftKey, area.value);
       } catch {
         /* ignore */
+      }
+      if (noSubmit && editable) {
+        clearTimeout(autosave);
+        autosave = setTimeout(() => persist("draft", { quiet: true }), 20000);
       }
     });
     box.querySelector("#pr-file")?.addEventListener("change", async (e) => {
@@ -344,8 +359,17 @@ export function bindWritten(root, problem, { sanitize, label = "Ваш отве�
       box.querySelector("#pr-files").innerHTML = await filesHtml(files);
       say("Фото прикреплены. Не забудьте сохранить или сдать работу.");
     });
-    const persist = async (next) => {
+    const persist = async (next, { quiet = false } = {}) => {
       const body = area.value.trim();
+      if (quiet) {
+        try {
+          work = await saveWork({ id: work?.id, taskId: problem._tid, itemId: item?.id || null, body, files, status: "draft" });
+          say(`Сохранено автоматически в ${new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}.`);
+        } catch {
+          /* следующая попытка — при следующем вводе */
+        }
+        return;
+      }
       if (next === "submitted" && !body && !files.length) {
         say("Напишите ответ или приложите фото.");
         return;
