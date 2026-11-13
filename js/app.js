@@ -1,17 +1,18 @@
-import { layout } from "./ui.js?v=land67";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land67";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land67";
-import { mountLiterature } from "./literature.js?v=land67";
-import { mountRussian } from "./russian.js?v=land67";
-import { mountOge } from "./oge.js?v=land67";
-import { bindApplyForm } from "./apply.js?v=land67";
-import { EGE_TITLES } from "./ege.js?v=land67";
-import { renderExercise } from "./exercises.js?v=land67";
-import { mountTrainer } from "./trainers.js?v=land67";
-import { parseRoute } from "./route.js?v=land67";
+import { layout } from "./ui.js?v=land69";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land69";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land69";
+import { mountLiterature } from "./literature.js?v=land69";
+import { mountRussian } from "./russian.js?v=land69";
+import { mountOge } from "./oge.js?v=land69";
+import { bindApplyForm } from "./apply.js?v=land69";
+import { EGE_TITLES } from "./ege.js?v=land69";
+import { renderExercise } from "./exercises.js?v=land69";
+import { mountTrainer } from "./trainers.js?v=land69";
+import { parseRoute } from "./route.js?v=land69";
 import { initAuth, onAuthChange } from "./supa.js";
-import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land67";
-import { mountTeacher, teacherPage } from "./teacher.js?v=land67";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land69";
+import { mountTeacher, teacherPage } from "./teacher.js?v=land69";
+import { lessonPage, mountLesson } from "./lessons.js?v=land69";
 
 const app = document.getElementById("app");
 let content = null;
@@ -270,6 +271,13 @@ async function render() {
     mountHtml(mePage(), "me");
     setTitle("Личный кабинет");
     await mountMe(app);
+    return;
+  }
+
+  if (a === "lesson") {
+    mountHtml(lessonPage(), "me");
+    setTitle("Занятие");
+    await mountLesson(app, parts.slice(1));
     return;
   }
 

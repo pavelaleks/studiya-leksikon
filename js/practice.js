@@ -106,7 +106,8 @@ export function checkBlockHtml({ label, placeholder = "Введите ответ
 
 function solutionHtml(sanitize, res, title = "Разбор") {
   if (!res || res.locked) return "";
-  const answer = res.answer ? `<p class="pr-answer-key"><strong>Ответ:</strong> ${escapeHtml(String(res.answer).replace(/\|/g, " или "))}</p>` : "";
+  // Строку «Ответ» показываем, только если разбора нет: в разборах ответ уже записан по-человечески.
+  const answer = res.answer && !res.solution ? `<p class="pr-answer-key"><strong>Ответ:</strong> ${escapeHtml(String(res.answer).replace(/\|/g, " или "))}</p>` : "";
   const body = res.solution ? `<div class="lit-html">${sanitize(res.solution)}</div>` : "";
   if (!answer && !body) return "";
   return `<details class="lit-solution" open><summary>${escapeHtml(title)}</summary>${answer}${body}</details>`;
@@ -116,7 +117,15 @@ function solutionHtml(sanitize, res, title = "Разбор") {
  * Привязать проверку. problem._tid — id задания в базе.
  * onCorrect() — отметить «решено» локально.
  */
-export function bindCheck(root, problem, { sanitize, onCorrect } = {}) {
+const REVEAL_HINT = {
+  after_attempt: "Разбор откроется после попытки.",
+  after_correct: "Разбор откроется после верного ответа или когда закончатся попытки.",
+  after_due: "Разбор откроется после срока сдачи.",
+  after_review: "Разбор откроется после проверки преподавателем.",
+  manual: "Разбор откроет преподаватель.",
+};
+
+export function bindCheck(root, problem, { sanitize, onCorrect, item = null } = {}) {
   const input = root.querySelector("#pr-answer");
   const result = root.querySelector("#pr-result");
   const btn = root.querySelector("#pr-check");
@@ -142,27 +151,44 @@ export function bindCheck(root, problem, { sanitize, onCorrect } = {}) {
     setResult("Проверяем…");
     try {
       const res = await submitAnswer(problem._tid, value, {
+        item: item?.id || null,
         seconds: Math.round((Date.now() - started) / 1000),
       });
       tries += 1;
+      const left = res.attempts_left != null ? ` Осталось попыток: ${res.attempts_left}.` : "";
+      if (res.hidden) {
+        setResult(`Ответ принят. Результат и разбор появятся после проверки контрольной.${left}`, "");
+        revealRow.hidden = true;
+        if (res.attempts_left === 0) (input.disabled = true), (btn.disabled = true);
+        onCorrect?.("submitted");
+        return;
+      }
       if (res.correct) {
         setResult("Верно!", "is-ok");
         revealRow.hidden = true;
         solution.innerHTML = solutionHtml(sanitize, res);
         onCorrect?.();
       } else {
+        const exhausted = res.attempts_left === 0;
         setResult(
-          tries === 1
-            ? "Пока не совпало. Перечитайте задание и попробуйте ещё раз."
-            : "Снова не совпало. Можно попробовать ещё или открыть разбор.",
+          exhausted
+            ? "Не совпало, попытки закончились."
+            : (tries === 1
+                ? "Пока не совпало. Перечитайте задание и попробуйте ещё раз."
+                : "Снова не совпало. Можно попробовать ещё или открыть разбор.") + left,
           "is-bad"
         );
+        if (exhausted) input.disabled = true;
         revealRow.hidden = !res.can_reveal;
+        if (!res.can_reveal && item) {
+          const hint = REVEAL_HINT[item.reveal];
+          if (hint) result.textContent += ` ${hint}`;
+        }
       }
     } catch (err) {
       setResult(err.message, "is-bad");
     } finally {
-      btn.disabled = false;
+      if (!input.disabled) btn.disabled = false;
     }
   };
 
@@ -176,9 +202,9 @@ export function bindCheck(root, problem, { sanitize, onCorrect } = {}) {
   reveal?.addEventListener("click", async () => {
     reveal.disabled = true;
     try {
-      const res = await showSolution(problem._tid);
+      const res = await showSolution(problem._tid, item?.id || null);
       if (res.locked) {
-        setResult("Разбор откроется после попытки.", "");
+        setResult((item && REVEAL_HINT[item.reveal]) || "Разбор откроется после попытки.", "");
       } else {
         solution.innerHTML = solutionHtml(sanitize, res);
         revealRow.hidden = true;
@@ -211,7 +237,7 @@ function criteriaHtml(criteria) {
   return rows ? `<p class="pr-crits">${rows}</p>` : "";
 }
 
-export function bindWritten(root, problem, { sanitize, label = "Ваш ответ", solutionTitle = "Пояснение и образец" } = {}) {
+export function bindWritten(root, problem, { sanitize, label = "Ваш ответ", solutionTitle = "Пояснение и образец", item = null } = {}) {
   const box = root.querySelector("#pr-work");
   const solution = root.querySelector("#pr-solution");
   if (!box) return;
@@ -223,13 +249,13 @@ export function bindWritten(root, problem, { sanitize, label = "Ваш отве�
     return;
   }
 
-  const draftKey = `work-draft-${problem._tid}`;
+  const draftKey = `work-draft-${problem._tid}${item ? `-${item.id}` : ""}`;
   let work = null;
   let files = [];
 
   const loadSolution = async () => {
     try {
-      const res = await showSolution(problem._tid);
+      const res = await showSolution(problem._tid, item?.id || null);
       solution.innerHTML = solutionHtml(sanitize, res, solutionTitle);
     } catch {
       /* разбор не обязателен */
@@ -326,7 +352,7 @@ export function bindWritten(root, problem, { sanitize, label = "Ваш отве�
       }
       say(next === "submitted" ? "Сдаём…" : "Сохраняем…");
       try {
-        work = await saveWork({ id: work?.id, taskId: problem._tid, body, files, status: next });
+        work = await saveWork({ id: work?.id, taskId: problem._tid, itemId: item?.id || null, body, files, status: next });
         if (next === "submitted") {
           try {
             localStorage.removeItem(draftKey);
@@ -346,7 +372,7 @@ export function bindWritten(root, problem, { sanitize, label = "Ваш отве�
     box.querySelector("#pr-submit")?.addEventListener("click", () => persist("submitted"));
   };
 
-  myWorkFor(problem._tid)
+  myWorkFor(problem._tid, item?.id || null)
     .then(async (w) => {
       work = w;
       await render();

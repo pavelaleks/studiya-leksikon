@@ -4515,3 +4515,149 @@ tr.t-bad strong {
 .t-row .actions {
   margin-top: 4px;
 }
+
+/* ===================== Занятия ===================== */
+.l-head .l-title {
+  width: 100%;
+  font-family: var(--serif);
+  font-size: clamp(24px, 4vw, 34px);
+  font-weight: 700;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 4px 6px;
+  margin-left: -6px;
+}
+.l-head .l-title:hover,
+.l-head .l-title:focus {
+  border-color: var(--line);
+  background: #fff;
+}
+.lesson-status {
+  display: inline-block;
+  padding: 1px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--paper-deep);
+}
+.lesson-live {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+.lesson-done {
+  color: var(--ink-soft);
+}
+.live-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--line);
+  vertical-align: middle;
+}
+.live-dot.on {
+  background: #2fa35a;
+  box-shadow: 0 0 0 4px rgba(47, 163, 90, 0.18);
+}
+.board th,
+.board td {
+  text-align: center;
+  white-space: nowrap;
+}
+.board tbody th,
+.board tfoot th {
+  text-align: left;
+  font-weight: 600;
+  background: var(--card);
+  position: sticky;
+  left: 0;
+}
+.board td small {
+  font-size: 10px;
+  vertical-align: super;
+  margin-left: 1px;
+}
+.b-ok {
+  background: var(--ok-bg);
+  color: var(--ok);
+  font-weight: 700;
+}
+.b-bad {
+  background: var(--bad-bg);
+  color: var(--bad);
+  font-weight: 700;
+}
+.b-empty {
+  color: var(--line);
+}
+.b-work a {
+  font-weight: 700;
+  text-decoration: none;
+}
+.b-submitted {
+  background: #fff6e0;
+}
+.b-graded {
+  background: var(--ok-bg);
+}
+.b-returned {
+  background: var(--bad-bg);
+}
+.b-sum {
+  font-weight: 700;
+}
+.l-items td {
+  vertical-align: middle;
+}
+.l-items select,
+.l-items input[type="datetime-local"] {
+  width: auto;
+  max-width: 190px;
+  font-size: 13px;
+  padding: 6px 8px;
+}
+.l-row-actions {
+  white-space: nowrap;
+}
+.l-row-actions .btn {
+  padding: 6px 10px;
+  font-size: 13px;
+  display: inline-flex;
+}
+tr.l-hidden td {
+  opacity: 0.55;
+}
+.t-okc {
+  color: var(--ok);
+  font-weight: 700;
+}
+.l-defaults {
+  background: var(--paper-deep);
+}
+.l-random {
+  align-items: center;
+  margin-top: 10px;
+}
+.l-results .lit-item {
+  cursor: default;
+}
+.l-results input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+.l-st {
+  font-weight: 700;
+  font-size: 13px;
+}
+.l-st.is-ok {
+  color: var(--ok);
+}
+.l-st.is-bad {
+  color: var(--bad);
+}
+.l-st.is-wait {
+  color: var(--gold);
+}
+.l-history {
+  margin: 8px 0;
+}

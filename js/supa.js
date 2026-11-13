@@ -259,12 +259,11 @@ export async function mySolved() {
 /* Письменные работы                                                   */
 /* ------------------------------------------------------------------ */
 
-export async function myWorkFor(taskId) {
+export async function myWorkFor(taskId, itemId = null) {
   if (!session) return null;
-  const { data, error } = await supa
-    .from("written_works")
-    .select("*")
-    .eq("task_id", taskId)
+  let q = supa.from("written_works").select("*").eq("task_id", taskId);
+  q = itemId ? q.eq("item_id", itemId) : q.is("item_id", null);
+  const { data, error } = await q
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -289,13 +288,13 @@ export async function signedFileUrl(path) {
 }
 
 /** Сохранить черновик или сдать работу (status: 'draft' | 'submitted'). */
-export async function saveWork({ id = null, taskId, body, files = [], status }) {
+export async function saveWork({ id = null, taskId, itemId = null, body, files = [], status }) {
   const uid = session?.user?.id;
   if (!uid) throw new Error("Нужно войти.");
   const row = { body, files, status };
   const q = id
     ? supa.from("written_works").update(row).eq("id", id)
-    : supa.from("written_works").insert({ ...row, task_id: taskId, student_id: uid });
+    : supa.from("written_works").insert({ ...row, task_id: taskId, item_id: itemId, student_id: uid });
   const { data, error } = await q.select().single();
   if (error) throw humanError(error);
   return data;

@@ -1,14 +1,15 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land67";
+import { taskHref } from "./account.js?v=land69";
 import { clearBankCache, currentUser, humanError, isTeacher, signedFileUrl, supa } from "./supa.js";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land69";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
 /* ------------------------------------------------------------------ */
 
-const SOURCES = {
+export const SOURCES = {
   "ege-rus": { title: "ЕГЭ · русский язык", manifest: "js/russian-data/manifest.json", dir: "js/russian-data" },
   "oge-rus": { title: "ОГЭ · русский язык", manifest: "js/oge-data/manifest.json", dir: "js/oge-data" },
   "ege-lit": { title: "ЕГЭ · литература", manifest: "js/literature-data/manifest.json", dir: "js/literature-data" },
@@ -54,7 +55,7 @@ async function manifest(source) {
 
 const bankIdOf = (file) => String(file).replace(/^bank\//, "").replace(/\.json$/i, "");
 
-async function bankFiles(source) {
+export async function bankFiles(source) {
   const m = await manifest(source);
   return (m.files || [])
     .map((f) => ({ ...f, bank: bankIdOf(f.file) }))
@@ -207,6 +208,7 @@ async function saveTasks(built) {
 /* ------------------------------------------------------------------ */
 
 const TABS = [
+  ["lessons", "Занятия"],
   ["students", "Ученики"],
   ["works", "Проверка работ"],
   ["bank", "Банк заданий"],
@@ -247,10 +249,13 @@ export async function mountTeacher(root, parts) {
     host.innerHTML = `<div class="empty">Этот раздел — только для преподавателя. <a href="#/me">В личный кабинет</a></div>`;
     return;
   }
-  const [tab = "students", sub, arg] = parts;
+  const [tab = "lessons", sub, arg] = parts;
   const b = await badges().catch(() => ({}));
-  const render = (body) => (host.innerHTML = shell(tab === "student" ? "students" : tab, body, b));
+  const active = tab === "student" ? "students" : tab === "lesson" ? "lessons" : tab;
+  const render = (body) => (host.innerHTML = shell(active, body, b));
   try {
+    if (tab === "lessons") return await lessonsListView(host, render);
+    if (tab === "lesson") return await lessonEditView(host, render, sub);
     if (tab === "students") return await studentsView(host, render);
     if (tab === "student") return await studentView(host, render, sub);
     if (tab === "works") return await worksView(host, render, sub);

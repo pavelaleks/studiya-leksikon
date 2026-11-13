@@ -265,6 +265,7 @@ export async function mountMe(root) {
         <p class="lit-result" id="me-join-status"></p>
       </form>
     </section>` : ""}
+    ${await (await import("./lessons.js?v=land69")).myLessonsHtml().catch(() => "")}
     <section class="me-section"><h2>Прогресс по номерам</h2>${statsHtml(stats.data || [])}</section>
     <section class="me-section"><h2>Тетрадь ошибок</h2>${mistakesHtml(mistakes.data || [])}</section>
     <section class="me-section"><h2>Письменные работы</h2>${worksHtml(works.data || [])}</section>
