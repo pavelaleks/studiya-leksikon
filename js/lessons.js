@@ -5,9 +5,9 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land72";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land72";
-import { SOURCES, bankFiles } from "./teacher.js?v=land72";
+import { taskHref } from "./account.js?v=land73";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land73";
+import { SOURCES, bankFiles } from "./teacher.js?v=land73";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };

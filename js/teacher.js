@@ -1,9 +1,9 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land72";
-import { clearBankCache, currentUser, humanError, isTeacher, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land72";
+import { taskHref } from "./account.js?v=land73";
+import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land73";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -285,6 +285,7 @@ function teacherLogin(host) {
         <label>E-mail<input type="email" name="email" required autocomplete="username" /></label>
         <label>Пароль<input type="password" name="password" required autocomplete="current-password" /></label>
         <button class="btn" type="submit">Войти в кабинет преподавателя</button>
+        <p class="muted"><a href="#/login?mode=reset">Забыли пароль?</a></p>
         <p class="lit-result" id="t-login-status" aria-live="polite"></p>
       </form>
     </div>`;
@@ -463,6 +464,7 @@ async function studentView(host, render, id) {
     <p class="crumbs"><a href="#/cabinet/students">← Ученики</a></p>
     <h1>${escapeHtml(p.full_name || p.email)}</h1>
     <p class="lede">${escapeHtml(p.email || "")} · ${STATUS_TEXT[p.status]}${p.grade ? ` · ${p.grade} класс` : ""}${p.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""}${p.contact ? ` · ${escapeHtml(p.contact)}` : ""}</p>
+    ${p.email ? `<p class="actions"><button class="btn secondary" id="t-reset">Отправить ученику ссылку для смены пароля</button> <span class="muted" id="t-reset-status"></span></p>` : ""}
     <section class="me-section">
       <h2>Заметки (видите только вы)</h2>
       <textarea id="t-note" class="lit-essay" style="min-height:90px">${escapeHtml(note?.note || "")}</textarea>
@@ -477,6 +479,18 @@ async function studentView(host, render, id) {
     <section class="me-section"><h2>Последние ответы</h2>
       ${attemptRows ? `<div class="t-table-wrap"><table class="t-table"><thead><tr><th>Когда</th><th>Задание</th><th>Ответ</th><th></th><th>Время</th></tr></thead><tbody>${attemptRows}</tbody></table></div>` : `<p class="muted">Нет.</p>`}
     </section>`);
+  host.querySelector("#t-reset")?.addEventListener("click", async (e) => {
+    const st = host.querySelector("#t-reset-status");
+    if (!confirm(`Отправить письмо со ссылкой для смены пароля на ${p.email}?`)) return;
+    e.target.disabled = true;
+    try {
+      await resetPassword(p.email);
+      st.textContent = `Письмо отправлено на ${p.email}. Ссылка действует около часа.`;
+    } catch (err) {
+      st.textContent = err.message;
+      e.target.disabled = false;
+    }
+  });
   host.querySelector("#t-note-save")?.addEventListener("click", async () => {
     const { error } = await supa
       .from("student_notes")

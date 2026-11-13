@@ -143,7 +143,7 @@ export function bindLogin(root) {
         else say("Почти готово: откройте письмо, которое пришло на почту, и подтвердите адрес.", "is-ok");
       } else {
         await resetPassword(email);
-        say("Если такой e-mail зарегистрирован, на него пришла ссылка для смены пароля.", "is-ok");
+        say("Если такой e-mail зарегистрирован, на него пришло письмо со ссылкой для нового пароля. Проверьте и папку «Спам». Ссылка действует около часа.", "is-ok");
       }
     } catch (err) {
       say(err.message, "is-bad");
@@ -265,7 +265,7 @@ export async function mountMe(root) {
         <p class="lit-result" id="me-join-status"></p>
       </form>
     </section>` : ""}
-    ${await (await import("./lessons.js?v=land72")).myLessonsHtml().catch(() => "")}
+    ${await (await import("./lessons.js?v=land73")).myLessonsHtml().catch(() => "")}
     <section class="me-section"><h2>Прогресс по номерам</h2>${statsHtml(stats.data || [])}</section>
     <section class="me-section"><h2>Тетрадь ошибок</h2>${mistakesHtml(mistakes.data || [])}</section>
     <section class="me-section"><h2>Письменные работы</h2>${worksHtml(works.data || [])}</section>
@@ -321,25 +321,65 @@ export function passwordPage() {
     <div class="auth-page">
       <h1>Новый пароль</h1>
       <form id="pw-form" class="stack card auth-card">
-        <label>Новый пароль<input type="password" name="password" minlength="8" required autocomplete="new-password" /></label>
+        <p class="muted" id="pw-who"></p>
+        <label>Новый пароль (не меньше 8 символов)<input type="password" name="password" minlength="8" required autocomplete="new-password" /></label>
+        <label>Повторите пароль<input type="password" name="password2" minlength="8" required autocomplete="new-password" /></label>
         <button class="btn" type="submit">Сохранить</button>
         <p class="lit-result" id="pw-status"></p>
       </form>
     </div>`;
 }
 
-export function bindPassword(root) {
-  root.querySelector("#pw-form")?.addEventListener("submit", async (e) => {
+/**
+ * Ссылка из письма: #/me/password?token_hash=…&type=recovery.
+ * Код проверяется на сервере (verifyOtp) — работает на любом устройстве, не только там, где просили письмо.
+ */
+export async function bindPassword(root) {
+  const form = root.querySelector("#pw-form");
+  const status = root.querySelector("#pw-status");
+  const who = root.querySelector("#pw-who");
+  const say = (t, cls = "") => {
+    status.className = `lit-result ${cls}`;
+    status.textContent = t;
+  };
+  const q = new URLSearchParams(location.hash.split("?")[1] || "");
+  const tokenHash = q.get("token_hash");
+  if (tokenHash) {
+    form.querySelector("button").disabled = true;
+    say("Проверяем ссылку…");
+    const { error } = await supa.auth.verifyOtp({ token_hash: tokenHash, type: q.get("type") || "recovery" });
+    // убираем одноразовый код из адресной строки
+    history.replaceState(null, "", `${location.pathname}${location.search}#/me/password`);
+    form.querySelector("button").disabled = false;
+    if (error) {
+      say("Ссылка устарела или уже использована. Запросите новую: «Войти» → «Забыли пароль?».", "is-bad");
+      return;
+    }
+    say("");
+  }
+  const user = currentUser() || (await supa.auth.getUser()).data.user;
+  if (!user) {
+    say("Откройте страницу по ссылке из письма или войдите. Новую ссылку можно запросить: «Войти» → «Забыли пароль?».", "is-bad");
+    form.querySelector("button").disabled = true;
+    return;
+  }
+  who.textContent = `Учётная запись: ${user.email}`;
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const status = root.querySelector("#pw-status");
+    const f = new FormData(form);
+    if (f.get("password") !== f.get("password2")) {
+      say("Пароли не совпадают.", "is-bad");
+      return;
+    }
+    form.querySelector("button").disabled = true;
     try {
-      await updatePassword(String(new FormData(e.target).get("password")));
-      status.className = "lit-result is-ok";
-      status.textContent = "Пароль обновлён.";
-      setTimeout(() => (location.hash = "#/me"), 800);
+      await updatePassword(String(f.get("password")));
+      say("Пароль обновлён. Открываем кабинет…", "is-ok");
+      await refreshProfile();
+      setTimeout(() => (location.hash = currentProfile()?.role === "teacher" ? "#/cabinet" : "#/me"), 900);
     } catch (err) {
-      status.className = "lit-result is-bad";
-      status.textContent = err.message;
+      say(err.message, "is-bad");
+      form.querySelector("button").disabled = false;
     }
   });
 }
