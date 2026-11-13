@@ -5,13 +5,13 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land74";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land74";
-import { SOURCES, bankFiles } from "./teacher.js?v=land74";
+import { taskHref } from "./account.js?v=land76";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land76";
+import { SOURCES, bankFiles } from "./teacher.js?v=land76";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land74";
+} from "./exams.js?v=land76";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -165,7 +165,7 @@ export async function lessonsListView(host, render) {
   const [{ data: lessons, error }, { data: groups }, { data: students }, { data: items }, { data: assignees }] = await Promise.all([
     supa
       .from("lessons")
-      .select("id, title, status, kind, exam_code, duration_minutes, starts_at, created_at, group_id, student_id, groups(title), profiles(full_name, email)")
+      .select("id, title, status, kind, exam_code, duration_minutes, starts_at, created_at, group_id, student_id, groups(title), profiles!lessons_student_id_fkey(full_name, email)")
       .order("starts_at", { ascending: false, nullsFirst: true })
       .order("created_at", { ascending: false }),
     supa.from("groups").select("id, title").eq("archived", false).order("title"),
@@ -232,7 +232,7 @@ export async function lessonsListView(host, render) {
     if (kind === "exam") {
       const ex = EXAMS[examSel.value];
       dur.value = ex.minutes;
-      form.querySelector("#l-exam-note").textContent = `Время по умолчанию: ${ex.note}. Задания: ${ex.numbers[0]}–${ex.numbers.at(-1)}.`;
+      form.querySelector("#l-exam-note").textContent = `Время по умолчанию: ${durationText(ex.minutes)} (${ex.note}). Задания: ${ex.numbers[0]}–${ex.numbers.at(-1)}.`;
       form.querySelector('[name="title"]').placeholder = `Пробный ${ex.title}`;
     } else if (kind === "test") {
       if (!dur.value || Object.values(EXAMS).some((x) => String(x.minutes) === dur.value)) dur.value = 45;
@@ -301,7 +301,7 @@ export async function lessonsListView(host, render) {
 async function loadLesson(id) {
   const { data: lesson, error } = await supa
     .from("lessons")
-    .select("*, groups(id, title), profiles(id, full_name, email)")
+    .select("*, groups(id, title), profiles!lessons_student_id_fkey(id, full_name, email)")
     .eq("id", id)
     .maybeSingle();
   if (error) throw humanError(error);
@@ -576,6 +576,8 @@ export async function lessonEditView(host, render, id) {
 
   const reload = () => lessonEditView(host, render, id);
   const refreshBoard = async () => {
+    // работы на время: черновики тех, у кого время вышло, сдаются на сервере
+    if (lesson.duration_minutes) await supa.rpc("finalize_exam_works", { p_lesson: id });
     const fresh = await loadLesson(id);
     if (!fresh) return;
     const board = await loadBoard(fresh.items);

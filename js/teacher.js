@@ -1,9 +1,9 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land74";
+import { taskHref } from "./account.js?v=land76";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land74";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land76";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -505,6 +505,9 @@ async function studentView(host, render, id) {
 
 async function worksView(host, render, workId) {
   if (workId) return workReview(host, render, workId);
+  // работы на время, у которых вышло время: сервер сдаёт оставшиеся черновики
+  const { data: timed } = await supa.from("lessons").select("id").not("duration_minutes", "is", null).neq("status", "draft").limit(30);
+  await Promise.all((timed || []).map((l) => supa.rpc("finalize_exam_works", { p_lesson: l.id })));
   const { data, error } = await supa
     .from("written_works")
     .select("id, status, submitted_at, score, max_score, body, profiles(full_name, email), tasks(source, task_no, source_ref)")
