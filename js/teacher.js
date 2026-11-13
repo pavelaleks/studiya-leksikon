@@ -1,9 +1,9 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land69";
-import { clearBankCache, currentUser, humanError, isTeacher, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land69";
+import { taskHref } from "./account.js?v=land70";
+import { clearBankCache, currentUser, humanError, isTeacher, signIn, signedFileUrl, supa } from "./supa.js";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land70";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -242,11 +242,11 @@ async function badges() {
 export async function mountTeacher(root, parts) {
   const host = root.querySelector("#teacher-root");
   if (!currentUser()) {
-    location.hash = `#/login?next=${encodeURIComponent(location.hash)}`;
+    teacherLogin(host);
     return;
   }
   if (!isTeacher()) {
-    host.innerHTML = `<div class="empty">Этот раздел — только для преподавателя. <a href="#/me">В личный кабинет</a></div>`;
+    host.innerHTML = `<div class="empty">Этот раздел — только для преподавателя. Вы вошли как ученик. <a href="#/me">В личный кабинет</a></div>`;
     return;
   }
   const [tab = "lessons", sub, arg] = parts;
@@ -272,6 +272,40 @@ export async function mountTeacher(root, parts) {
     console.error(err);
     render(`<div class="empty">Ошибка: ${escapeHtml(err.message)}</div>`);
   }
+}
+
+/** Отдельная страница входа для преподавателя (ссылка внизу сайта). Регистрации здесь нет. */
+function teacherLogin(host) {
+  host.innerHTML = `
+    <div class="auth-page">
+      <p class="eyebrow">Студия Лексикон</p>
+      <h1>Вход для преподавателя</h1>
+      <p class="lede">Ученикам сюда не нужно — их вход вверху сайта, кнопка «Войти».</p>
+      <form id="t-login" class="stack card auth-card">
+        <label>E-mail<input type="email" name="email" required autocomplete="username" /></label>
+        <label>Пароль<input type="password" name="password" required autocomplete="current-password" /></label>
+        <button class="btn" type="submit">Войти в кабинет преподавателя</button>
+        <p class="lit-result" id="t-login-status" aria-live="polite"></p>
+      </form>
+    </div>`;
+  const form = host.querySelector("#t-login");
+  const status = host.querySelector("#t-login-status");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = new FormData(form);
+    const btn = form.querySelector("button");
+    btn.disabled = true;
+    status.className = "lit-result";
+    status.textContent = "Входим…";
+    try {
+      await signIn(String(f.get("email")).trim(), String(f.get("password")));
+      // После входа сайт сам перерисует кабинет (onAuthChange).
+    } catch (err) {
+      status.className = "lit-result is-bad";
+      status.textContent = err.message;
+      btn.disabled = false;
+    }
+  });
 }
 
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("ru-RU") : "");
