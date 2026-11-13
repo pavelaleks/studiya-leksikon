@@ -31,17 +31,16 @@ jobs:
         run: python tools/bank.py unlock
       - name: Collect site files
         run: |
-          mkdir -p _site/css _site/js _site/data/ege
+          mkdir -p _site/css _site/js _site/data
           cp index.html 404.html favicon.svg _site/
           cp -r css/. _site/css/
           cp -r js/. _site/js/
           # Банк заданий с ответами живёт в Supabase. На сайт уходят только манифесты и картинки.
           rm -rf _site/js/russian-data/problems _site/js/russian-data/passages _site/js/russian-data/bank
           rm -rf _site/js/oge-data/problems _site/js/oge-data/passages _site/js/oge-data/bank
-          rm -rf _site/js/literature-data/bank
-          ! grep -rl '"solutionHtml"' _site/js || (echo "В публикацию попали ответы" && exit 1)
+          rm -rf _site/js/literature-data/bank _site/js/literature-data/index.json
+          ! grep -rlE --include='*.json' '"(solutionHtml|answerNorm)"' _site/js || (echo "В публикацию попали ответы" && exit 1)
           cp data/orthography.json data/punctuation.json data/stylistics.json data/exercises.json _site/data/
-          cp data/ege/*.json _site/data/ege/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

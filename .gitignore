@@ -34,3 +34,13 @@ Doschinskii*.pdf
 *.pdf
 *.heic
 *.HEIC
+
+# Банк заданий с ответами живёт в Supabase; исходники — только локально
+js/russian-data/problems/
+js/russian-data/passages/
+js/russian-data/bank/
+js/oge-data/problems/
+js/oge-data/passages/
+js/oge-data/bank/
+js/literature-data/bank/
+js/literature-data/index.json
