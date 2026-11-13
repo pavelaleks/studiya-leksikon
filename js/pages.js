@@ -4,6 +4,7 @@ import { EGE_TITLES } from "./ege.js";
 import { readProgress } from "./progress.js";
 import { STUDIO, studioTelegram, studioWhatsApp } from "./config.js";
 import { iconTelegram, iconWhatsApp } from "./icons.js";
+import { accessState } from "./supa.js";
 
 function contactsBlock(extraClass = "", { mail = true } = {}) {
   const tg = studioTelegram();
@@ -181,6 +182,33 @@ export function homeHitsHtml(content, raw) {
       ${q.length >= 2 ? `<a class="rule-row" href="#/rules?q=${encodeURIComponent(query)}">Все правила в каталоге</a>` : ""}
     </div>
   `;
+}
+
+/** Плашка над материалами: что открыто именно этому посетителю. */
+function accessNoteHtml() {
+  const state = accessState();
+  if (state === "teacher") {
+    return `<div class="learn-access is-full">
+      <p><strong>Вы вошли как преподаватель.</strong> Весь банк открыт: ЕГЭ и ОГЭ по русскому, литература — с ответами и разборами.</p>
+      <p class="actions"><a class="btn" href="#/cabinet/lessons">Занятия</a><a class="btn secondary" href="#/cabinet/bank">Банк заданий</a><a class="btn secondary" href="#/cabinet/students">Ученики</a></p>
+    </div>`;
+  }
+  if (state === "student") {
+    return `<div class="learn-access is-full">
+      <p><strong>Вам открыт весь банк заданий</strong> с проверкой и разборами. Задания от преподавателя — в разделе «Мои занятия».</p>
+      <p class="actions"><a class="btn" href="#/me">Личный кабинет</a></p>
+    </div>`;
+  }
+  if (state === "pending") {
+    return `<div class="learn-access"><p><strong>Регистрация прошла.</strong> Как только преподаватель подтвердит доступ, здесь откроется весь банк заданий. Пока доступны демо-задания.</p></div>`;
+  }
+  if (state === "paused" || state === "expired") {
+    return `<div class="learn-access"><p><strong>Доступ к банку приостановлен.</strong> Напишите преподавателю, чтобы продлить. Правила и тренажёры открыты.</p></div>`;
+  }
+  return `<div class="learn-access">
+    <p>Правила и тренажёры открыты всем. <strong>Банк заданий с разборами</strong> — для учеников студии; гостям доступны демо-задания.</p>
+    <p class="actions"><a class="btn" href="#/login">Войти</a><a class="btn secondary" href="#/login?mode=signup">Зарегистрироваться</a></p>
+  </div>`;
 }
 
 export function homePage(content) {
@@ -423,6 +451,7 @@ export function homePage(content) {
       <h2 id="learn-title">Материалы для занятий</h2>
       <p class="lede">Русский язык и литература: правила, тренажёры и темы для ЕГЭ. Работаем с ними на уроках, заниматься можно и дома.</p>
       ${continueHtml(true)}
+      ${accessNoteHtml()}
 
       <div class="landing-learn-subjects">
         <article class="landing-learn-subject">

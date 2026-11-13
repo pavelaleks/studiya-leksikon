@@ -4661,3 +4661,22 @@ tr.l-hidden td {
 .l-history {
   margin: 8px 0;
 }
+
+.learn-access {
+  margin: 18px 0 22px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+}
+.learn-access.is-full {
+  border-left-color: var(--ok);
+  background: var(--ok-bg);
+}
+.learn-access p {
+  margin: 0 0 8px;
+}
+.learn-access .actions {
+  margin: 8px 0 0;
+}
