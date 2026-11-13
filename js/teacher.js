@@ -1,9 +1,13 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land76";
+import { taskHref } from "./account.js?v=land78";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land76";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land78";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land78";
+import {
+  countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
+} from "./review.js?v=land78";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -539,78 +543,257 @@ async function worksView(host, render, workId) {
 async function workReview(host, render, id) {
   const { data: w, error } = await supa
     .from("written_works")
-    .select("*, profiles(full_name, email), tasks(id, source, task_no, source_ref, data, passage_id)")
+    .select("*, profiles(full_name, email), tasks(id, source, bank_file, task_no, source_ref, data, passage_id)")
     .eq("id", id)
     .maybeSingle();
   if (error) throw humanError(error);
   if (!w) return render(`<div class="empty">Работа не найдена.</div>`);
   const { data: full } = w.task_id ? await supa.rpc("teacher_get_task", { p_task: w.task_id }) : { data: null };
-  const photos = await Promise.all(
+  let passage = "";
+  if (w.tasks?.passage_id) {
+    const { data } = await supa.from("passages").select("html").eq("id", w.tasks.passage_id).maybeSingle();
+    passage = data?.html || "";
+  }
+  const ann = { text: [...(w.annotations?.text || [])], photos: { ...(w.annotations?.photos || {}) } };
+  const body = w.body || "";
+  const words = countWords(body);
+  const saved = w.criteria?.rubric ? w.criteria : { rubric: rubricFor(w.tasks), scores: w.criteria || {} };
+  let rubricId = saved.rubric;
+  let scores = { ...(saved.scores || {}) };
+  const photoUrls = {};
+  await Promise.all(
     (w.files || []).map(async (p) => {
       try {
-        const url = await signedFileUrl(p);
-        return /\.pdf$/i.test(p)
-          ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">PDF</a>`
-          : `<a href="${escapeHtml(url)}" target="_blank" rel="noopener"><img src="${escapeHtml(url)}" alt="фото работы" class="t-photo" /></a>`;
+        photoUrls[p] = await signedFileUrl(p);
       } catch {
-        return "";
+        /* нет доступа к файлу */
       }
     })
   );
-  const crit = w.criteria ? Object.entries(w.criteria).map(([k, v]) => `${k}: ${v}`).join("\n") : "";
+
   render(`
     <p class="crumbs"><a href="#/cabinet/works">← Все работы</a></p>
     <h1>${escapeHtml(w.profiles?.full_name || w.profiles?.email || "Работа")}</h1>
     <p class="lede">${escapeHtml(SOURCES[w.tasks?.source]?.title || "")} · задание ${w.tasks?.task_no ?? ""} · № ${escapeHtml(String(w.tasks?.source_ref || ""))} · ${WORK_STATUS[w.status]} · сдано ${fmtDateTime(w.submitted_at)}</p>
-    <details class="lit-solution"><summary>Условие задания</summary><div class="lit-html">${w.tasks?.data?.questionHtml || ""}</div></details>
+    <details class="lit-solution"><summary>Условие задания</summary>${passage ? `<div class="lit-html rv-passage">${passage}</div>` : ""}<div class="lit-html">${w.tasks?.data?.questionHtml || ""}</div></details>
     ${full?.key?.solution_html ? `<details class="lit-solution"><summary>Образец / пояснение</summary><div class="lit-html">${full.key.solution_html}</div></details>` : ""}
+
     <section class="me-section">
-      <h2>Ответ ученика</h2>
-      <div class="card t-work-body">${escapeHtml(w.body || "").replace(/\n/g, "<br>") || '<span class="muted">Текста нет — смотрите фото.</span>'}</div>
-      ${photos.length ? `<div class="t-photos">${photos.join("")}</div>` : ""}
-      <p class="muted">${(w.body || "").trim().split(/\s+/).filter(Boolean).length} слов</p>
+      <h2>Ответ ученика <small class="muted">${words} сл.</small></h2>
+      ${
+        body.trim()
+          ? `<p class="muted">Выделите мышью слово или фрагмент — появится панель пометок.</p>
+        <div class="card rv-body" id="rv-body">${markedTextHtml(body, ann.text)}</div>
+        <div id="rv-pop" class="rv-pop" hidden>
+          ${Object.entries(MARKS).map(([k, m]) => `<button type="button" data-mark="${k}" class="rv-chip rv-${k}" title="${escapeHtml(m.title)}">${escapeHtml(m.label)}</button>`).join("")}
+          <input id="rv-note" placeholder="комментарий (необязательно)" />
+        </div>
+        <div id="rv-list">${marksListHtml(ann.text, { editable: true })}</div>`
+          : '<p class="muted">Текста нет — смотрите фото.</p>'
+      }
+      ${
+        (w.files || []).length
+          ? `<h3>Фото работы</h3><p class="muted">Нажмите на фото, чтобы отметить ошибки красной ручкой, выделить маркером или написать на полях.</p>
+        <div class="rv-photos">${(w.files || [])
+          .map(
+            (p, i) => `<figure class="rv-photo" data-path="${escapeHtml(p)}">
+              ${/\.pdf$/i.test(p) ? `<a href="${escapeHtml(photoUrls[p] || "#")}" target="_blank" rel="noopener">PDF-файл ${i + 1}</a>` : `<canvas></canvas>`}
+              <figcaption>Страница ${i + 1}${ann.photos[p]?.strokes?.length || ann.photos[p]?.labels?.length ? " · есть пометки" : ""}</figcaption>
+            </figure>`
+          )
+          .join("")}</div>`
+          : ""
+      }
     </section>
+
     <section class="me-section">
       <h2>Оценка</h2>
       <form id="t-grade" class="stack card" style="padding:20px">
-        <div class="grid-2">
+        <div id="rv-criteria">${criteriaFormHtml(rubricId, scores, { words, counts: countMarks(ann.text) })}</div>
+        <div class="grid-2" id="rv-manual" ${RUBRICS[rubricId]?.criteria.length ? "hidden" : ""}>
           <label>Балл<input name="score" type="number" step="0.5" min="0" value="${w.score ?? ""}" /></label>
           <label>Из скольких<input name="max_score" type="number" step="0.5" min="0" value="${w.max_score ?? ""}" /></label>
         </div>
-        <label>Критерии (по строке: К1: 1)<textarea name="criteria" placeholder="К1: 1&#10;К2: 3&#10;К3: 2">${escapeHtml(crit)}</textarea></label>
         <label>Комментарий ученику<textarea name="comment" style="min-height:140px">${escapeHtml(w.teacher_comment || "")}</textarea></label>
         <div class="actions">
-          <button class="btn" type="submit" name="act" value="graded">Оценить</button>
+          <button class="btn" type="submit" name="act" value="graded">Оценить и отправить ученику</button>
           <button class="btn secondary" type="submit" name="act" value="returned">Вернуть на доработку</button>
+          <button class="btn secondary" type="submit" name="act" value="keep">Сохранить без отправки</button>
         </div>
         <p class="lit-result" id="t-grade-status"></p>
       </form>
     </section>`);
-  host.querySelector("#t-grade").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const f = new FormData(e.target);
-    const criteria = {};
-    String(f.get("criteria") || "")
-      .split("\n")
-      .map((l) => l.split(/[:=]/))
-      .forEach(([k, v]) => {
-        if (k && k.trim() && v !== undefined) criteria[k.trim()] = isNaN(Number(v)) ? v.trim() : Number(v);
-      });
-    const num = (v) => (v === "" || v === null ? null : Number(v));
-    const { error: err } = await supa
-      .from("written_works")
-      .update({
-        status: e.submitter?.value || "graded",
-        score: num(f.get("score")),
-        max_score: num(f.get("max_score")),
-        criteria: Object.keys(criteria).length ? criteria : null,
-        teacher_comment: String(f.get("comment") || "").trim() || null,
-        reviewed_at: new Date().toISOString(),
+
+  // ----- пометки в тексте
+  const bodyEl = host.querySelector("#rv-body");
+  const pop = host.querySelector("#rv-pop");
+  const refreshText = () => {
+    bodyEl.innerHTML = markedTextHtml(body, ann.text);
+    host.querySelector("#rv-list").innerHTML = marksListHtml(ann.text, { editable: true });
+    bindDeletes();
+    refreshCriteria();
+  };
+  const bindDeletes = () =>
+    host.querySelectorAll("#rv-list [data-del]").forEach((b) =>
+      b.addEventListener("click", () => {
+        ann.text.splice(Number(b.dataset.del), 1);
+        refreshText();
       })
-      .eq("id", id);
+    );
+  let sel = null;
+  const offsetIn = (node, offset) => {
+    const r = document.createRange();
+    r.setStart(bodyEl, 0);
+    r.setEnd(node, offset);
+    // теги пометок (sup) не входят в текст ответа
+    const frag = r.cloneContents();
+    frag.querySelectorAll(".rv-tag").forEach((x) => x.remove());
+    return frag.textContent.length;
+  };
+  bodyEl?.addEventListener("mouseup", () => {
+    const s = window.getSelection();
+    if (!s || s.isCollapsed || !bodyEl.contains(s.anchorNode) || !bodyEl.contains(s.focusNode)) {
+      pop.hidden = true;
+      return;
+    }
+    const r = s.getRangeAt(0);
+    let start = offsetIn(r.startContainer, r.startOffset);
+    let end = offsetIn(r.endContainer, r.endOffset);
+    if (end < start) [start, end] = [end, start];
+    while (start < end && /\s/.test(body[start])) start += 1;
+    while (end > start && /\s/.test(body[end - 1])) end -= 1;
+    if (end <= start) return;
+    sel = { start, end };
+    const rect = r.getBoundingClientRect();
+    const box = host.getBoundingClientRect();
+    pop.style.left = `${Math.max(0, rect.left - box.left)}px`;
+    pop.style.top = `${rect.bottom - box.top + 6}px`;
+    pop.hidden = false;
+    pop.querySelector("#rv-note").value = "";
+  });
+  pop?.querySelectorAll("[data-mark]").forEach((b) =>
+    b.addEventListener("click", () => {
+      if (!sel) return;
+      if (ann.text.some((m) => sel.start < m.end && sel.end > m.start)) {
+        alert("Этот фрагмент пересекается с уже отмеченным. Уберите старую пометку или выделите другой фрагмент.");
+        return;
+      }
+      ann.text.push({ ...sel, type: b.dataset.mark, note: pop.querySelector("#rv-note").value.trim() || undefined, quote: body.slice(sel.start, sel.end).slice(0, 80) });
+      pop.hidden = true;
+      window.getSelection()?.removeAllRanges();
+      sel = null;
+      refreshText();
+    })
+  );
+  bindDeletes();
+
+  // ----- фото
+  const drawPhotos = () =>
+    host.querySelectorAll(".rv-photo").forEach(async (fig) => {
+      const p = fig.dataset.path;
+      const canvas = fig.querySelector("canvas");
+      if (!canvas || !photoUrls[p]) return;
+      try {
+        await renderPhoto(canvas, photoUrls[p], ann.photos[p]);
+      } catch {
+        fig.querySelector("figcaption").textContent = "Фото не загрузилось";
+      }
+    });
+  drawPhotos();
+  host.querySelectorAll(".rv-photo canvas").forEach((canvas) =>
+    canvas.addEventListener("click", async () => {
+      const fig = canvas.closest(".rv-photo");
+      const p = fig.dataset.path;
+      const layer = await openPhotoEditor(photoUrls[p], ann.photos[p]);
+      if (!layer) return;
+      ann.photos[p] = layer;
+      await renderPhoto(canvas, photoUrls[p], layer);
+      fig.querySelector("figcaption").textContent = `${fig.querySelector("figcaption").textContent.split(" · ")[0]}${layer.strokes.length || layer.labels.length ? " · есть пометки (не забудьте сохранить)" : ""}`;
+    })
+  );
+
+  // ----- критерии
+  const form = host.querySelector("#t-grade");
+  const refreshCriteria = (rerender = false) => {
+    const ctx = { words, counts: countMarks(ann.text) };
+    if (rerender) {
+      const current = readCriteria(form, rubricId, ctx);
+      scores = { ...scores, ...current.raw };
+      form.querySelector("#rv-criteria").innerHTML = criteriaFormHtml(rubricId, scores, ctx);
+      bindCriteria();
+    } else {
+      // обновить подсказки по пометкам без потери выбора
+      const current = readCriteria(form, rubricId, ctx);
+      scores = { ...scores, ...current.raw };
+      form.querySelector("#rv-criteria").innerHTML = criteriaFormHtml(rubricId, scores, ctx);
+      bindCriteria();
+    }
+  };
+  const showTotal = () => {
+    const res = readCriteria(form, rubricId, { words, counts: countMarks(ann.text) });
+    const has = RUBRICS[rubricId]?.criteria.length;
+    form.querySelector("#rv-manual").hidden = Boolean(has);
+    form.querySelector("#rv-fired").innerHTML = res.fired.map(escapeHtml).join("<br>");
+    form.querySelector("#rv-total").innerHTML = has
+      ? `Итого: <b>${res.total}</b> из ${res.max}${res.filled ? "" : ' <span class="muted">— не все критерии отмечены</span>'}`
+      : "";
+    // выставить нули, которых требуют правила
+    Object.entries(res.scores).forEach(([code, v]) => {
+      if (res.raw[code] !== v) {
+        const r = form.querySelector(`input[name="crit-${code}"][value="${v}"]`);
+        if (r) r.checked = true;
+      }
+    });
+    return res;
+  };
+  const bindCriteria = () => {
+    form.querySelector("#rv-rubric").addEventListener("change", (e) => {
+      rubricId = e.target.value;
+      scores = {};
+      form.querySelector("#rv-criteria").innerHTML = criteriaFormHtml(rubricId, scores, { words, counts: countMarks(ann.text) });
+      bindCriteria();
+    });
+    form.querySelectorAll(".rv-crit input").forEach((r) => r.addEventListener("change", showTotal));
+    form.querySelectorAll(".rv-hint").forEach((b) =>
+      b.addEventListener("click", () => {
+        const r = form.querySelector(`input[name="crit-${b.dataset.code}"][value="${b.dataset.val}"]`);
+        if (r) r.checked = true;
+        showTotal();
+      })
+    );
+    showTotal();
+  };
+  bindCriteria();
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const act = e.submitter?.value || "graded";
+    const f = new FormData(form);
+    const res = showTotal();
+    const has = RUBRICS[rubricId]?.criteria.length;
+    if (act === "graded" && has && !res.filled && !confirm("Не все критерии отмечены. Всё равно отправить оценку?")) return;
+    const num = (v) => (v === "" || v === null ? null : Number(v));
+    const row = {
+      annotations: ann,
+      criteria: has ? { rubric: rubricId, scores: res.scores, fired: res.fired } : null,
+      score: has ? res.total : num(f.get("score")),
+      max_score: has ? res.max : num(f.get("max_score")),
+      teacher_comment: String(f.get("comment") || "").trim() || null,
+    };
+    if (act !== "keep") {
+      row.status = act;
+      row.reviewed_at = new Date().toISOString();
+    }
+    const { error: err } = await supa.from("written_works").update(row).eq("id", id);
     const st = host.querySelector("#t-grade-status");
     st.className = `lit-result ${err ? "is-bad" : "is-ok"}`;
-    st.textContent = err ? humanError(err).message : "Сохранено — ученик увидит оценку в кабинете.";
+    st.textContent = err
+      ? humanError(err).message
+      : act === "keep"
+        ? "Пометки и баллы сохранены. Ученик увидит их, когда вы нажмёте «Оценить» или «Вернуть»."
+        : act === "returned"
+          ? "Работа возвращена на доработку — ученик видит ваши пометки и комментарий."
+          : "Оценка отправлена — ученик видит баллы, пометки и комментарий в кабинете.";
   });
 }
 

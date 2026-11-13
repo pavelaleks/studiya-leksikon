@@ -5,6 +5,7 @@
  *  - письменная работа: черновик, фото, сдача на проверку, оценка.
  */
 import { escapeHtml } from "./ui.js";
+import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land78";
 import {
   accessState,
   currentUser,
@@ -234,14 +235,6 @@ export function writtenBlockHtml({ label = "Ваш ответ" } = {}) {
     <div id="pr-solution"></div>`;
 }
 
-function criteriaHtml(criteria) {
-  if (!criteria || typeof criteria !== "object") return "";
-  const rows = Object.entries(criteria)
-    .map(([k, v]) => `<span class="pr-crit"><b>${escapeHtml(k)}</b> ${escapeHtml(String(v))}</span>`)
-    .join("");
-  return rows ? `<p class="pr-crits">${rows}</p>` : "";
-}
-
 export function bindWritten(
   root,
   problem,
@@ -271,20 +264,40 @@ export function bindWritten(
     }
   };
 
+  const urls = {};
   const filesHtml = async (paths) => {
     if (!paths.length) return "";
-    const links = await Promise.all(
+    const items = await Promise.all(
       paths.map(async (p, i) => {
         try {
-          const url = await signedFileUrl(p);
-          return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">Фото ${i + 1}</a>`;
+          urls[p] = urls[p] || (await signedFileUrl(p));
         } catch {
           return `<span>Фото ${i + 1}</span>`;
         }
+        const layer = work?.annotations?.photos?.[p];
+        const marked = layer && ((layer.strokes || []).length || (layer.labels || []).length);
+        if (/\.pdf$/i.test(p)) return `<a href="${escapeHtml(urls[p])}" target="_blank" rel="noopener">PDF ${i + 1}</a>`;
+        return `<figure class="pr-photo" data-path="${escapeHtml(p)}">
+            <canvas></canvas>
+            <figcaption>Страница ${i + 1}${marked ? " · с пометками преподавателя" : ""}
+              <button type="button" class="linklike" data-dl="${escapeHtml(p)}">скачать</button></figcaption>
+          </figure>`;
       })
     );
-    return `<p class="pr-files">${links.join(" · ")}</p>`;
+    return `<div class="pr-photos">${items.join("")}</div>`;
   };
+  const drawFiles = () =>
+    box.querySelectorAll(".pr-photo").forEach(async (fig) => {
+      const p = fig.dataset.path;
+      const canvas = fig.querySelector("canvas");
+      try {
+        await renderPhoto(canvas, urls[p], work?.annotations?.photos?.[p]);
+      } catch {
+        fig.querySelector("figcaption").textContent = "Фото не загрузилось";
+      }
+      fig.querySelector("[data-dl]")?.addEventListener("click", () => downloadCanvas(canvas, `stranica-${p.split("/").pop().replace(/\.[a-z]+$/i, "")}.jpg`));
+      canvas.addEventListener("click", () => window.open(canvas.toDataURL("image/jpeg", 0.9), "_blank"));
+    });
 
   const render = async () => {
     const status = work?.status || "draft";
@@ -303,9 +316,14 @@ export function bindWritten(
         <div class="pr-review card">
           <p class="eyebrow">${escapeHtml(STATUS_TEXT[status])}${work.reviewed_at ? ` · ${new Date(work.reviewed_at).toLocaleDateString("ru-RU")}` : ""}</p>
           ${work.score != null ? `<p class="pr-score"><strong>${escapeHtml(String(work.score))}</strong>${work.max_score ? ` из ${escapeHtml(String(work.max_score))}` : ""} баллов</p>` : ""}
-          ${criteriaHtml(work.criteria)}
+          ${studentReviewHtml(work)}
           ${work.teacher_comment ? `<p class="pr-comment">${escapeHtml(work.teacher_comment).replace(/\n/g, "<br>")}</p>` : ""}
-        </div>`
+        </div>
+        ${
+          (work.annotations?.text || []).length
+            ? `<h4>Ваш текст с пометками</h4><div class="card rv-body">${markedTextHtml(work.body, work.annotations.text)}</div>${marksListHtml(work.annotations.text)}`
+            : ""
+        }`
         : "";
     box.innerHTML = `
       ${review}
@@ -326,6 +344,7 @@ export function bindWritten(
       }
       <p class="lit-send-status muted" id="pr-status" aria-live="polite"></p>`;
 
+    drawFiles();
     const area = box.querySelector("#pr-essay");
     const statusEl = box.querySelector("#pr-status");
     const say = (t) => (statusEl.textContent = t);
@@ -357,6 +376,7 @@ export function bindWritten(
         }
       }
       box.querySelector("#pr-files").innerHTML = await filesHtml(files);
+      drawFiles();
       say("Фото прикреплены. Не забудьте сохранить или сдать работу.");
     });
     const persist = async (next, { quiet = false } = {}) => {

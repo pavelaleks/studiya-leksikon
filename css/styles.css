@@ -4809,3 +4809,230 @@ tr.l-hidden td {
   align-items: center;
   gap: 10px;
 }
+
+/* ===================== Проверка письменных работ ===================== */
+.rv-body {
+  position: relative;
+  padding: 18px 20px;
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+.rv-m {
+  background: transparent;
+  color: inherit;
+  border-bottom: 2px solid #d0021b;
+  cursor: help;
+}
+.rv-m .rv-tag {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 800;
+  color: #d0021b;
+  margin-left: 1px;
+  user-select: none;
+}
+.rv-m.rv-good {
+  border-bottom-color: var(--ok);
+}
+.rv-m.rv-good .rv-tag {
+  color: var(--ok);
+}
+.rv-m.rv-note {
+  border-bottom-style: dashed;
+  border-bottom-color: var(--gold);
+}
+.rv-m.rv-note .rv-tag {
+  color: var(--gold);
+}
+.rv-m.rv-punct {
+  border-bottom-style: double;
+  border-bottom-width: 3px;
+}
+.rv-m.rv-orth {
+  background: rgba(208, 2, 27, 0.07);
+}
+.rv-chip {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid #d0021b;
+  color: #d0021b;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.rv-chip.rv-good {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+.rv-chip.rv-note {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.rv-pop {
+  position: absolute;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  max-width: min(560px, 92vw);
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+.rv-pop input {
+  flex: 1 1 180px;
+  min-width: 140px;
+  padding: 6px 8px;
+  font-size: 14px;
+}
+.me-section {
+  position: relative;
+}
+#teacher-root {
+  position: relative;
+}
+.rv-notes {
+  margin: 10px 0 0;
+  padding-left: 22px;
+  line-height: 1.7;
+  font-size: 14px;
+}
+.rv-photos,
+.pr-photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+.rv-photo,
+.pr-photo {
+  margin: 0;
+}
+.rv-photo canvas,
+.pr-photo canvas {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  cursor: zoom-in;
+  background: #fff;
+}
+.rv-photo canvas {
+  cursor: crosshair;
+}
+.rv-photo figcaption,
+.pr-photo figcaption {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-top: 4px;
+}
+.rv-editor {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background: rgba(20, 16, 12, 0.92);
+}
+.rv-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+  background: #1e1914;
+}
+.rv-toolbar button {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #5a5248;
+  background: #2b241d;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.rv-toolbar button.is-on {
+  background: #d0021b;
+  border-color: #d0021b;
+}
+.rv-toolbar .rv-save {
+  background: var(--ok);
+  border-color: var(--ok);
+}
+.rv-spacer {
+  flex: 1;
+}
+.rv-stage {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+  text-align: center;
+}
+.rv-stage canvas {
+  max-width: 100%;
+  height: auto;
+  touch-action: none;
+  cursor: crosshair;
+  background: #fff;
+}
+.rv-loading {
+  color: #fff;
+}
+body.rv-lock {
+  overflow: hidden;
+}
+.rv-crits {
+  display: grid;
+  gap: 10px;
+}
+.rv-crit {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 12px 10px;
+  background: #fff;
+}
+.rv-crit legend {
+  padding: 0 4px;
+  font-weight: 600;
+}
+.rv-level {
+  display: flex !important;
+  gap: 8px;
+  align-items: baseline;
+  font-weight: 400 !important;
+  font-size: 14px;
+  padding: 2px 0;
+}
+.rv-level input {
+  width: auto;
+}
+.rv-hint {
+  font-size: 12px;
+  margin-left: 6px;
+}
+.rv-fired {
+  color: var(--gold);
+  font-size: 14px;
+}
+.rv-total {
+  font-size: 18px;
+}
+.rv-table td {
+  vertical-align: top;
+}
+.rv-sc {
+  white-space: nowrap;
+  font-weight: 700;
+}
+.rv-passage {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
