@@ -257,6 +257,14 @@ export async function mountMe(root) {
     }</p>
     ${p?.role === "teacher" ? `<p class="actions"><a class="btn" href="#/cabinet">Кабинет преподавателя</a></p>` : ""}
     ${pendingNote}
+    ${p?.role !== "teacher" ? `
+    <section class="me-section">
+      <form id="me-join" class="t-filter card">
+        <label>Код группы от преподавателя<input name="code" maxlength="12" autocomplete="off" placeholder="например, a1b2c3" /></label>
+        <button class="btn secondary" type="submit">Вступить в группу</button>
+        <p class="lit-result" id="me-join-status"></p>
+      </form>
+    </section>` : ""}
     <section class="me-section"><h2>Прогресс по номерам</h2>${statsHtml(stats.data || [])}</section>
     <section class="me-section"><h2>Тетрадь ошибок</h2>${mistakesHtml(mistakes.data || [])}</section>
     <section class="me-section"><h2>Письменные работы</h2>${worksHtml(works.data || [])}</section>
@@ -271,6 +279,15 @@ export async function mountMe(root) {
       </form>
     </section>`;
 
+  host.querySelector("#me-join")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const st = host.querySelector("#me-join-status");
+    const code = String(new FormData(e.target).get("code") || "").trim();
+    if (!code) return;
+    const { error } = await supa.rpc("join_group", { p_code: code });
+    st.className = `lit-result ${error ? "is-bad" : "is-ok"}`;
+    st.textContent = error ? (/invalid code/.test(error.message) ? "Такого кода нет — проверьте у преподавателя." : humanError(error).message) : "Готово, вы в группе.";
+  });
   host.querySelector("#me-logout")?.addEventListener("click", async () => {
     await signOut();
     location.hash = "#/";
