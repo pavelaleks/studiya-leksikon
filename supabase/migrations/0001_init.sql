@@ -498,8 +498,10 @@ begin
     kj := coalesce(it -> 'key', '{}'::jsonb);
     insert into public.task_keys (task_id, answer, answer_norm, answer_alts, answer_numbers, solution_html, teacher_notes)
     values (tid, kj ->> 'answer', kj ->> 'answer_norm',
-            coalesce((select array_agg(x) from jsonb_array_elements_text(kj -> 'answer_alts') x), '{}'),
-            (select array_agg(x::int) from jsonb_array_elements_text(kj -> 'answer_numbers') x),
+            coalesce((select array_agg(x) from jsonb_array_elements_text(
+              case when jsonb_typeof(kj -> 'answer_alts') = 'array' then kj -> 'answer_alts' else '[]'::jsonb end) x), '{}'),
+            (select array_agg(x::int) from jsonb_array_elements_text(
+              case when jsonb_typeof(kj -> 'answer_numbers') = 'array' then kj -> 'answer_numbers' else '[]'::jsonb end) x),
             kj ->> 'solution_html', kj ->> 'teacher_notes')
     on conflict (task_id) do update set
       answer = excluded.answer, answer_norm = excluded.answer_norm, answer_alts = excluded.answer_alts,

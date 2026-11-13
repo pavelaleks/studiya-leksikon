@@ -66,8 +66,8 @@ export function loginPage() {
         <label>Пароль (не меньше 8 символов)<input type="password" name="password" required minlength="8" autocomplete="new-password" /></label>
         <div class="grid-2">
           <label>Класс
-            <select name="grade" required>
-              <option value="">—</option>
+            <select name="grade">
+              <option value="">не указан</option>
               ${[5, 6, 7, 8, 9, 10, 11].map((g) => `<option value="${g}">${g}</option>`).join("")}
             </select>
           </label>
@@ -255,7 +255,7 @@ export async function mountMe(root) {
     <p class="lede">${escapeHtml(STATUS_TEXT[p?.status] || "")}${p?.grade ? ` · ${p.grade} класс` : ""}${p?.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""}${
       p?.access_until ? ` · доступ до ${new Date(p.access_until).toLocaleDateString("ru-RU")}` : ""
     }</p>
-    ${p?.role === "teacher" ? `<p class="actions"><a class="btn" href="#/teacher">Кабинет преподавателя</a></p>` : ""}
+    ${p?.role === "teacher" ? `<p class="actions"><a class="btn" href="#/cabinet">Кабинет преподавателя</a></p>` : ""}
     ${pendingNote}
     <section class="me-section"><h2>Прогресс по номерам</h2>${statsHtml(stats.data || [])}</section>
     <section class="me-section"><h2>Тетрадь ошибок</h2>${mistakesHtml(mistakes.data || [])}</section>

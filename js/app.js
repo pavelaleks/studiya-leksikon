@@ -1,17 +1,17 @@
-import { layout } from "./ui.js?v=land63";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land63";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land63";
-import { mountLiterature } from "./literature.js?v=land63";
-import { mountRussian } from "./russian.js?v=land63";
-import { mountOge } from "./oge.js?v=land63";
-import { bindApplyForm } from "./apply.js?v=land63";
-import { EGE_TITLES } from "./ege.js?v=land63";
-import { renderExercise } from "./exercises.js?v=land63";
-import { mountTrainer } from "./trainers.js?v=land63";
-import { parseRoute } from "./route.js?v=land63";
+import { layout } from "./ui.js?v=land65";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land65";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land65";
+import { mountLiterature } from "./literature.js?v=land65";
+import { mountRussian } from "./russian.js?v=land65";
+import { mountOge } from "./oge.js?v=land65";
+import { bindApplyForm } from "./apply.js?v=land65";
+import { EGE_TITLES } from "./ege.js?v=land65";
+import { renderExercise } from "./exercises.js?v=land65";
+import { mountTrainer } from "./trainers.js?v=land65";
+import { parseRoute } from "./route.js?v=land65";
 import { initAuth, onAuthChange } from "./supa.js";
-import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js";
-import { mountTeacher, teacherPage } from "./teacher.js";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land65";
+import { mountTeacher, teacherPage } from "./teacher.js?v=land65";
 
 const app = document.getElementById("app");
 let content = null;
@@ -249,7 +249,7 @@ async function render() {
   }
 
   if (a === "admin") {
-    location.hash = "#/teacher";
+    location.hash = "#/cabinet";
     return;
   }
 
@@ -273,7 +273,7 @@ async function render() {
     return;
   }
 
-  if (a === "teacher") {
+  if (a === "cabinet") {
     mountHtml(teacherPage(), "teacher");
     setTitle("Кабинет преподавателя");
     await mountTeacher(app, parts.slice(1));

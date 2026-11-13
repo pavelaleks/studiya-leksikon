@@ -1,7 +1,7 @@
-/** Кабинет преподавателя: #/teacher/... */
+/** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js";
+import { taskHref } from "./account.js?v=land65";
 import { clearBankCache, currentUser, humanError, isTeacher, signedFileUrl, supa } from "./supa.js";
 
 /* ------------------------------------------------------------------ */
@@ -223,7 +223,7 @@ function shell(active, body, badges = {}) {
     <div class="filter-bar teacher-tabs">
       ${TABS.map(
         ([id, title]) =>
-          `<a class="pill ${active === id ? "active" : ""}" href="#/teacher/${id}">${title}${badges[id] ? ` <span class="badge">${badges[id]}</span>` : ""}</a>`
+          `<a class="pill ${active === id ? "active" : ""}" href="#/cabinet/${id}">${title}${badges[id] ? ` <span class="badge">${badges[id]}</span>` : ""}</a>`
       ).join("")}
     </div>
     ${body}`;
@@ -319,7 +319,7 @@ async function studentsView(host, render) {
     .map(
       (p) => `
       <tr data-id="${p.id}" data-blob="${escapeHtml([p.full_name, p.email, p.contact, p.exam_target].join(" ").toLowerCase())}">
-        <td><a href="#/teacher/student/${p.id}">${escapeHtml(p.full_name || p.email || "—")}</a><br><small class="muted">${escapeHtml(p.email || "")}</small></td>
+        <td><a href="#/cabinet/student/${p.id}">${escapeHtml(p.full_name || p.email || "—")}</a><br><small class="muted">${escapeHtml(p.email || "")}</small></td>
         <td>${p.grade || ""}</td>
         <td>${escapeHtml(p.exam_target || "")}</td>
         <td>${escapeHtml(groupsOf(p.id).join(", "))}</td>
@@ -417,11 +417,11 @@ async function studentView(host, render, id) {
   const workRows = (works || [])
     .map(
       (w) =>
-        `<tr><td>${fmtDateTime(w.submitted_at)}</td><td>${escapeHtml(SOURCES[w.tasks?.source]?.title || "")} № ${w.tasks?.task_no ?? ""}</td><td>${WORK_STATUS[w.status]}</td><td>${w.score ?? ""}${w.max_score ? `/${w.max_score}` : ""}</td><td><a href="#/teacher/works/${w.id}">открыть</a></td></tr>`
+        `<tr><td>${fmtDateTime(w.submitted_at)}</td><td>${escapeHtml(SOURCES[w.tasks?.source]?.title || "")} № ${w.tasks?.task_no ?? ""}</td><td>${WORK_STATUS[w.status]}</td><td>${w.score ?? ""}${w.max_score ? `/${w.max_score}` : ""}</td><td><a href="#/cabinet/works/${w.id}">открыть</a></td></tr>`
     )
     .join("");
   render(`
-    <p class="crumbs"><a href="#/teacher/students">← Ученики</a></p>
+    <p class="crumbs"><a href="#/cabinet/students">← Ученики</a></p>
     <h1>${escapeHtml(p.full_name || p.email)}</h1>
     <p class="lede">${escapeHtml(p.email || "")} · ${STATUS_TEXT[p.status]}${p.grade ? ` · ${p.grade} класс` : ""}${p.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""}${p.contact ? ` · ${escapeHtml(p.contact)}` : ""}</p>
     <section class="me-section">
@@ -460,7 +460,7 @@ async function worksView(host, render, workId) {
     .limit(200);
   if (error) throw humanError(error);
   const row = (w) => `
-    <a class="lit-item" href="#/teacher/works/${w.id}">
+    <a class="lit-item" href="#/cabinet/works/${w.id}">
       <span class="lit-item-n">${w.tasks?.task_no ?? "·"}</span>
       <span class="lit-item-body">
         <strong>${escapeHtml(w.profiles?.full_name || w.profiles?.email || "ученик")} · ${escapeHtml(SOURCES[w.tasks?.source]?.title || "")} № ${w.tasks?.task_no ?? ""}</strong>
@@ -503,7 +503,7 @@ async function workReview(host, render, id) {
   );
   const crit = w.criteria ? Object.entries(w.criteria).map(([k, v]) => `${k}: ${v}`).join("\n") : "";
   render(`
-    <p class="crumbs"><a href="#/teacher/works">← Все работы</a></p>
+    <p class="crumbs"><a href="#/cabinet/works">← Все работы</a></p>
     <h1>${escapeHtml(w.profiles?.full_name || w.profiles?.email || "Работа")}</h1>
     <p class="lede">${escapeHtml(SOURCES[w.tasks?.source]?.title || "")} · задание ${w.tasks?.task_no ?? ""} · № ${escapeHtml(String(w.tasks?.source_ref || ""))} · ${WORK_STATUS[w.status]} · сдано ${fmtDateTime(w.submitted_at)}</p>
     <details class="lit-solution"><summary>Условие задания</summary><div class="lit-html">${w.tasks?.data?.questionHtml || ""}</div></details>
@@ -574,7 +574,7 @@ async function groupsView(host, render) {
       <div class="card t-group" data-id="${g.id}">
         <h3>${escapeHtml(g.title)} ${g.archived ? '<small class="muted">архив</small>' : ""}</h3>
         <p class="muted">${{ online: "онлайн", offline: "очно", mixed: "очно и онлайн" }[g.format]} · код для вступления: <code>${escapeHtml(g.invite_code || "")}</code></p>
-        <p>${list.map((m) => `<a href="#/teacher/student/${m.student_id}">${escapeHtml(m.profiles?.full_name || m.profiles?.email || "—")}</a>`).join(", ") || '<span class="muted">пусто</span>'}</p>
+        <p>${list.map((m) => `<a href="#/cabinet/student/${m.student_id}">${escapeHtml(m.profiles?.full_name || m.profiles?.email || "—")}</a>`).join(", ") || '<span class="muted">пусто</span>'}</p>
         <button class="btn secondary" data-act="archive">${g.archived ? "Вернуть из архива" : "В архив"}</button>
       </div>`;
     })
@@ -618,7 +618,7 @@ function bankSubnav(active) {
     ["import", "Импорт банка сайта"],
   ];
   return `<div class="filter-bar">${items
-    .map(([id, t]) => `<a class="pill ${active === id ? "active" : ""}" href="#/teacher/bank${id ? "/" + id : ""}">${t}</a>`)
+    .map(([id, t]) => `<a class="pill ${active === id ? "active" : ""}" href="#/cabinet/bank${id ? "/" + id : ""}">${t}</a>`)
     .join("")}</div>`;
 }
 
@@ -684,7 +684,7 @@ async function bankView(host, render) {
       <td>${escapeHtml((t.list_item?.questionText || "").slice(0, 140))}<br><small class="muted">${escapeHtml(t.topic || "")} · ${escapeHtml(MODE_LABEL[t.answer_mode] || t.answer_mode)}</small></td>
       <td><label class="t-inline"><input type="checkbox" data-f="is_published" ${t.is_published ? "checked" : ""}/> ученикам</label>
           <label class="t-inline"><input type="checkbox" data-f="is_demo" ${t.is_demo ? "checked" : ""}/> демо</label></td>
-      <td><a class="btn secondary" href="#/teacher/bank/edit/${t.id}">Изменить</a></td>
+      <td><a class="btn secondary" href="#/cabinet/bank/edit/${t.id}">Изменить</a></td>
     </tr>`
     )
     .join("");
@@ -692,7 +692,7 @@ async function bankView(host, render) {
   const link = (p) => {
     const n = new URLSearchParams(q);
     n.set("page", p);
-    return `#/teacher/bank?${n}`;
+    return `#/cabinet/bank?${n}`;
   };
   render(`
     <h1>Банк заданий</h1>
@@ -722,7 +722,7 @@ async function bankView(host, render) {
     if (f.get("bank")) n.set("bank", f.get("bank"));
     if (f.get("q")) n.set("q", f.get("q"));
     if (f.get("own")) n.set("own", "1");
-    location.hash = `#/teacher/bank?${n}`;
+    location.hash = `#/cabinet/bank?${n}`;
   });
   host.querySelectorAll("tbody input[type=checkbox]").forEach((cb) =>
     cb.addEventListener("change", async () => {
@@ -860,7 +860,7 @@ async function taskFormView(host, render, editId) {
     try {
       const [res] = await saveTasks([buildTask(v)]);
       status.className = "lit-result is-ok";
-      status.innerHTML = `Сохранено: задание № ${escapeHtml(res.source_ref)}. <a href="${taskHref({ source: v.source, bank_file: v.bank, task_no: v.task_no, source_ref: res.source_ref })}" target="_blank">Открыть как ученик</a> · <a href="#/teacher/bank/new">Добавить ещё</a>`;
+      status.innerHTML = `Сохранено: задание № ${escapeHtml(res.source_ref)}. <a href="${taskHref({ source: v.source, bank_file: v.bank, task_no: v.task_no, source_ref: res.source_ref })}" target="_blank">Открыть как ученик</a> · <a href="#/cabinet/bank/new">Добавить ещё</a>`;
       if (!t) {
         form.querySelector('[name="question"]').value = "";
         form.querySelector('[name="answer"]').value = "";
@@ -877,7 +877,7 @@ async function taskFormView(host, render, editId) {
     const { error } = await supa.from("tasks").delete().eq("id", t.id);
     if (error) return alert(humanError(error).message);
     clearBankCache();
-    location.hash = "#/teacher/bank";
+    location.hash = "#/cabinet/bank";
   });
 }
 
@@ -1033,7 +1033,7 @@ async function batchView(host, render) {
     try {
       const res = await saveTasks(good.map(buildTask));
       st.className = "lit-result is-ok";
-      st.innerHTML = `Добавлено заданий: ${res.length} (№ ${res.map((r) => escapeHtml(r.source_ref)).join(", ")}). <a href="#/teacher/bank?own=1&source=${good[0].source}">Посмотреть в банке</a>`;
+      st.innerHTML = `Добавлено заданий: ${res.length} (№ ${res.map((r) => escapeHtml(r.source_ref)).join(", ")}). <a href="#/cabinet/bank?own=1&source=${good[0].source}">Посмотреть в банке</a>`;
       form.querySelector('[name="text"]').value = "";
       form.querySelector("#t-batch-save").disabled = true;
     } catch (err) {
@@ -1170,7 +1170,7 @@ async function tableView(host, render) {
     try {
       const res = await saveTasks(good.map(buildTask));
       st.className = "lit-result is-ok";
-      st.innerHTML = `Добавлено: ${res.length}. <a href="#/teacher/bank?own=1&source=${good[0].source}">Посмотреть в банке</a>`;
+      st.innerHTML = `Добавлено: ${res.length}. <a href="#/cabinet/bank?own=1&source=${good[0].source}">Посмотреть в банке</a>`;
       form.querySelector("#t-table-save").disabled = true;
     } catch (err) {
       st.className = "lit-result is-bad";

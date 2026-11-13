@@ -3,7 +3,7 @@ import { accessState } from "./supa.js";
 function accountLink(active) {
   const state = accessState();
   if (state === "guest") return `<a href="#/login" class="nav-account ${active === "login" ? "active" : ""}">Войти</a>`;
-  if (state === "teacher") return `<a href="#/teacher" class="nav-account ${active === "teacher" ? "active" : ""}">Кабинет</a>`;
+  if (state === "teacher") return `<a href="#/cabinet" class="nav-account ${active === "teacher" ? "active" : ""}">Кабинет</a>`;
   return `<a href="#/me" class="nav-account ${active === "me" ? "active" : ""}">Кабинет</a>`;
 }
 
@@ -65,7 +65,7 @@ export function layout(content, active = "", { hideFooter = false } = {}) {
           <span> (вход со стороны ул. Головина)</span>
         </p>
         <p class="footer-note">Русский язык и литература для 8–11 классов. Очно и онлайн.</p>
-        <p class="footer-admin"><a href="#/teacher">Преподавателю</a></p>
+        <p class="footer-admin"><a href="#/cabinet">Преподавателю</a></p>
       </div>
     </footer>`
     }
