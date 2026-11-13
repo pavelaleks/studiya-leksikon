@@ -54,6 +54,18 @@ export async function initAuth() {
 }
 
 export const onAuthChange = (fn) => listeners.add(fn);
+
+// Ученик ждёт подтверждения — как только вернётся на вкладку, проверим статус ещё раз.
+document.addEventListener("visibilitychange", async () => {
+  if (document.visibilityState !== "visible" || !session || !profile) return;
+  if (profile.role === "teacher") return;
+  const before = `${profile.status}|${profile.access_until}`;
+  await loadProfile();
+  if (`${profile?.status}|${profile?.access_until}` !== before) {
+    bankCache.clear();
+    listeners.forEach((fn) => fn(profile));
+  }
+});
 export const currentUser = () => session?.user || null;
 export const currentProfile = () => profile;
 export const isTeacher = () => profile?.role === "teacher";

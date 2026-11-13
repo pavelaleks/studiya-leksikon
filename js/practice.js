@@ -5,7 +5,7 @@
  *  - письменная работа: черновик, фото, сдача на проверку, оценка.
  */
 import { escapeHtml } from "./ui.js";
-import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land78";
+import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land80";
 import {
   accessState,
   currentUser,
@@ -316,7 +316,7 @@ export function bindWritten(
         <div class="pr-review card">
           <p class="eyebrow">${escapeHtml(STATUS_TEXT[status])}${work.reviewed_at ? ` · ${new Date(work.reviewed_at).toLocaleDateString("ru-RU")}` : ""}</p>
           ${work.score != null ? `<p class="pr-score"><strong>${escapeHtml(String(work.score))}</strong>${work.max_score ? ` из ${escapeHtml(String(work.max_score))}` : ""} баллов</p>` : ""}
-          ${studentReviewHtml(work)}
+          ${work.criteria || status === "graded" ? studentReviewHtml(work) : ""}
           ${work.teacher_comment ? `<p class="pr-comment">${escapeHtml(work.teacher_comment).replace(/\n/g, "<br>")}</p>` : ""}
         </div>
         ${

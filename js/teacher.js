@@ -1,13 +1,13 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land78";
+import { taskHref } from "./account.js?v=land80";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land78";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land78";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land80";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land80";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land78";
+} from "./review.js?v=land80";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -45,6 +45,7 @@ const MODE_LABEL = Object.fromEntries(Object.values(MODES).flat());
 const CHECKED_BY_TEACHER = new Set(["open", "essay"]);
 const WORK_STATUS = { draft: "черновик", submitted: "на проверке", returned: "на доработке", graded: "проверена" };
 const STATUS_TEXT = { pending: "ждёт подтверждения", active: "ученик", paused: "приостановлен", archived: "архив" };
+const FORMAT_TEXT = { offline: "очно", online: "онлайн", mixed: "очно и онлайн" };
 
 const manifests = {};
 async function manifest(source) {
@@ -343,7 +344,7 @@ async function studentsView(host, render) {
       <div class="card t-row" data-id="${p.id}">
         <div>
           <strong>${escapeHtml(p.full_name || "без имени")}</strong>
-          <span class="muted">${escapeHtml(p.email || "")} · ${p.grade ? `${p.grade} кл.` : ""} ${escapeHtml(p.exam_target || "")} · ${escapeHtml(p.study_format || "")}</span>
+          <span class="muted">${escapeHtml(p.email || "")} · ${p.grade ? `${p.grade} кл.` : ""} ${escapeHtml(p.exam_target || "")} · ${escapeHtml(FORMAT_TEXT[p.study_format] || p.study_format || "")}</span>
           ${p.contact ? `<span>Связь: ${escapeHtml(p.contact)}</span>` : ""}
           ${p.note ? `<span class="muted">«${escapeHtml(p.note)}»</span>` : ""}
           <small class="muted">Зарегистрирован ${fmtDateTime(p.created_at)}</small>
@@ -773,11 +774,13 @@ async function workReview(host, render, id) {
     const has = RUBRICS[rubricId]?.criteria.length;
     if (act === "graded" && has && !res.filled && !confirm("Не все критерии отмечены. Всё равно отправить оценку?")) return;
     const num = (v) => (v === "" || v === null ? null : Number(v));
+    // при возврате на доработку баллы сохраняем, только если они действительно выставлены
+    const scored = has ? res.filled || act === "graded" : f.get("score") !== "";
     const row = {
       annotations: ann,
-      criteria: has ? { rubric: rubricId, scores: res.scores, fired: res.fired } : null,
-      score: has ? res.total : num(f.get("score")),
-      max_score: has ? res.max : num(f.get("max_score")),
+      criteria: has && scored ? { rubric: rubricId, scores: res.scores, fired: res.fired } : null,
+      score: !scored ? null : has ? res.total : num(f.get("score")),
+      max_score: !scored ? null : has ? res.max : num(f.get("max_score")),
       teacher_comment: String(f.get("comment") || "").trim() || null,
     };
     if (act !== "keep") {

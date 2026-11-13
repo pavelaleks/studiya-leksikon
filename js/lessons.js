@@ -5,13 +5,13 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land78";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land78";
-import { SOURCES, bankFiles } from "./teacher.js?v=land78";
+import { taskHref } from "./account.js?v=land80";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land80";
+import { SOURCES, bankFiles } from "./teacher.js?v=land80";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land78";
+} from "./exams.js?v=land80";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -518,7 +518,7 @@ export async function lessonEditView(host, render, id) {
   const isWork = lesson.kind !== "lesson";
   const defaults = isWork
     ? { kind: "test", reveal: "after_due", attempts: null }
-    : JSON.parse(sessionStorage.getItem("lesson-defaults") || '{"kind":"classwork","reveal":"after_correct","attempts":3}');
+    : { reveal: "after_correct", attempts: 3, ...JSON.parse(sessionStorage.getItem("lesson-defaults") || "{}"), kind: "classwork" };
   const [{ data: groups }, { data: allStudents }] = await Promise.all([
     supa.from("groups").select("id, title").eq("archived", false).order("title"),
     supa.from("profiles").select("id, full_name, email").neq("role", "teacher").eq("status", "active").order("full_name"),
@@ -716,7 +716,7 @@ export async function lessonEditView(host, render, id) {
       due: fromLocalInput(host.querySelector("#l-def-due").value),
       hidden: host.querySelector("#l-def-hidden").checked,
     };
-    sessionStorage.setItem("lesson-defaults", JSON.stringify({ kind: d.kind, reveal: d.reveal, attempts: d.attempts }));
+    sessionStorage.setItem("lesson-defaults", JSON.stringify({ reveal: d.reveal, attempts: d.attempts }));
     return d;
   };
   const addTasks = async (tasks) => {

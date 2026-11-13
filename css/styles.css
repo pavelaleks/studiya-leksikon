@@ -5036,3 +5036,37 @@ body.rv-lock {
   padding-bottom: 12px;
   border-bottom: 1px solid var(--line);
 }
+
+/* Вход / кабинет: на телефоне — всегда на виду в шапке, а не в прокручиваемом меню */
+.header-account {
+  display: none;
+}
+@media (max-width: 640px) {
+  .header-inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .header-inner .nav {
+    grid-column: 1 / -1;
+  }
+  .header-account {
+    display: block;
+    grid-row: 1;
+    grid-column: 2;
+    align-self: center;
+  }
+  .header-account .nav-account {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff !important;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .nav .nav-account {
+    display: none;
+  }
+}

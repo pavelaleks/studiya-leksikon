@@ -1,21 +1,23 @@
-import { layout } from "./ui.js?v=land78";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land78";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land78";
-import { mountLiterature } from "./literature.js?v=land78";
-import { mountRussian } from "./russian.js?v=land78";
-import { mountOge } from "./oge.js?v=land78";
-import { bindApplyForm } from "./apply.js?v=land78";
-import { EGE_TITLES } from "./ege.js?v=land78";
-import { renderExercise } from "./exercises.js?v=land78";
-import { mountTrainer } from "./trainers.js?v=land78";
-import { parseRoute } from "./route.js?v=land78";
-import { initAuth, onAuthChange } from "./supa.js";
-import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land78";
-import { mountTeacher, teacherPage } from "./teacher.js?v=land78";
-import { lessonPage, mountLesson } from "./lessons.js?v=land78";
+import { layout } from "./ui.js?v=land80";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land80";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land80";
+import { mountLiterature } from "./literature.js?v=land80";
+import { mountRussian } from "./russian.js?v=land80";
+import { mountOge } from "./oge.js?v=land80";
+import { bindApplyForm } from "./apply.js?v=land80";
+import { EGE_TITLES } from "./ege.js?v=land80";
+import { renderExercise } from "./exercises.js?v=land80";
+import { mountTrainer } from "./trainers.js?v=land80";
+import { parseRoute } from "./route.js?v=land80";
+import { hasAccess, initAuth, mySolved, onAuthChange } from "./supa.js";
+import { markEgeDone, markOgeDone } from "./progress.js";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land80";
+import { mountTeacher, teacherPage } from "./teacher.js?v=land80";
+import { lessonPage, mountLesson } from "./lessons.js?v=land80";
 
 const app = document.getElementById("app");
 let content = null;
+let contentPromise = null;
 
 function setTitle(page) {
   document.title = page
@@ -104,7 +106,7 @@ async function render() {
     mountHtml(skeletonHtml(), "", { hideFooter: true });
     setTitle("Загрузка");
     try {
-      content = await loadContent();
+      content = (await contentPromise) || (await loadContent());
     } catch (err) {
       document.body.classList.remove("is-loading");
       mountHtml(
@@ -310,6 +312,25 @@ app.addEventListener("click", (e) => {
   }
 });
 
+// Заставка сразу, а не пустой экран; правила грузятся параллельно с проверкой входа.
+document.body.classList.add("is-loading");
+mountHtml(skeletonHtml(), "", { hideFooter: true });
+contentPromise = loadContent().catch(() => null);
+/** Отметки «решено» в списках — из базы, чтобы они были на любом устройстве. */
+async function syncSolved() {
+  if (!hasAccess()) return;
+  try {
+    const map = await mySolved();
+    Object.entries(map["ege-rus"] || {}).forEach(([no, refs]) => refs.forEach((id) => markEgeDone({ id, egeTask: Number(no) })));
+    Object.entries(map["oge-rus"] || {}).forEach(([no, refs]) => refs.forEach((id) => markOgeDone({ id, ogeTask: Number(no) })));
+  } catch (err) {
+    console.warn("sync", err);
+  }
+}
+
 initAuth()
   .catch((err) => console.warn("auth", err))
-  .finally(render);
+  .finally(() => {
+    render();
+    syncSolved();
+  });

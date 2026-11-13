@@ -48,6 +48,7 @@ export function layout(content, active = "", { hideFooter = false } = {}) {
             <span>${isHome ? "русский язык и литература" : "русский язык"}</span>
           </span>
         </a>
+        <span class="header-account">${accountLink(active)}</span>
         <nav class="nav">${nav}
         </nav>
       </div>

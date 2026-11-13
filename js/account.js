@@ -229,7 +229,7 @@ export async function mountMe(root) {
   }
   const p = currentProfile() || (await refreshProfile());
   const state = accessState();
-  const [stats, mistakes, works] = await Promise.all([
+  const [stats, mistakes, works, myGroups] = await Promise.all([
     supa.from("task_stats").select("*").eq("student_id", user.id),
     supa.from("my_mistakes").select("*").order("last_try", { ascending: false }),
     supa
@@ -238,7 +238,9 @@ export async function mountMe(root) {
       .eq("student_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50),
+    supa.from("group_members").select("groups(title)").eq("student_id", user.id),
   ]);
+  const groupNames = (myGroups.data || []).map((g) => g.groups?.title).filter(Boolean);
   const err = stats.error || mistakes.error || works.error;
   if (err) console.warn(err);
 
@@ -254,7 +256,7 @@ export async function mountMe(root) {
     <h1>${escapeHtml(p?.full_name || user.email)}</h1>
     <p class="lede">${p?.role === "teacher" ? "преподаватель" : escapeHtml(STATUS_TEXT[p?.status] || "")}${p?.grade && p?.role !== "teacher" ? ` · ${p.grade} класс` : ""}${p?.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""}${
       p?.access_until ? ` · доступ до ${new Date(p.access_until).toLocaleDateString("ru-RU")}` : ""
-    }</p>
+    }${groupNames.length ? ` · группа: ${escapeHtml(groupNames.join(", "))}` : ""}</p>
     ${p?.role === "teacher" ? `<p class="actions"><a class="btn" href="#/cabinet">Кабинет преподавателя</a></p>` : ""}
     ${pendingNote}
     ${p?.role !== "teacher" ? `
@@ -265,7 +267,7 @@ export async function mountMe(root) {
         <p class="lit-result" id="me-join-status"></p>
       </form>
     </section>` : ""}
-    ${await (await import("./lessons.js?v=land78")).myLessonsHtml().catch(() => "")}
+    ${await (await import("./lessons.js?v=land80")).myLessonsHtml().catch(() => "")}
     <section class="me-section"><h2>Прогресс по номерам</h2>${statsHtml(stats.data || [])}</section>
     <section class="me-section"><h2>Тетрадь ошибок</h2>${mistakesHtml(mistakes.data || [])}</section>
     <section class="me-section"><h2>Письменные работы</h2>${worksHtml(works.data || [])}</section>
