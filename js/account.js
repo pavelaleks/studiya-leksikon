@@ -1,6 +1,9 @@
 /** Вход, регистрация и личный кабинет ученика (#/login, #/me). */
 import { escapeHtml } from "./ui.js";
 import {
+  badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, recommendations, recsHtml, selfExamHtml,
+} from "./dashboard.js?v=land83";
+import {
   accessState,
   currentProfile,
   currentUser,
@@ -229,6 +232,15 @@ export async function mountMe(root) {
   }
   const p = currentProfile() || (await refreshProfile());
   const state = accessState();
+  if (location.hash.startsWith("#/me/daily")) {
+    if (state !== "student") {
+      location.hash = "#/me";
+      return;
+    }
+    await mountDaily(root, await loadDashboard(), p);
+    return;
+  }
+  const dash = state === "student" ? await loadDashboard().catch(() => null) : null;
   const [stats, mistakes, works, myGroups] = await Promise.all([
     supa.from("task_stats").select("*").eq("student_id", user.id),
     supa.from("my_mistakes").select("*").order("last_try", { ascending: false }),
@@ -259,6 +271,7 @@ export async function mountMe(root) {
     }${groupNames.length ? ` · группа: ${escapeHtml(groupNames.join(", "))}` : ""}</p>
     ${p?.role === "teacher" ? `<p class="actions"><a class="btn" href="#/cabinet">Кабинет преподавателя</a></p>` : ""}
     ${pendingNote}
+    ${dash ? heroHtml(dash, p) + recsHtml(recommendations(dash, examCodeOf(p))) : ""}
     ${p?.role !== "teacher" ? `
     <section class="me-section">
       <form id="me-join" class="t-filter card">
@@ -267,7 +280,8 @@ export async function mountMe(root) {
         <p class="lit-result" id="me-join-status"></p>
       </form>
     </section>` : ""}
-    ${await (await import("./lessons.js?v=land80")).myLessonsHtml().catch(() => "")}
+    ${await (await import("./lessons.js?v=land83")).myLessonsHtml().catch(() => "")}
+    ${dash ? selfExamHtml(examCodeOf(p)) + badgesHtml(badges(dash, examCodeOf(p))) + howPointsHtml() : ""}
     <section class="me-section"><h2>Прогресс по номерам</h2>${statsHtml(stats.data || [])}</section>
     <section class="me-section"><h2>Тетрадь ошибок</h2>${mistakesHtml(mistakes.data || [])}</section>
     <section class="me-section"><h2>Письменные работы</h2>${worksHtml(works.data || [])}</section>
@@ -291,6 +305,13 @@ export async function mountMe(root) {
     st.className = `lit-result ${error ? "is-bad" : "is-ok"}`;
     st.textContent = error ? (/invalid code/.test(error.message) ? "Такого кода нет — проверьте у преподавателя." : humanError(error).message) : "Готово, вы в группе.";
   });
+  bindSelfExam(host);
+  host.querySelectorAll("[data-scroll]").forEach((a) =>
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      host.querySelector(`#${a.dataset.scroll}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    })
+  );
   host.querySelector("#me-logout")?.addEventListener("click", async () => {
     await signOut();
     location.hash = "#/";

@@ -1,13 +1,13 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land80";
+import { taskHref } from "./account.js?v=land83";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land80";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land80";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land83";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land83";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land80";
+} from "./review.js?v=land83";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -322,11 +322,15 @@ const fmtDateTime = (d) => (d ? new Date(d).toLocaleString("ru-RU", { dateStyle:
 /* ------------------------------------------------------------------ */
 
 async function studentsView(host, render) {
-  const [{ data: people, error }, { data: groups }, { data: members }] = await Promise.all([
+  const [{ data: people, error }, { data: groups }, { data: members }, { data: xp }] = await Promise.all([
     supa.from("profiles").select("*").neq("role", "teacher").order("created_at", { ascending: false }),
     supa.from("groups").select("id, title").eq("archived", false).order("title"),
     supa.from("group_members").select("group_id, student_id"),
+    supa.from("xp_events").select("student_id, points, created_at").limit(20000),
   ]);
+  const xpOf = (id) => (xp || []).filter((e) => e.student_id === id).reduce((a, e) => a + e.points, 0);
+  const weekOf = (id) =>
+    (xp || []).filter((e) => e.student_id === id && Date.now() - new Date(e.created_at) < 7 * 86400000).reduce((a, e) => a + e.points, 0);
   if (error) throw humanError(error);
   const groupOpts = (groups || []).map((g) => `<option value="${g.id}">${escapeHtml(g.title)}</option>`).join("");
   const groupsOf = (id) =>
@@ -368,6 +372,7 @@ async function studentsView(host, render) {
         <td>${p.grade || ""}</td>
         <td>${escapeHtml(p.exam_target || "")}</td>
         <td>${escapeHtml(groupsOf(p.id).join(", "))}</td>
+        <td title="за 7 дней: ${weekOf(p.id)}">${xpOf(p.id)}${weekOf(p.id) ? ` <small class="t-okc">+${weekOf(p.id)}</small>` : ""}</td>
         <td>
           <select data-f="status">${Object.entries(STATUS_TEXT)
             .map(([k, v]) => `<option value="${k}" ${p.status === k ? "selected" : ""}>${v}</option>`)
@@ -390,8 +395,8 @@ async function studentsView(host, render) {
       <h2>Все ученики · ${rest.length}</h2>
       <input class="search" id="t-q" type="search" placeholder="Поиск по имени, почте, цели" />
       <div class="t-table-wrap"><table class="t-table">
-        <thead><tr><th>Ученик</th><th>Класс</th><th>Цель</th><th>Группы</th><th>Статус</th><th>Доступ до</th><th></th></tr></thead>
-        <tbody>${restHtml || `<tr><td colspan="7" class="muted">Пока никого.</td></tr>`}</tbody>
+        <thead><tr><th>Ученик</th><th>Класс</th><th>Цель</th><th>Группы</th><th title="Очки за самостоятельную работу; зелёным — за неделю">Очки</th><th>Статус</th><th>Доступ до</th><th></th></tr></thead>
+        <tbody>${restHtml || `<tr><td colspan="8" class="muted">Пока никого.</td></tr>`}</tbody>
       </table></div>
     </section>`);
 
@@ -445,6 +450,10 @@ async function studentView(host, render, id) {
       .order("created_at", { ascending: false }),
     supa.from("student_notes").select("note").eq("student_id", id).maybeSingle(),
   ]);
+  const { data: xpRows } = await supa.from("xp_events").select("points, created_at").eq("student_id", id).limit(5000);
+  const xpTotal = (xpRows || []).reduce((a, e) => a + e.points, 0);
+  const xpWeek = (xpRows || []).filter((e) => Date.now() - new Date(e.created_at) < 7 * 86400000).reduce((a, e) => a + e.points, 0);
+  const activeDays = new Set((xpRows || []).map((e) => e.created_at.slice(0, 10))).size;
   if (!p) return render(`<div class="empty">Ученик не найден.</div>`);
   const statRows = (stats || [])
     .sort((a, b) => a.source.localeCompare(b.source) || a.task_no - b.task_no)
@@ -468,6 +477,7 @@ async function studentView(host, render, id) {
   render(`
     <p class="crumbs"><a href="#/cabinet/students">← Ученики</a></p>
     <h1>${escapeHtml(p.full_name || p.email)}</h1>
+    <p class="t-xp">Очки: <b>${xpTotal}</b> · за неделю: <b>+${xpWeek}</b> · дней с занятиями: <b>${activeDays}</b></p>
     <p class="lede">${escapeHtml(p.email || "")} · ${STATUS_TEXT[p.status]}${p.grade ? ` · ${p.grade} класс` : ""}${p.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""}${p.contact ? ` · ${escapeHtml(p.contact)}` : ""}</p>
     ${p.email ? `<p class="actions"><button class="btn secondary" id="t-reset">Отправить ученику ссылку для смены пароля</button> <span class="muted" id="t-reset-status"></span></p>` : ""}
     <section class="me-section">

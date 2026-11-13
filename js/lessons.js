@@ -5,13 +5,13 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land80";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land80";
-import { SOURCES, bankFiles } from "./teacher.js?v=land80";
+import { taskHref } from "./account.js?v=land83";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land83";
+import { SOURCES, bankFiles } from "./teacher.js?v=land83";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land80";
+} from "./exams.js?v=land83";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -165,7 +165,7 @@ export async function lessonsListView(host, render) {
   const [{ data: lessons, error }, { data: groups }, { data: students }, { data: items }, { data: assignees }] = await Promise.all([
     supa
       .from("lessons")
-      .select("id, title, status, kind, exam_code, duration_minutes, starts_at, created_at, group_id, student_id, groups(title), profiles!lessons_student_id_fkey(full_name, email)")
+      .select("id, title, status, kind, exam_code, duration_minutes, starts_at, created_at, group_id, student_id, self_made, groups(title), profiles!lessons_student_id_fkey(full_name, email)")
       .order("starts_at", { ascending: false, nullsFirst: true })
       .order("created_at", { ascending: false }),
     supa.from("groups").select("id, title").eq("archived", false).order("title"),
@@ -186,7 +186,7 @@ export async function lessonsListView(host, render) {
         <span class="lit-item-n">${count(l.id)}</span>
         <span class="lit-item-body">
           <strong>${escapeHtml(l.title)}</strong>
-          <span>${escapeHtml(WORK_KIND[l.kind] || "Занятие")}${l.duration_minutes ? ` · ${durationText(l.duration_minutes)}` : ""} · ${escapeHtml(who || "никому не назначено")}${l.starts_at ? ` · ${fmtDT(l.starts_at)}` : ""}</span>
+          <span>${l.self_made ? '<span class="badge">сам</span> ' : ""}${escapeHtml(WORK_KIND[l.kind] || "Занятие")}${l.duration_minutes ? ` · ${durationText(l.duration_minutes)}` : ""} · ${escapeHtml(who || "никому не назначено")}${l.starts_at ? ` · ${fmtDT(l.starts_at)}` : ""}</span>
           <span class="lesson-status lesson-${l.status}">${LESSON_STATUS[l.status]}</span>
         </span>
       </a>`;

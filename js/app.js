@@ -1,19 +1,19 @@
-import { layout } from "./ui.js?v=land80";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land80";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land80";
-import { mountLiterature } from "./literature.js?v=land80";
-import { mountRussian } from "./russian.js?v=land80";
-import { mountOge } from "./oge.js?v=land80";
-import { bindApplyForm } from "./apply.js?v=land80";
-import { EGE_TITLES } from "./ege.js?v=land80";
-import { renderExercise } from "./exercises.js?v=land80";
-import { mountTrainer } from "./trainers.js?v=land80";
-import { parseRoute } from "./route.js?v=land80";
+import { layout } from "./ui.js?v=land83";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land83";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land83";
+import { mountLiterature } from "./literature.js?v=land83";
+import { mountRussian } from "./russian.js?v=land83";
+import { mountOge } from "./oge.js?v=land83";
+import { bindApplyForm } from "./apply.js?v=land83";
+import { EGE_TITLES } from "./ege.js?v=land83";
+import { renderExercise } from "./exercises.js?v=land83";
+import { mountTrainer } from "./trainers.js?v=land83";
+import { parseRoute } from "./route.js?v=land83";
 import { hasAccess, initAuth, mySolved, onAuthChange } from "./supa.js";
 import { markEgeDone, markOgeDone } from "./progress.js";
-import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land80";
-import { mountTeacher, teacherPage } from "./teacher.js?v=land80";
-import { lessonPage, mountLesson } from "./lessons.js?v=land80";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land83";
+import { mountTeacher, teacherPage } from "./teacher.js?v=land83";
+import { lessonPage, mountLesson } from "./lessons.js?v=land83";
 
 const app = document.getElementById("app");
 let content = null;
@@ -271,7 +271,7 @@ async function render() {
       return;
     }
     mountHtml(mePage(), "me");
-    setTitle("Личный кабинет");
+    setTitle(b === "daily" ? "Тренировка дня" : "Личный кабинет");
     await mountMe(app);
     return;
   }
