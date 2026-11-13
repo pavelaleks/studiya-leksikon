@@ -252,7 +252,7 @@ export async function mountMe(root) {
   host.innerHTML = `
     <p class="eyebrow">Личный кабинет</p>
     <h1>${escapeHtml(p?.full_name || user.email)}</h1>
-    <p class="lede">${escapeHtml(STATUS_TEXT[p?.status] || "")}${p?.grade ? ` · ${p.grade} класс` : ""}${p?.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""}${
+    <p class="lede">${p?.role === "teacher" ? "преподаватель" : escapeHtml(STATUS_TEXT[p?.status] || "")}${p?.grade && p?.role !== "teacher" ? ` · ${p.grade} класс` : ""}${p?.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""}${
       p?.access_until ? ` · доступ до ${new Date(p.access_until).toLocaleDateString("ru-RU")}` : ""
     }</p>
     ${p?.role === "teacher" ? `<p class="actions"><a class="btn" href="#/cabinet">Кабинет преподавателя</a></p>` : ""}

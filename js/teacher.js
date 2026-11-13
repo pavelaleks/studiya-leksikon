@@ -1,7 +1,7 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land66";
+import { taskHref } from "./account.js?v=land67";
 import { clearBankCache, currentUser, humanError, isTeacher, signedFileUrl, supa } from "./supa.js";
 
 /* ------------------------------------------------------------------ */
