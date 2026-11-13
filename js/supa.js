@@ -34,13 +34,20 @@ export async function initAuth() {
   const { data } = await supa.auth.getSession();
   session = data.session;
   await loadProfile();
-  supa.auth.onAuthStateChange(async (event, next) => {
+  // Внутри обработчика нельзя ждать других запросов к Supabase: они делят блокировку сессии
+  // (иначе «Lock … was released because another request stole it»). Поэтому работа — после него.
+  supa.auth.onAuthStateChange((event, next) => {
     const changed = (next?.user?.id || null) !== (session?.user?.id || null);
     session = next;
+    if (event === "PASSWORD_RECOVERY" && !location.hash.startsWith("#/me/password")) {
+      location.hash = "#/me/password";
+    }
     if (changed || event === "USER_UPDATED") {
-      bankCache.clear();
-      await loadProfile();
-      listeners.forEach((fn) => fn(profile));
+      setTimeout(async () => {
+        bankCache.clear();
+        await loadProfile();
+        listeners.forEach((fn) => fn(profile));
+      }, 0);
     }
   });
   return profile;
@@ -99,8 +106,17 @@ export async function resetPassword(email) {
 }
 
 export async function updatePassword(password) {
-  const { error } = await supa.auth.updateUser({ password });
-  if (error) throw humanError(error);
+  for (let i = 0; i < 3; i += 1) {
+    let error = null;
+    try {
+      ({ error } = await supa.auth.updateUser({ password }));
+    } catch (err) {
+      error = err;
+    }
+    if (!error) return;
+    if (!/lock/i.test(error.message || "") || i === 2) throw humanError(error);
+    await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+  }
 }
 
 export async function signOut() {
@@ -120,6 +136,9 @@ export function humanError(err) {
     [/attempts exhausted/i, "Попытки на это задание закончились."],
     [/deadline passed/i, "Срок сдачи прошёл."],
     [/failed to fetch|network/i, "Нет связи с сервером. Проверьте интернет."],
+    [/lock .*stole|lock .*released/i, "Сайт был занят другим запросом. Нажмите «Сохранить» ещё раз."],
+    [/auth session missing|session.*expired|jwt expired/i, "Ссылка из письма устарела. Запросите новую: «Войти» → «Забыли пароль?»."],
+    [/should be different from the old password/i, "Новый пароль совпадает со старым — придумайте другой."],
   ];
   const hit = map.find(([re]) => re.test(msg));
   const e = new Error(hit ? hit[1] : msg || "Что-то пошло не так.");
