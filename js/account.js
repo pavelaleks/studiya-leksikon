@@ -1,8 +1,9 @@
 /** Вход, регистрация и личный кабинет ученика (#/login, #/me). */
 import { escapeHtml } from "./ui.js";
+import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, tracksOf } from "./track.js?v=land107";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, recommendations, recsHtml, selfExamHtml,
-} from "./dashboard.js?v=land104";
+} from "./dashboard.js?v=land107";
 import {
   accessState,
   currentProfile,
@@ -281,7 +282,7 @@ export async function mountMe(root) {
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land104").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
+    import("./lessons.js?v=land107").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
     isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },
     isProfile ? supa.from("my_mistakes").select("*").order("last_try", { ascending: false }) : { data: [] },
     isProfile
@@ -294,6 +295,7 @@ export async function mountMe(root) {
       : { data: [] },
     supa.from("group_members").select("groups(title)").eq("student_id", user.id),
   ]);
+  const { data: courseReq } = isProfile ? await supa.from("course_requests").select("course, status, created_at").order("created_at", { ascending: false }) : { data: [] };
   const groupNames = (myGroups.data || []).map((g) => g.groups?.title).filter(Boolean);
   const err = stats.error || mistakes.error || works.error;
   if (err) console.warn(err);
@@ -306,13 +308,18 @@ export async function mountMe(root) {
         : "";
   const code = examCodeOf(p);
   const firstName = String(p?.full_name || "").trim().split(/\s+/)[0] || "";
+  // Код группы нужен редко: преподаватель обычно добавляет в группу сам. Поэтому поле спрятано.
   const joinHtml = `
     <section class="me-section">
-      <form id="me-join" class="t-filter card">
-        <label>Код группы от преподавателя<input name="code" maxlength="12" autocomplete="off" placeholder="например, a1b2c3" /></label>
-        <button class="btn secondary" type="submit">Вступить в группу</button>
-        <p class="lit-result" id="me-join-status"></p>
-      </form>
+      <details class="me-join card">
+        <summary>Преподаватель дал код группы?</summary>
+        <form id="me-join" class="t-filter">
+          <p class="muted">Введите код — и вы окажетесь в группе: будете видеть её занятия и контрольные. Если кода нет, ничего делать не нужно.</p>
+          <label>Код группы<input name="code" maxlength="12" autocomplete="off" placeholder="например, a1b2c3" /></label>
+          <button class="btn secondary" type="submit">Вступить в группу</button>
+          <p class="lit-result" id="me-join-status"></p>
+        </form>
+      </details>
     </section>`;
 
   if (!isProfile) {
@@ -333,6 +340,13 @@ export async function mountMe(root) {
         </span>
       </header>
       ${pendingNote}
+      ${
+        tracksOf(p).length > 1
+          ? `<nav class="me-tracks" aria-label="Курс">${tracksOf(p)
+              .map((t) => `<button type="button" class="pill ${t === code ? "active" : ""}" data-track="${t}">${escapeHtml(TRACK_TITLE[t] || t)}</button>`)
+              .join("")}</nav>`
+          : ""
+      }
       ${
         dash
           ? `<a class="me-level card" href="#/me/profile">
@@ -380,7 +394,7 @@ export async function mountMe(root) {
             </div></section>`
           : ""
       }
-      ${state !== "student" && !groupNames.length ? joinHtml : ""}`;
+`;
   } else {
     host.innerHTML = `
       <header class="me-hello">
@@ -400,6 +414,20 @@ export async function mountMe(root) {
       <section class="me-section"><h2>Прогресс по номерам</h2>${statsHtml(stats.data || [])}</section>
       <section class="me-section" id="mistakes"><h2>Тетрадь ошибок</h2>${mistakesHtml(mistakes.data || [])}</section>
       <section class="me-section" id="works"><h2>Письменные работы</h2>${worksHtml(works.data || [])}</section>
+      <section class="me-section" id="courses">
+        <h2>Мои курсы</h2>
+        <div class="me-courses">${(p?.courses || []).map((c) => `<span class="chip">${escapeHtml(courseLabel(c))}</span>`).join("") || '<span class="muted">Пока не указаны — попросите преподавателя.</span>'}</div>
+        ${(courseReq || [])
+          .filter((r) => r.status !== "approved")
+          .map((r) => `<p class="muted me-req">${escapeHtml(courseLabel(r.course))} — ${r.status === "pending" ? "запрос отправлен, ждёт преподавателя" : "преподаватель пока отказал"}</p>`)
+          .join("")}
+        <form id="me-course" class="t-filter card">
+          <label>Предмет<select name="subject">${Object.entries(SUBJECTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label>
+          <label>Класс<select name="grade">${GRADES.map((g) => `<option value="${g}" ${g === Number(p?.grade) ? "selected" : ""}>${g} класс${g === 9 ? " (ОГЭ)" : g >= 10 ? " (ЕГЭ)" : ""}</option>`).join("")}</select></label>
+          <button class="btn secondary" type="submit">Попросить доступ к курсу</button>
+          <p class="lit-result" id="me-course-status"></p>
+        </form>
+      </section>
       ${joinHtml}
       ${dash ? howPointsHtml() : ""}
       <section class="me-section">
@@ -425,6 +453,25 @@ export async function mountMe(root) {
     st.textContent = error ? (/invalid code/.test(error.message) ? "Такого кода нет — проверьте у преподавателя." : humanError(error).message) : "Готово, вы в группе.";
   });
   bindSelfExam(host);
+  host.querySelectorAll("[data-track]").forEach((b) =>
+    b.addEventListener("click", () => {
+      setTrack(b.dataset.track);
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    })
+  );
+  host.querySelector("#me-course")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const course = `${f.get("subject")}:${f.get("grade")}`;
+    const st = host.querySelector("#me-course-status");
+    const { data, error } = await supa.rpc("request_course", { p_course: course });
+    st.className = `lit-result ${error ? "is-bad" : "is-ok"}`;
+    st.textContent = error
+      ? humanError(error).message
+      : data === "already"
+        ? `«${courseLabel(course)}» у вас уже есть.`
+        : `Запрос на «${courseLabel(course)}» отправлен. Преподаватель увидит его в кабинете.`;
+  });
   host.querySelectorAll("[data-goto]").forEach((a) =>
     a.addEventListener("click", (e) => {
       e.preventDefault();

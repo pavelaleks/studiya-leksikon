@@ -1113,3 +1113,272 @@ label,
 .rv-origin .chip {
   text-decoration: none;
 }
+
+/* Курсы */
+.me-tracks {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 12px;
+}
+.me-tracks button {
+  cursor: pointer;
+  font: inherit;
+}
+.me-courses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.me-req {
+  margin: 4px 0;
+}
+.t-courses {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+.t-courses fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.t-courses legend {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.t-course {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+.tt-row .btn {
+  min-height: 40px;
+  padding: 8px 12px;
+  flex: none;
+}
+.t-danger {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.btn.t-del,
+.btn.t-del:hover {
+  background: #9b2c2c;
+  color: #fff;
+}
+
+/* ---------- Исходный текст к заданию ---------- */
+.tb-text,
+.passage-more {
+  display: none;
+}
+.passage-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+}
+.ps-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.38);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.ps-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 88vh;
+  height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: 22px 22px 0 0;
+  transform: translateY(100%);
+  transition: transform 0.22s ease;
+}
+.passage-sheet.is-open .ps-backdrop {
+  opacity: 1;
+}
+.passage-sheet.is-open .ps-panel {
+  transform: none;
+}
+.ps-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.ps-head strong {
+  font-size: 1.1rem;
+}
+.ps-body {
+  flex: 1;
+  overflow: auto;
+  padding: 14px 18px calc(24px + env(safe-area-inset-bottom, 0px));
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  -webkit-overflow-scrolling: touch;
+}
+body.is-sheet-open {
+  overflow: hidden;
+}
+@media (max-width: 760px) {
+  .tb-text {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    height: 40px;
+    padding: 0 12px;
+    border-radius: 12px;
+    border: 1px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font: inherit;
+    font-weight: 800;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  /* текст в задании свёрнут до нескольких строк — вопрос виден сразу */
+  .has-passage .lit-passage {
+    position: relative;
+    max-height: 210px;
+    overflow: hidden;
+  }
+  .has-passage .lit-passage::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 90px;
+    background: linear-gradient(transparent, var(--card) 75%);
+    pointer-events: none;
+  }
+  .passage-more {
+    display: block;
+    position: absolute;
+    left: 50%;
+    bottom: 10px;
+    z-index: 1;
+    transform: translateX(-50%);
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--accent);
+    font: inherit;
+    font-weight: 800;
+    font-size: 0.88rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+}
+/* Широкий экран: текст слева (прокручивается сам), вопрос и ответ справа */
+@media (min-width: 1000px) {
+  .lit-problem.has-passage {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    column-gap: 28px;
+    align-items: start;
+  }
+  .lit-problem.has-passage > * {
+    grid-column: 2;
+  }
+  .lit-problem.has-passage > .lit-passage {
+    grid-column: 1;
+    grid-row: 1 / span 30;
+    position: sticky;
+    top: 80px;
+    max-height: calc(100vh - 100px);
+    overflow: auto;
+    margin: 0;
+  }
+}
+
+/* Активность ученика в карточке */
+.t-act-stats {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+.t-act-stats strong {
+  font-size: 1.05rem;
+}
+.t-days {
+  display: grid;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  gap: 4px;
+  align-items: end;
+  height: 120px;
+  margin-top: 14px;
+}
+.t-day {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  height: 100%;
+  grid-template-rows: 1fr auto;
+}
+.t-day small {
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+}
+.t-bar {
+  width: 100%;
+  max-width: 22px;
+  height: 100%;
+  display: flex;
+  flex-direction: column-reverse;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  overflow: hidden;
+}
+.t-bar-a {
+  background: var(--accent-fill);
+}
+.t-bar-v {
+  background: var(--forest);
+  opacity: 0.6;
+}
+.t-legend {
+  font-size: 0.82rem;
+}
+.t-key {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  vertical-align: -1px;
+}
+.t-key-a {
+  background: var(--accent-fill);
+}
+.t-key-v {
+  background: var(--forest);
+  opacity: 0.6;
+}
+.t-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.me-join summary {
+  cursor: pointer;
+  font-weight: 700;
+  padding: 4px 0;
+}
+.me-join form {
+  margin-top: 10px;
+}

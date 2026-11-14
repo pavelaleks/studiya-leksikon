@@ -1,14 +1,15 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land107";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land104";
+import { taskHref } from "./account.js?v=land107";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land104";
-import { readingView } from "./teacher-reading.js?v=land104";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land104";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land107";
+import { readingView } from "./teacher-reading.js?v=land107";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land107";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land104";
+} from "./review.js?v=land107";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -296,12 +297,43 @@ function agoText(d) {
   return `${days} ${days % 10 === 1 && days % 100 !== 11 ? "день" : days % 10 >= 2 && days % 10 <= 4 && (days % 100 < 12 || days % 100 > 14) ? "дня" : "дней"} назад`;
 }
 
+const SECTION_TITLE = {
+  home: "Главная сайта", me: "Кабинет", lesson: "Занятия", ege: "ЕГЭ · русский", "ege-item": "ЕГЭ · русский", oge: "ОГЭ · русский",
+  literature: "Литература", library: "Библиотека", rules: "Правила", rule: "Правила", practice: "Практика",
+  exercise: "Практика", trainer: "Тренажёры", admin: "Кабинет",
+};
+const sectionTitle = (s) => SECTION_TITLE[s] || s;
+
+/** Когда был последний раз: «сегодня в 14:05», «вчера», «3 дня назад», «—». */
+function seenText(d) {
+  if (!d) return "—";
+  const t = new Date(d);
+  const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((day(new Date()) - day(t)) / 86400000);
+  const time = t.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  if (diff === 0) return `сегодня в ${time}`;
+  if (diff === 1) return `вчера в ${time}`;
+  return agoText(d);
+}
+
+/** Сеансы: заходы с перерывом меньше 30 минут — один сеанс. Длительность — от первого до последнего действия (+3 мин). */
+function sessionsOf(times) {
+  const ts = times.map((x) => new Date(x).getTime()).sort((a, b) => a - b);
+  const out = [];
+  for (const t of ts) {
+    const cur = out[out.length - 1];
+    if (cur && t - cur.end < 30 * 60000) cur.end = t;
+    else out.push({ start: t, end: t });
+  }
+  return out.map((x) => ({ ...x, min: Math.round((x.end - x.start) / 60000) + 3 }));
+}
+
 async function todayView(host, render) {
   const dayStart = new Date();
   dayStart.setHours(0, 0, 0, 0);
   const dayEnd = new Date(dayStart.getTime() + 86400000);
   const fiveDays = new Date(Date.now() - 5 * 86400000).toISOString();
-  const [pending, queue, live, todayLessons, todayAtt, recentAtt, recentWorks, students] = await Promise.all([
+  const [pending, queue, live, todayLessons, todayAtt, recentAtt, recentWorks, students, creqs] = await Promise.all([
     supa.from("profiles").select("id, full_name, email, created_at").eq("status", "pending").order("created_at"),
     supa.from("written_works").select("id, submitted_at, profiles(full_name, email), tasks(source, task_no)").eq("status", "submitted").order("submitted_at"),
     supa.from("lessons").select("id, title, kind, duration_minutes, exam_sessions(student_id, started_at, finished_at)").eq("status", "live").not("duration_minutes", "is", null),
@@ -310,6 +342,7 @@ async function todayView(host, render) {
     supa.from("attempts").select("student_id").gte("created_at", fiveDays).limit(5000),
     supa.from("written_works").select("student_id").gte("updated_at", fiveDays).limit(2000),
     supa.from("profiles").select("id, full_name, email").neq("role", "teacher").eq("status", "active").order("full_name"),
+    supa.from("course_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
   ]);
   const now = Date.now();
   const liveRows = (live.data || [])
@@ -354,6 +387,8 @@ async function todayView(host, render) {
         pending.data.slice(0, 3).map(name).join(", ") + (pending.data.length > 3 ? "…" : "")
       )
     );
+  if (creqs.count)
+    blocks.push(row("#/cabinet/students", `Запросы на курсы <span class="tt-count">${creqs.count}</span>`, "ученики просят добавить предмет или класс"));
   (todayLessons.data || []).forEach((l) =>
     blocks.push(
       row(
@@ -436,12 +471,22 @@ const fmtDateTime = (d) => (d ? new Date(d).toLocaleString("ru-RU", { dateStyle:
 /* ------------------------------------------------------------------ */
 
 async function studentsView(host, render) {
-  const [{ data: people, error }, { data: groups }, { data: members }, { data: xp }] = await Promise.all([
+  const [{ data: people, error }, { data: groups }, { data: members }, { data: xp }, { data: creq }] = await Promise.all([
     supa.from("profiles").select("*").neq("role", "teacher").order("created_at", { ascending: false }),
     supa.from("groups").select("id, title").eq("archived", false).order("title"),
     supa.from("group_members").select("group_id, student_id"),
     supa.from("xp_events").select("student_id, points, created_at").limit(20000),
+    supa.from("course_requests").select("id, course, created_at, student_id").eq("status", "pending").order("created_at"),
   ]);
+  const since7 = new Date(Date.now() - 7 * 86400000).toISOString();
+  const [{ data: acts }, { data: lastActs }, { data: atts7 }] = await Promise.all([
+    supa.from("activity_log").select("student_id, at").gte("at", since7).limit(20000),
+    supa.from("activity_log").select("student_id, at").order("at", { ascending: false }).limit(3000),
+    supa.from("attempts").select("student_id, created_at").gte("created_at", since7).limit(20000),
+  ]);
+  const lastSeen = (id) => (lastActs || []).find((a) => a.student_id === id)?.at || null;
+  const visits7 = (id) => sessionsOf((acts || []).filter((a) => a.student_id === id).map((a) => a.at)).length;
+  const answers7 = (id) => (atts7 || []).filter((a) => a.student_id === id).length;
   const xpOf = (id) => (xp || []).filter((e) => e.student_id === id).reduce((a, e) => a + e.points, 0);
   const weekOf = (id) =>
     (xp || []).filter((e) => e.student_id === id && Date.now() - new Date(e.created_at) < 7 * 86400000).reduce((a, e) => a + e.points, 0);
@@ -484,9 +529,12 @@ async function studentsView(host, render) {
       <tr data-id="${p.id}" data-blob="${escapeHtml([p.full_name, p.email, p.contact, p.exam_target].join(" ").toLowerCase())}">
         <td><a href="#/cabinet/student/${p.id}">${escapeHtml(p.full_name || p.email || "—")}</a><br><small class="muted">${escapeHtml(p.email || "")}</small></td>
         <td>${p.grade || ""}</td>
-        <td>${escapeHtml(p.exam_target || "")}</td>
+        <td>${(p.courses || []).length ? (p.courses || []).map((c) => escapeHtml(courseLabel(c))).join("<br>") : escapeHtml(p.exam_target || "")}</td>
         <td>${escapeHtml(groupsOf(p.id).join(", "))}</td>
         <td title="за 7 дней: ${weekOf(p.id)}">${xpOf(p.id)}${weekOf(p.id) ? ` <small class="t-okc">+${weekOf(p.id)}</small>` : ""}</td>
+        <td>${seenText(lastSeen(p.id))}</td>
+        <td>${visits7(p.id) || "—"}</td>
+        <td>${answers7(p.id) || "—"}</td>
         <td>
           <select data-f="status">${Object.entries(STATUS_TEXT)
             .map(([k, v]) => `<option value="${k}" ${p.status === k ? "selected" : ""}>${v}</option>`)
@@ -498,8 +546,27 @@ async function studentsView(host, render) {
     )
     .join("");
 
+  const nameOf = (id) => {
+    const p = people.find((x) => x.id === id);
+    return escapeHtml(p?.full_name || p?.email || "ученик");
+  };
+  const creqHtml = (creq || []).length
+    ? `<section class="me-section" id="course-requests">
+        <h2>Запросы на курсы <span class="badge">${creq.length}</span></h2>
+        <div class="tt-list">${creq
+          .map(
+            (r) => `<div class="tt-row" data-req="${r.id}">
+              <span class="tt-body"><strong>${nameOf(r.student_id)}</strong><span class="muted">хочет курс «${escapeHtml(courseLabel(r.course))}» · ${fmtDateTime(r.created_at)}</span></span>
+              <button class="btn" data-req-ok="1">Добавить</button>
+              <button class="btn secondary" data-req-ok="0">Отказать</button>
+            </div>`
+          )
+          .join("")}</div>
+      </section>`
+    : "";
   render(`
     <h1>Ученики</h1>
+    ${creqHtml}
     <section class="me-section">
       <h2>Заявки на доступ ${pending.length ? `<span class="badge">${pending.length}</span>` : ""}</h2>
       <p class="muted">Ученик регистрируется сам на странице «Войти». Пока вы не подтвердите, он видит только демо-задания.</p>
@@ -509,11 +576,24 @@ async function studentsView(host, render) {
       <h2>Все ученики · ${rest.length}</h2>
       <input class="search" id="t-q" type="search" placeholder="Поиск по имени, почте, цели" />
       <div class="t-table-wrap"><table class="t-table">
-        <thead><tr><th>Ученик</th><th>Класс</th><th>Цель</th><th>Группы</th><th title="Очки за самостоятельную работу; зелёным — за неделю">Очки</th><th>Статус</th><th>Доступ до</th><th></th></tr></thead>
-        <tbody>${restHtml || `<tr><td colspan="8" class="muted">Пока никого.</td></tr>`}</tbody>
+        <thead><tr><th>Ученик</th><th>Класс</th><th>Курсы</th><th>Группы</th><th title="Очки за самостоятельную работу; зелёным — за неделю">Очки</th><th>Был на сайте</th><th title="Сеансов за 7 дней (заходы с перерывом больше 30 минут)">Заходов 7 дн.</th><th>Ответов 7 дн.</th><th>Статус</th><th>Доступ до</th><th></th></tr></thead>
+        <tbody>${restHtml || `<tr><td colspan="11" class="muted">Пока никого.</td></tr>`}</tbody>
       </table></div>
     </section>`);
 
+  host.querySelectorAll("[data-req-ok]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      const row = b.closest("[data-req]");
+      row.querySelectorAll("button").forEach((x) => (x.disabled = true));
+      const { error } = await supa.rpc("decide_course_request", { p_id: Number(row.dataset.req), p_ok: b.dataset.reqOk === "1" });
+      if (error) {
+        alert(humanError(error).message);
+        row.querySelectorAll("button").forEach((x) => (x.disabled = false));
+        return;
+      }
+      mountTeacher(document, ["students"]);
+    })
+  );
   host.querySelector("#t-q")?.addEventListener("input", (e) => {
     const q = e.target.value.trim().toLowerCase();
     host.querySelectorAll("tbody tr[data-blob]").forEach((tr) => (tr.hidden = q && !tr.dataset.blob.includes(q)));
@@ -547,6 +627,61 @@ async function studentsView(host, render) {
   );
 }
 
+/** Активность ученика за 30 дней: заходы, время, разделы, ответы. */
+function activityHtml(acts, atts) {
+  const sess = sessionsOf([...acts.map((a) => a.at), ...atts.map((a) => a.created_at)]);
+  const totalMin = sess.reduce((a, s) => a + s.min, 0);
+  const correct = atts.filter((a) => a.is_correct).length;
+  const secs = atts.map((a) => a.seconds).filter((x) => x > 0 && x < 3600);
+  const bySection = {};
+  acts.forEach((a) => (bySection[sectionTitle(a.section)] = (bySection[sectionTitle(a.section)] || 0) + 1));
+  const top = Object.entries(bySection).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const days = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - 13 + i);
+    const next = d.getTime() + 86400000;
+    const inDay = (t) => {
+      const x = new Date(t).getTime();
+      return x >= d.getTime() && x < next;
+    };
+    return {
+      label: d.toLocaleDateString("ru-RU", { day: "numeric" }),
+      wd: d.toLocaleDateString("ru-RU", { weekday: "short" }),
+      visits: sessionsOf(acts.filter((a) => inDay(a.at)).map((a) => a.at)).length,
+      answers: atts.filter((a) => inDay(a.created_at)).length,
+    };
+  });
+  const maxA = Math.max(1, ...days.map((d) => d.answers + d.visits));
+  const last = acts[0]?.at || atts.map((a) => a.created_at).sort().at(-1);
+  return `
+    <section class="me-section">
+      <h2>Активность <span class="muted">за 30 дней</span></h2>
+      <div class="tt-stats t-act-stats">
+        <div><strong>${seenText(last)}</strong><span>последний раз</span></div>
+        <div><strong>${sess.length}</strong><span>заходов</span></div>
+        <div><strong>${totalMin >= 60 ? `${Math.floor(totalMin / 60)} ч ${totalMin % 60} мин` : `${totalMin} мин`}</strong><span>на сайте (примерно)</span></div>
+        <div><strong>${atts.length}</strong><span>ответов · верных ${atts.length ? Math.round((100 * correct) / atts.length) : 0}%</span></div>
+        <div><strong>${secs.length ? Math.round(secs.reduce((a, b) => a + b, 0) / secs.length) : "—"}${secs.length ? " с" : ""}</strong><span>в среднем на ответ</span></div>
+      </div>
+      <div class="t-days" role="img" aria-label="Заходы и ответы по дням за 2 недели">
+        ${days
+          .map(
+            (d) => `<div class="t-day" title="${d.wd} ${d.label}: заходов ${d.visits}, ответов ${d.answers}">
+              <span class="t-bar"><span class="t-bar-a" style="height:${Math.round((100 * d.answers) / maxA)}%"></span><span class="t-bar-v" style="height:${Math.round((100 * d.visits) / maxA)}%"></span></span>
+              <small>${d.label}</small></div>`
+          )
+          .join("")}
+      </div>
+      <p class="muted t-legend"><span class="t-key t-key-a"></span> ответы · <span class="t-key t-key-v"></span> заходы</p>
+      ${
+        top.length
+          ? `<h3>Куда заходил</h3><div class="t-sections">${top.map(([k, v]) => `<span class="chip">${escapeHtml(k)} · ${v}</span>`).join("")}</div>`
+          : `<p class="muted">Журнал заходов ведётся с ${new Date().toLocaleDateString("ru-RU")} — данные появятся, когда ученик откроет сайт.</p>`
+      }
+    </section>`;
+}
+
 async function studentView(host, render, id) {
   const [{ data: p }, { data: stats }, { data: attempts }, { data: works }, { data: note }] = await Promise.all([
     supa.from("profiles").select("*").eq("id", id).maybeSingle(),
@@ -564,7 +699,12 @@ async function studentView(host, render, id) {
       .order("created_at", { ascending: false }),
     supa.from("student_notes").select("note").eq("student_id", id).maybeSingle(),
   ]);
-  const { data: xpRows } = await supa.from("xp_events").select("points, created_at").eq("student_id", id).limit(5000);
+  const since30 = new Date(Date.now() - 30 * 86400000).toISOString();
+  const [{ data: xpRows }, { data: actRows }, { data: att30 }] = await Promise.all([
+    supa.from("xp_events").select("points, created_at").eq("student_id", id).limit(5000),
+    supa.from("activity_log").select("section, path, at").eq("student_id", id).gte("at", since30).order("at", { ascending: false }).limit(5000),
+    supa.from("attempts").select("is_correct, created_at, seconds").eq("student_id", id).gte("created_at", since30).limit(10000),
+  ]);
   const xpTotal = (xpRows || []).reduce((a, e) => a + e.points, 0);
   const xpWeek = (xpRows || []).filter((e) => Date.now() - new Date(e.created_at) < 7 * 86400000).reduce((a, e) => a + e.points, 0);
   const activeDays = new Set((xpRows || []).map((e) => e.created_at.slice(0, 10))).size;
@@ -594,6 +734,20 @@ async function studentView(host, render, id) {
     <p class="t-xp">Очки: <b>${xpTotal}</b> · за неделю: <b>+${xpWeek}</b> · дней с занятиями: <b>${activeDays}</b></p>
     <p class="lede">${escapeHtml(p.email || "")} · ${STATUS_TEXT[p.status]}${p.grade ? ` · ${p.grade} класс` : ""}${p.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""}${p.contact ? ` · ${escapeHtml(p.contact)}` : ""}</p>
     ${p.email ? `<p class="actions"><button class="btn secondary" id="t-reset">Отправить ученику ссылку для смены пароля</button> <span class="muted" id="t-reset-status"></span></p>` : ""}
+    ${activityHtml(actRows || [], att30 || [])}
+    <section class="me-section">
+      <h2>Курсы</h2>
+      <form id="t-courses" class="card t-courses">
+        ${Object.entries(SUBJECTS)
+          .map(
+            ([s, title]) => `<fieldset><legend>${title}</legend>${GRADES.map(
+              (g) => `<label class="t-course"><input type="checkbox" value="${s}:${g}" ${(p.courses || []).includes(`${s}:${g}`) ? "checked" : ""}/> ${g}${g === 9 ? " ОГЭ" : g >= 10 ? " ЕГЭ" : ""}</label>`
+            ).join("")}</fieldset>`
+          )
+          .join("")}
+        <p class="actions"><button class="btn secondary" type="submit">Сохранить курсы</button> <span class="muted" id="t-courses-status"></span></p>
+      </form>
+    </section>
     <section class="me-section">
       <h2>Заметки (видите только вы)</h2>
       <textarea id="t-note" class="lit-essay" style="min-height:90px">${escapeHtml(note?.note || "")}</textarea>
@@ -607,7 +761,40 @@ async function studentView(host, render, id) {
     </section>
     <section class="me-section"><h2>Последние ответы</h2>
       ${attemptRows ? `<div class="t-table-wrap"><table class="t-table"><thead><tr><th>Когда</th><th>Задание</th><th>Ответ</th><th></th><th>Время</th></tr></thead><tbody>${attemptRows}</tbody></table></div>` : `<p class="muted">Нет.</p>`}
+    </section>
+    <section class="me-section t-danger">
+      <h2>Удалить ученика</h2>
+      <p class="muted">Удалятся учётная запись, ответы, письменные работы с фото, очки и результаты. Это нельзя отменить. Если ученик просто перестал ходить — лучше поставьте статус «в архиве» в списке учеников: всё сохранится.</p>
+      <p class="actions"><button class="btn t-del" id="t-delete">Удалить ученика навсегда</button> <span class="muted" id="t-delete-status"></span></p>
     </section>`);
+  host.querySelector("#t-courses")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const courses = [...e.target.querySelectorAll("input:checked")].map((x) => x.value);
+    const { error } = await supa.from("profiles").update({ courses }).eq("id", id);
+    host.querySelector("#t-courses-status").textContent = error ? humanError(error).message : "Сохранено";
+  });
+  host.querySelector("#t-delete")?.addEventListener("click", async (e) => {
+    const name = p.full_name || p.email || "ученик";
+    const typed = prompt(`Удалить ${name} навсегда вместе со всеми ответами, работами и очками?\n\nЧтобы подтвердить, напишите слово УДАЛИТЬ.`);
+    if (String(typed || "").trim().toUpperCase() !== "УДАЛИТЬ") return;
+    const st = host.querySelector("#t-delete-status");
+    e.target.disabled = true;
+    st.textContent = "Удаляем фото работ…";
+    try {
+      const { data: files } = await supa.storage.from("works").list(id, { limit: 1000 });
+      if (files?.length) {
+        const { error: fe } = await supa.storage.from("works").remove(files.map((f) => `${id}/${f.name}`));
+        if (fe) throw fe;
+      }
+      st.textContent = "Удаляем учётную запись…";
+      const { error } = await supa.rpc("teacher_delete_student", { p_id: id });
+      if (error) throw error;
+      location.hash = "#/cabinet/students";
+    } catch (err) {
+      st.textContent = humanError(err).message || String(err);
+      e.target.disabled = false;
+    }
+  });
   host.querySelector("#t-reset")?.addEventListener("click", async (e) => {
     const st = host.querySelector("#t-reset-status");
     if (!confirm(`Отправить письмо со ссылкой для смены пароля на ${p.email}?`)) return;

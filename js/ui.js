@@ -1,4 +1,5 @@
 import { accessState, currentProfile } from "./supa.js";
+import { TRACK_HREF, currentTrack } from "./track.js?v=land107";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -19,12 +20,9 @@ export function icon(name) {
   return `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[name] || ""}</svg>`;
 }
 
-/** Раздел заданий ученика — по цели подготовки из профиля. */
+/** Раздел заданий ученика — по выбранному треку (курсу). */
 function tasksHref() {
-  const t = String(currentProfile()?.exam_target || "");
-  if (/ОГЭ/.test(t)) return "#/oge";
-  if (/литератур/i.test(t)) return "#/literature";
-  return "#/ege";
+  return TRACK_HREF[currentTrack(currentProfile())] || "#/ege";
 }
 
 /** Нижнее меню на телефоне: у гостя, ученика и преподавателя — свои разделы. */

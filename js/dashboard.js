@@ -4,7 +4,8 @@
  * Очки начисляет сервер (таблица xp_events), здесь — только показ и подсказки.
  */
 import { escapeHtml } from "./ui.js";
-import { EXAMS, autoNumbers, composeVariant, durationText } from "./exams.js?v=land104";
+import { currentTrack } from "./track.js?v=land107";
+import { EXAMS, autoNumbers, composeVariant, durationText } from "./exams.js?v=land107";
 import { currentUser, humanError, supa } from "./supa.js";
 
 const LEVELS = [
@@ -29,10 +30,7 @@ const OGE_TRAINER = { 2: "trenazher-osnova-leksikon", 3: "trenazher-oborotov-lek
 const SECTION = { "ege-rus": "ege", "oge-rus": "oge", "ege-lit": "literature" };
 
 export function examCodeOf(profile) {
-  const t = String(profile?.exam_target || "");
-  if (/ОГЭ/.test(t)) return "oge-rus";
-  if (/литератур/i.test(t)) return "ege-lit";
-  return "ege-rus";
+  return currentTrack(profile);
 }
 
 export function levelOf(xp) {

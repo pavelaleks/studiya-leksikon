@@ -1,20 +1,20 @@
-import { applyTheme, layout } from "./ui.js?v=land104";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land104";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land104";
-import { mountLiterature } from "./literature.js?v=land104";
-import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land104";
-import { mountRussian } from "./russian.js?v=land104";
-import { mountOge } from "./oge.js?v=land104";
-import { bindApplyForm } from "./apply.js?v=land104";
-import { EGE_TITLES } from "./ege.js?v=land104";
-import { renderExercise } from "./exercises.js?v=land104";
-import { mountTrainer } from "./trainers.js?v=land104";
-import { parseRoute } from "./route.js?v=land104";
-import { hasAccess, initAuth, mySolved, onAuthChange } from "./supa.js";
+import { applyTheme, layout } from "./ui.js?v=land107";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land107";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land107";
+import { mountLiterature } from "./literature.js?v=land107";
+import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land107";
+import { mountRussian } from "./russian.js?v=land107";
+import { mountOge } from "./oge.js?v=land107";
+import { bindApplyForm } from "./apply.js?v=land107";
+import { EGE_TITLES } from "./ege.js?v=land107";
+import { renderExercise } from "./exercises.js?v=land107";
+import { mountTrainer } from "./trainers.js?v=land107";
+import { parseRoute } from "./route.js?v=land107";
+import { accessState, hasAccess, initAuth, mySolved, onAuthChange, supa } from "./supa.js";
 import { markEgeDone, markOgeDone } from "./progress.js";
-import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land104";
-import { mountTeacher, teacherPage } from "./teacher.js?v=land104";
-import { lessonPage, mountLesson } from "./lessons.js?v=land104";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land107";
+import { mountTeacher, teacherPage } from "./teacher.js?v=land107";
+import { lessonPage, mountLesson } from "./lessons.js?v=land107";
 
 const app = document.getElementById("app");
 let content = null;
@@ -104,7 +104,24 @@ function bindHomeSearch() {
 // Правила (≈1 МБ) нужны только этим разделам; кабинеты и библиотека их не ждут.
 const NEEDS_CONTENT = new Set(["", "formats", "apply", "learn", "contact", "materials", "about", "teacher", "faq", "rules", "rule", "practice", "exercise"]);
 
+/** Журнал для преподавателя: какой раздел открыл ученик (не чаще раза в 5 минут на раздел). */
+function logVisit() {
+  const st = accessState();
+  if (st === "guest" || st === "teacher") return;
+  const parts = parseRoute().parts;
+  const section = parts[0] || "home";
+  if (["login", "cabinet", "thanks"].includes(section)) return;
+  const key = "visit:" + section;
+  try {
+    const last = Number(sessionStorage.getItem(key) || 0);
+    if (Date.now() - last < 5 * 60000) return;
+    sessionStorage.setItem(key, String(Date.now()));
+  } catch {}
+  supa.rpc("log_visit", { p_section: section, p_path: "/" + parts.join("/").slice(0, 190) }).then(() => {}, () => {});
+}
+
 async function render() {
+  setTimeout(logVisit, 0);
   const first = parseRoute().parts[0] || "";
   if (!content && NEEDS_CONTENT.has(first)) {
     document.body.classList.add("is-loading");
@@ -330,6 +347,41 @@ app.addEventListener("click", (e) => {
  * Экран задания на телефоне: сверху «‹ 3 из 8 ›» с полосой прогресса, листание свайпом.
  * Работает для всех разделов, где есть .lit-pager (ЕГЭ, ОГЭ, литература, занятия).
  */
+let lastTaskHash = "";
+const passageScroll = new Map();
+
+/** Шторка с исходным текстом: читаешь текст, закрываешь — вопрос и ответ на месте. */
+function openPassageSheet(passage) {
+  document.querySelector(".passage-sheet")?.remove();
+  const key = location.hash;
+  const sheet = document.createElement("div");
+  sheet.className = "passage-sheet";
+  sheet.innerHTML = `
+    <div class="ps-backdrop" data-ps-close></div>
+    <div class="ps-panel" role="dialog" aria-label="Исходный текст">
+      <div class="ps-head"><strong>Текст</strong><button type="button" class="l-x" data-ps-close aria-label="Закрыть">×</button></div>
+      <div class="ps-body lit-html"></div>
+    </div>`;
+  const body = sheet.querySelector(".ps-body");
+  body.innerHTML = passage.querySelector(".lit-html")?.innerHTML || passage.innerHTML;
+  body.querySelector(".passage-more")?.remove();
+  document.body.append(sheet);
+  document.body.classList.add("is-sheet-open");
+  requestAnimationFrame(() => {
+    sheet.classList.add("is-open");
+    body.scrollTop = passageScroll.get(key) || 0;
+  });
+  const close = () => {
+    passageScroll.set(key, body.scrollTop);
+    sheet.classList.remove("is-open");
+    document.body.classList.remove("is-sheet-open");
+    setTimeout(() => sheet.remove(), 200);
+    window.removeEventListener("hashchange", close);
+  };
+  sheet.querySelectorAll("[data-ps-close]").forEach((b) => b.addEventListener("click", close));
+  window.addEventListener("hashchange", close);
+}
+
 function enhanceTask(root) {
   const nav = root.querySelector(".lit-task-nav:not([data-done])");
   if (nav) {
@@ -354,6 +406,31 @@ function enhanceTask(root) {
     <span class="tb-mid">${m ? `<span>${m[1]} из ${m[2]}</span><span class="today-bar"><span style="width:${pct}%"></span></span>` : all ? `<a href="${all.getAttribute("href")}">Все задания</a>` : ""}</span>
     ${next ? `<a class="tb-btn" href="${next.getAttribute("href")}" aria-label="Следующее задание">›</a>` : `<span class="tb-btn is-off" aria-hidden="true">›</span>`}`;
   article.prepend(bar);
+  // Новое задание открывается сверху (а не там, где была прокрутка у предыдущего).
+  if (lastTaskHash !== location.hash) {
+    lastTaskHash = location.hash;
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }
+  // Исходный текст: на телефоне — свёрнут и открывается шторкой кнопкой «Текст»,
+  // на широком экране — колонкой рядом с вопросом.
+  const passage = article.querySelector(".lit-passage");
+  if (passage) {
+    article.classList.add("has-passage");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "tb-text";
+    btn.textContent = "Текст";
+    btn.setAttribute("aria-label", "Открыть исходный текст");
+    bar.querySelector(".tb-mid")?.after(btn);
+    const more = document.createElement("button");
+    more.type = "button";
+    more.className = "passage-more";
+    more.textContent = "Открыть текст целиком";
+    passage.append(more);
+    const open = () => openPassageSheet(passage);
+    btn.addEventListener("click", open);
+    more.addEventListener("click", open);
+  }
   let sx = 0, sy = 0, st = 0;
   article.addEventListener("touchstart", (e) => {
     if (e.touches.length !== 1 || e.target.closest("input, textarea, canvas, select, .table-scroll, .lit-check")) return (st = 0);

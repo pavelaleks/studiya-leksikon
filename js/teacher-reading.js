@@ -100,7 +100,7 @@ export async function readingView(host, render, sub) {
     .then((d) => new Map(d.poems.map((p) => [p.id, `${p.author.split(" ").pop()}. ${p.title}`])))
     .catch(() => new Map());
   const [students, results, learned, quizzes] = await Promise.all([
-    supa.from("profiles").select("id, full_name, email, status").neq("role", "teacher").eq("status", "active").order("full_name"),
+    supa.from("profiles").select("id, full_name, email, status, courses, exam_target").neq("role", "teacher").eq("status", "active").order("full_name"),
     supa.from("reading_results").select("student_id, quiz_id, passed, created_at"),
     supa.from("poems_learned").select("student_id, poem_id, learned_at"),
     supa.from("reading_quizzes").select("id, title, work_id, is_published, position, url").order("position"),
@@ -119,7 +119,13 @@ export async function readingView(host, render, sub) {
     poemsBy.get(r.student_id).push(r.poem_id);
   });
   const qTitle = new Map((quizzes.data || []).map((q) => [q.id, q.title]));
-  const rows = (students.data || [])
+  // По умолчанию — только ученики с курсом литературы (или те, кто уже что-то сдавал).
+  const showAll = /[?&]all=1/.test(location.hash);
+  const isLit = (p) =>
+    (p.courses || []).some((c) => c.startsWith("lit:")) || (!(p.courses || []).length && /литератур/i.test(p.exam_target || ""));
+  const shown = (students.data || []).filter((p) => showAll || isLit(p) || passedBy.has(p.id) || triedBy.has(p.id) || poemsBy.has(p.id));
+  const hiddenCount = (students.data || []).length - shown.length;
+  const rows = shown
     .map((p) => {
       const passed = [...(passedBy.get(p.id) || [])];
       const poems = poemsBy.get(p.id) || [];
@@ -142,8 +148,9 @@ export async function readingView(host, render, sub) {
       <h2>Ученики</h2>
       <div class="t-table-wrap"><table class="t-table">
         <thead><tr><th>Ученик</th><th>Статьи (сдано)</th><th>Стихи наизусть</th></tr></thead>
-        <tbody>${rows || `<tr><td colspan="3" class="muted">Нет подтверждённых учеников.</td></tr>`}</tbody>
+        <tbody>${rows || `<tr><td colspan="3" class="muted">Нет учеников с курсом литературы.</td></tr>`}</tbody>
       </table></div>
+      <p class="muted">${showAll ? `Показаны все ученики. <a href="#/cabinet/reading">Только литература</a>` : `Показаны ученики с курсом литературы${hiddenCount ? ` · ещё ${hiddenCount} без него — <a href="#/cabinet/reading?all=1">показать всех</a>` : ""}.`}</p>
     </section>
     <section class="card">
       <div class="t-row-between"><h2>Тесты по статьям</h2><a class="btn" href="#/cabinet/reading/new">Добавить тест</a></div>
