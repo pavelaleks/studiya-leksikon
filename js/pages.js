@@ -556,7 +556,7 @@ export function rulesIndex(content, sectionId = "", q = "") {
           if (!all.length && query) return "";
           const open = query || (ci === 0 && section === sections[0]);
           return `
-            <details class="card chapter" ${open ? "open" : ""}>
+            <details class="card chapter" data-chapter="${chapter.id}" ${open ? "open" : ""}>
               <summary><span>${escapeHtml(chapter.roman ? chapter.roman + ". " : "")}${escapeHtml(chapter.title)}</span><span class="muted">${rules.length || "скоро"}</span></summary>
               ${
                 rules.length
@@ -657,6 +657,7 @@ export function rulePage(rule, neighbors = {}) {
         }
       </div>
     </article>
+    <section id="rule-quiz" class="rule-quiz-host" data-chapter="${escapeHtml(rule.chapter.id)}" data-chapter-title="${escapeHtml(rule.chapter.title)}"></section>
   `;
 }
 

@@ -1,15 +1,15 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land111";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land113";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land111";
+import { taskHref } from "./account.js?v=land113";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land111";
-import { readingView } from "./teacher-reading.js?v=land111";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land111";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land113";
+import { readingView } from "./teacher-reading.js?v=land113";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land113";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land111";
+} from "./review.js?v=land113";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -705,6 +705,7 @@ async function studentView(host, render, id) {
     supa.from("activity_log").select("section, path, at").eq("student_id", id).gte("at", since30).order("at", { ascending: false }).limit(5000),
     supa.from("attempts").select("is_correct, created_at, seconds").eq("student_id", id).gte("created_at", since30).limit(10000),
   ]);
+  const { data: mastered } = await supa.from("rules_mastered").select("chapter_id").eq("student_id", id);
   const xpTotal = (xpRows || []).reduce((a, e) => a + e.points, 0);
   const xpWeek = (xpRows || []).filter((e) => Date.now() - new Date(e.created_at) < 7 * 86400000).reduce((a, e) => a + e.points, 0);
   const activeDays = new Set((xpRows || []).map((e) => e.created_at.slice(0, 10))).size;
@@ -731,7 +732,7 @@ async function studentView(host, render, id) {
   render(`
     <p class="crumbs"><a href="#/cabinet/students">← Ученики</a></p>
     <h1>${escapeHtml(p.full_name || p.email)}</h1>
-    <p class="t-xp">Очки: <b>${xpTotal}</b> · за неделю: <b>+${xpWeek}</b> · дней с занятиями: <b>${activeDays}</b></p>
+    <p class="t-xp">Очки: <b>${xpTotal}</b> · за неделю: <b>+${xpWeek}</b> · дней с занятиями: <b>${activeDays}</b> · закреплено глав правил: <b>${(mastered || []).length}</b></p>
     <p class="lede">${escapeHtml(p.email || "")} · ${STATUS_TEXT[p.status]}${p.grade ? ` · ${p.grade} класс` : ""}${p.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""}${p.contact ? ` · ${escapeHtml(p.contact)}` : ""}</p>
     ${p.email ? `<p class="actions"><button class="btn secondary" id="t-reset">Отправить ученику ссылку для смены пароля</button> <span class="muted" id="t-reset-status"></span></p>` : ""}
     ${activityHtml(actRows || [], att30 || [])}

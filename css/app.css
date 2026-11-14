@@ -1613,3 +1613,70 @@ body.is-sheet-open {
     display: none;
   }
 }
+
+/* ---------- «Проверь себя» к правилу ---------- */
+.rule-quiz-host {
+  margin: 22px 0 10px;
+  scroll-margin-top: 70px;
+}
+.rq-card {
+  padding: 18px 18px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+}
+.rq-card h2 {
+  margin: 4px 0 6px;
+}
+.rq-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+}
+.rq-dots {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 10px;
+}
+.rq-dots span {
+  flex: 1;
+  height: 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+.rq-dots .is-ok {
+  background: var(--ok);
+}
+.rq-dots .is-bad {
+  background: var(--bad);
+}
+.rq-dots .is-now {
+  background: var(--accent-fill);
+}
+.rq-no {
+  margin: 0 0 4px;
+  font-size: 0.85rem;
+}
+.rq-q {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin-bottom: 12px;
+}
+.rq-form {
+  flex-wrap: nowrap;
+}
+.rq-form .search {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+.rq-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--ok);
+  white-space: nowrap;
+}
+details.is-mastered {
+  border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
+}

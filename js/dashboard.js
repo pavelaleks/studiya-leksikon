@@ -4,8 +4,8 @@
  * Очки начисляет сервер (таблица xp_events), здесь — только показ и подсказки.
  */
 import { escapeHtml } from "./ui.js";
-import { currentTrack } from "./track.js?v=land111";
-import { EXAMS, autoNumbers, composeVariant, durationText } from "./exams.js?v=land111";
+import { currentTrack } from "./track.js?v=land113";
+import { EXAMS, autoNumbers, composeVariant, durationText } from "./exams.js?v=land113";
 import { currentUser, humanError, supa } from "./supa.js";
 
 const LEVELS = [
@@ -211,6 +211,7 @@ export function badges(d, code) {
     ["🎭", "Наизусть", "Выучить 3 стихотворения", d.events.filter((e) => e.kind === "poem").length >= 3],
     ["🖋", "Писатель", "5 проверенных письменных работ", d.events.filter((e) => e.kind === "graded").length >= 5],
     ["🏅", "Мастер слова", "Письменная работа на 80% баллов и выше", d.events.some((e) => e.kind === "graded" && e.points >= 32)],
+    ["📘", "Знаток правил", "Закрепить 5 глав правил", d.events.filter((e) => e.kind === "rule").length >= 5],
     ["🧭", "Все номера", `Решать все ${autoNumbers(code).length} номеров с автопроверкой`, autoNumbers(code).every((n) => mine.some((s) => s.task_no === n))],
   ];
   return list.map(([icon, name, hint, got]) => ({ icon, name, hint, got }));
@@ -307,6 +308,7 @@ export function howPointsHtml() {
         <li>Письменные работы — по желанию, отдельная награда: за сдачу <b>15</b>, после проверки преподавателем — ещё до <b>40</b> по итогу баллов. На цель дня и серию не влияют.</li>
         <li>Завершил пробный экзамен — <b>30</b> и по <b>3</b> за каждый верный ответ; контрольная — <b>15</b>.</li>
         <li>Прочитал статью на «Полке» и ответил на вопросы — <b>20</b>; выучил стихотворение наизусть — от <b>10</b> до <b>40</b> (чем длиннее, тем больше).</li>
+        <li>«Проверь себя» после правила: 4 из 5 верно — глава закреплена, <b>15</b> очков.</li>
         <li>Цель дня — ${DAILY_GOAL} верных заданий. Каждый день с занятиями продлевает серию 🔥.</li>
       </ul>
     </details>`;
@@ -370,6 +372,27 @@ async function buildDaily(code, d) {
   const take = (t) => {
     if (t && !picked.some((p) => p.id === t.id)) picked.push(t);
   };
+  // 0) повторение правила: глава закреплена неделю назад и раньше — одно задание по ней
+  if (code === "ege-rus") {
+    try {
+      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+      const { data: old } = await supa.from("rules_mastered").select("chapter_id").lt("mastered_at", weekAgo);
+      if (old?.length) {
+        const pickCh = old[Math.floor(Math.random() * old.length)].chapter_id;
+        const { data: chRow } = await supa.from("rule_chapters").select("task_nos").eq("chapter_id", pickCh).maybeSingle();
+        if (chRow) {
+          const { data: pool } = await supa
+            .from("tasks")
+            .select("id, source, bank_file, source_ref, task_no")
+            .eq("source", "ege-rus")
+            .in("task_no", chRow.task_nos)
+            .not("answer_mode", "in", "(open,essay)")
+            .limit(200);
+          if (pool?.length) take({ ...pool[Math.floor(Math.random() * pool.length)], why: "повторение закреплённого правила" });
+        }
+      }
+    } catch {}
+  }
   // 1) ошибки этого экзамена
   d.mistakes.filter((m) => m.source === code).slice(0, 4).forEach((m) =>
     take({ id: m.task_id, source: m.source, bank_file: m.bank_file, source_ref: m.source_ref, task_no: m.task_no, why: "работа над ошибкой" })
@@ -449,7 +472,7 @@ export async function mountDaily(root, d, profile) {
   try {
     localStorage.setItem(`daily-done-${currentUser()?.id}-${today}`, JSON.stringify(list.filter((t) => solvedToday(t.id)).map((t) => t.id)));
   } catch {}
-  import("./session.js?v=land111").then((m) => m.maybeCelebrateDaily(doneN, list.length)).catch(() => {});
+  import("./session.js?v=land113").then((m) => m.maybeCelebrateDaily(doneN, list.length)).catch(() => {});
   host.querySelector("#daily-new").addEventListener("click", () => {
     try {
       localStorage.removeItem(dailyKey());
