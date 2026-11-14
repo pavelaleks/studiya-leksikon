@@ -1839,3 +1839,7 @@ details.is-mastered {
 .tg-card { padding: 16px 18px; }
 .tg-card p { margin: 0 0 8px; }
 .tg-card .actions { margin: 4px 0 0; }
+
+/* Черновик занятия */
+.l-draft { padding: 14px 16px; margin: 10px 0; border-left: 4px solid var(--accent, #8b2c2c); }
+.l-draft p { margin: 0 0 6px; }

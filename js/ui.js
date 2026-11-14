@@ -1,5 +1,5 @@
 import { accessState, currentProfile } from "./supa.js";
-import { TRACK_HREF, currentTrack } from "./track.js?v=land118";
+import { TRACK_HREF, currentTrack } from "./track.js?v=land119";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {

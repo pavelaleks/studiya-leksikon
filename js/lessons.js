@@ -5,13 +5,13 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land118";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land118";
-import { SOURCES, bankFiles } from "./teacher.js?v=land118";
+import { taskHref } from "./account.js?v=land119";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land119";
+import { SOURCES, bankFiles } from "./teacher.js?v=land119";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land118";
+} from "./exams.js?v=land119";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -239,7 +239,7 @@ export async function lessonsListView(host, render) {
         <button class="btn" type="submit">Создать</button>
       </div>
     </form>
-    <p class="muted">Новая работа — черновик: ученики увидят её, когда вы нажмёте «Открыть ученикам».</p>
+    <p class="muted">Как назначить: создайте занятие → добавьте задания → нажмите «Открыть ученикам». До этого оно черновик и ученики его не видят.</p>
     <div class="lit-list">${rows || '<p class="muted">Пока ничего нет.</p>'}</div>`);
 
   const form = host.querySelector("#l-new");
@@ -589,6 +589,15 @@ export async function lessonEditView(host, render, id) {
     <p class="crumbs"><a href="#/cabinet/lessons">← Все занятия и работы</a></p>
     <form id="l-head" class="l-head">
       <input name="title" class="l-title" value="${escapeHtml(lesson.title)}" aria-label="Название" />
+      ${
+        lesson.status === "draft"
+          ? `<div class="l-draft card">
+        <p><strong>Черновик — ученики пока не видят.</strong></p>
+        <p class="muted">${state.items.length ? `Заданий: ${state.items.length}.` : "Добавьте задания ниже."} ${state.students.length ? "" : "Назначьте группу или учеников ниже. "}Когда всё готово, нажмите «Открыть ученикам»: занятие появится у них на главной, а кто подключил Telegram, получит сообщение.${lesson.starts_at && new Date(lesson.starts_at) > new Date() ? ` Сообщение в Telegram придёт ${escapeHtml(fmtDT(lesson.starts_at))} — в указанное время начала.` : ""}</p>
+        <p class="actions"><button class="btn" type="button" data-status="live">Открыть ученикам</button></p>
+      </div>`
+          : ""
+      }
       <p class="lede">${escapeHtml(WORK_KIND[lesson.kind])}${lesson.exam_code ? ` · ${escapeHtml(EXAMS[lesson.exam_code]?.title || "")}` : ""} · ${escapeHtml(who || "никому не назначено")} · <span class="lesson-status lesson-${lesson.status}">${LESSON_STATUS[lesson.status]}</span></p>
       <div class="t-filter card">
         <label>Открыть с<input type="datetime-local" name="starts_at" value="${toLocalInput(lesson.starts_at)}" /></label>
@@ -603,7 +612,7 @@ export async function lessonEditView(host, render, id) {
         <button class="btn secondary" type="submit">Сохранить</button>
       </div>
       <div class="actions">
-        ${lesson.status !== "live" ? `<button class="btn" type="button" data-status="live">Открыть ученикам</button>` : ""}
+        ${lesson.status === "done" ? `<button class="btn" type="button" data-status="live">Открыть ученикам</button>` : ""}
         ${lesson.status === "live" ? `<button class="btn secondary" type="button" data-status="done">Завершить</button><button class="btn secondary" type="button" data-status="draft">Скрыть (черновик)</button>` : ""}
         ${lesson.status === "done" ? `<button class="btn secondary" type="button" data-status="draft">В черновик</button>` : ""}
         <button class="btn secondary" type="button" id="l-reveal-all">${isWork ? "Открыть результаты и разборы" : "Открыть все разборы"}</button>

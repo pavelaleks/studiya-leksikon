@@ -1,17 +1,17 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land118";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land119";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land118";
+import { taskHref } from "./account.js?v=land119";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land118";
-import { readingView } from "./teacher-reading.js?v=land118";
-import { optionsOf } from "./practice.js?v=land118";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land118";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land118";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land119";
+import { readingView } from "./teacher-reading.js?v=land119";
+import { optionsOf } from "./practice.js?v=land119";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land119";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land119";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land118";
+} from "./review.js?v=land119";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -335,7 +335,7 @@ async function todayView(host, render) {
   dayStart.setHours(0, 0, 0, 0);
   const dayEnd = new Date(dayStart.getTime() + 86400000);
   const fiveDays = new Date(Date.now() - 5 * 86400000).toISOString();
-  const [pending, queue, live, todayLessons, todayAtt, recentAtt, recentWorks, students, creqs] = await Promise.all([
+  const [pending, queue, live, todayLessons, todayAtt, recentAtt, recentWorks, students, creqs, drafts] = await Promise.all([
     supa.from("profiles").select("id, full_name, email, created_at").eq("status", "pending").order("created_at"),
     supa.from("written_works").select("id, submitted_at, profiles(full_name, email), tasks(source, task_no)").eq("status", "submitted").order("submitted_at"),
     supa.from("lessons").select("id, title, kind, duration_minutes, exam_sessions(student_id, started_at, finished_at)").eq("status", "live").not("duration_minutes", "is", null),
@@ -345,6 +345,7 @@ async function todayView(host, render) {
     supa.from("written_works").select("student_id").gte("updated_at", fiveDays).limit(2000),
     supa.from("profiles").select("id, full_name, email").neq("role", "teacher").eq("status", "active").order("full_name"),
     supa.from("course_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    supa.from("lessons").select("id, title, starts_at").eq("status", "draft").eq("self_made", false).gte("created_at", new Date(Date.now() - 30 * 86400000).toISOString()).order("created_at", { ascending: false }),
   ]);
   const now = Date.now();
   const liveRows = (live.data || [])
@@ -388,6 +389,14 @@ async function todayView(host, render) {
         `Заявки учеников <span class="tt-count">${pending.data.length}</span>`,
         pending.data.slice(0, 3).map(name).join(", ") + (pending.data.length > 3 ? "…" : "")
       )
+    );
+  const todayIds = new Set((todayLessons.data || []).map((l) => l.id));
+  const draftList = (drafts.data || []).filter((l) => !todayIds.has(l.id));
+  if (draftList.length)
+    blocks.push(
+      draftList.length === 1
+        ? row(`#/cabinet/lesson/${draftList[0].id}`, `Черновик: ${escapeHtml(draftList[0].title)}`, "ученики пока не видят — откройте занятие и нажмите «Открыть ученикам»")
+        : row("#/cabinet/lessons", `Черновики <span class="tt-count">${draftList.length}</span>`, "ученики их пока не видят: " + draftList.slice(0, 3).map((l) => escapeHtml(l.title)).join(", "))
     );
   if (creqs.count)
     blocks.push(row("#/cabinet/students", `Запросы на курсы <span class="tt-count">${creqs.count}</span>`, "ученики просят добавить предмет или класс"));
