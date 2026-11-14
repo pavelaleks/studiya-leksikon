@@ -1,14 +1,14 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land103";
+import { taskHref } from "./account.js?v=land104";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land103";
-import { readingView } from "./teacher-reading.js?v=land103";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land103";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land104";
+import { readingView } from "./teacher-reading.js?v=land104";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land104";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land103";
+} from "./review.js?v=land104";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -639,7 +639,7 @@ async function worksView(host, render, workId) {
   await Promise.all((timed || []).map((l) => supa.rpc("finalize_exam_works", { p_lesson: l.id })));
   const { data, error } = await supa
     .from("written_works")
-    .select("id, status, submitted_at, score, max_score, body, profiles(full_name, email), tasks(source, task_no, source_ref)")
+    .select("id, status, submitted_at, score, max_score, body, item_id, profiles(full_name, email), tasks(source, task_no, source_ref), lesson_items(lessons(title))")
     .in("status", ["submitted", "returned", "graded"])
     .order("submitted_at", { ascending: false })
     .limit(200);
@@ -649,7 +649,7 @@ async function worksView(host, render, workId) {
       <span class="lit-item-n">${w.tasks?.task_no ?? "·"}</span>
       <span class="lit-item-body">
         <strong>${escapeHtml(w.profiles?.full_name || w.profiles?.email || "ученик")} · ${escapeHtml(SOURCES[w.tasks?.source]?.title || "")} № ${w.tasks?.task_no ?? ""}</strong>
-        <span>${WORK_STATUS[w.status]} · ${fmtDateTime(w.submitted_at)}${w.score != null ? ` · ${w.score}${w.max_score ? `/${w.max_score}` : ""}` : ""}</span>
+        <span>${w.item_id ? `из занятия «${escapeHtml(w.lesson_items?.lessons?.title || "…")}»` : "сам, по желанию"} · ${WORK_STATUS[w.status]} · ${fmtDateTime(w.submitted_at)}${w.score != null ? ` · ${w.score}${w.max_score ? `/${w.max_score}` : ""}` : ""}</span>
         <span class="muted">${escapeHtml((w.body || "фото").slice(0, 120))}</span>
       </span>
     </a>`;
@@ -685,6 +685,15 @@ async function workReview(host, render, id) {
   const qPrev = qi > 0 ? queue[qi - 1] : null;
   const qNext = qi >= 0 ? queue[qi + 1] || null : queue[0] && queue[0].id !== id ? queue[0] : null;
   const studentName = w.profiles?.full_name || w.profiles?.email || "ученик";
+  // Откуда работа: из вашего занятия или ученик написал сам, по желанию.
+  let origin = `<span class="chip">сам, по желанию</span>`;
+  if (w.item_id) {
+    const { data: it } = await supa.from("lesson_items").select("lessons(id, title, kind)").eq("id", w.item_id).maybeSingle();
+    origin = it?.lessons
+      ? `<a class="chip is-hot" href="#/cabinet/lesson/${it.lessons.id}">из занятия «${escapeHtml(it.lessons.title)}»</a>`
+      : `<span class="chip">из занятия (удалено)</span>`;
+  }
+  const openText = matchMedia("(max-width: 760px)").matches ? " open" : "";
   const { data: full } = w.task_id ? await supa.rpc("teacher_get_task", { p_task: w.task_id }) : { data: null };
   let passage = "";
   if (w.tasks?.passage_id) {
@@ -716,8 +725,9 @@ async function workReview(host, render, id) {
       ${qNext ? `<a class="tb-btn" href="#/cabinet/works/${qNext.id}" aria-label="Следующая работа">›</a>` : `<span class="tb-btn is-off" aria-hidden="true">›</span>`}
     </nav>
     <h1>${escapeHtml(w.profiles?.full_name || w.profiles?.email || "Работа")}</h1>
+    <p class="rv-origin">${origin}</p>
     <p class="lede">${escapeHtml(SOURCES[w.tasks?.source]?.title || "")} · задание ${w.tasks?.task_no ?? ""} · № ${escapeHtml(String(w.tasks?.source_ref || ""))} · ${WORK_STATUS[w.status]} · сдано ${fmtDateTime(w.submitted_at)}</p>
-    <details class="lit-solution"><summary>Условие задания</summary>${passage ? `<div class="lit-html rv-passage">${passage}</div>` : ""}<div class="lit-html">${w.tasks?.data?.questionHtml || ""}</div></details>
+    <details class="lit-solution"${openText}><summary>${passage ? "Исходный текст и задание" : "Условие задания"}</summary>${passage ? `<div class="lit-html rv-passage">${passage}</div>` : ""}<div class="lit-html">${w.tasks?.data?.questionHtml || ""}</div></details>
     ${full?.key?.solution_html ? `<details class="lit-solution"><summary>Образец / пояснение</summary><div class="lit-html">${full.key.solution_html}</div></details>` : ""}
 
     <section class="me-section">

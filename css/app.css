@@ -1107,3 +1107,9 @@ label,
   font-family: var(--sans);
   font-weight: 600;
 }
+.rv-origin {
+  margin: 0 0 6px;
+}
+.rv-origin .chip {
+  text-decoration: none;
+}
