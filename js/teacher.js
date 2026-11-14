@@ -1,15 +1,15 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land108";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land110";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land108";
+import { taskHref } from "./account.js?v=land110";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land108";
-import { readingView } from "./teacher-reading.js?v=land108";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land108";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land110";
+import { readingView } from "./teacher-reading.js?v=land110";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land110";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land108";
+} from "./review.js?v=land110";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */

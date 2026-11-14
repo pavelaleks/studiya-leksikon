@@ -1542,3 +1542,74 @@ body.is-sheet-open {
     animation: none;
   }
 }
+
+/* ---------- Подвал ---------- */
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 22px;
+}
+.footer-grid p {
+  margin: 0 0 6px;
+}
+.footer-h {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.theme-switch {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.theme-switch button {
+  border: 0;
+  background: none;
+  padding: 6px 12px;
+  min-height: 34px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.theme-switch button.is-on {
+  background: var(--accent-fill);
+  color: #fff;
+}
+.site-footer.is-compact {
+  padding: 14px 0 18px;
+  font-size: 0.85rem;
+}
+.footer-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  color: var(--ink-soft);
+}
+.footer-line .footer-admin {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  margin: 0;
+}
+.sheet-theme {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 12px 4px;
+}
+@media (max-width: 760px) {
+  /* в заданиях и кабинетах на телефоне подвала нет — меню внизу экрана */
+  .site-footer.is-compact {
+    display: none;
+  }
+}

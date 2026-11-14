@@ -1,5 +1,5 @@
 import { accessState, currentProfile } from "./supa.js";
-import { TRACK_HREF, currentTrack } from "./track.js?v=land108";
+import { TRACK_HREF, currentTrack } from "./track.js?v=land110";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -79,10 +79,20 @@ function tabbar(active) {
             <a role="menuitem" href="#/oge">ОГЭ</a>
             <a role="menuitem" href="#/literature">Литература</a>
             <a role="menuitem" href="#/">Сайт студии</a>
+            <div class="sheet-theme"><span class="muted">Тема</span> ${themeSwitchHtml()}</div>
           </div>
         </div>`
       : "";
   return `<nav class="tabbar" aria-label="Разделы">${links}</nav>${more}`;
+}
+
+/** Переключатель темы — в подвале, в «Я» у ученика и в «Ещё» у преподавателя. */
+export function themeSwitchHtml() {
+  return `<span class="theme-switch" role="group" aria-label="Тема оформления">
+    <button type="button" data-theme-set="auto">Авто</button>
+    <button type="button" data-theme-set="light">Светлая</button>
+    <button type="button" data-theme-set="dark">Тёмная</button>
+  </span>`;
 }
 
 /** Тема оформления: авто (как в телефоне), светлая, тёмная. */
@@ -159,20 +169,30 @@ export function layout(content, active = "", { hideFooter = false } = {}) {
     ${
       hideFooter
         ? ""
-        : `<footer class="site-footer">
-      <div class="wrap footer-inner">
-        <p class="footer-name">Студия Лексикон</p>
-        <p>Основатель и руководитель — П. В. Алексеев · <a href="https://palekseev.ru/" target="_blank" rel="noopener noreferrer">личный сайт</a></p>
-        <p>
-          <a href="https://go.2gis.com/lknNX" target="_blank" rel="noopener noreferrer">г. Горно-Алтайск, пр. Коммунистический, 47</a>
-          <span> (вход со стороны ул. Головина)</span>
-        </p>
-        <p class="footer-note">Русский язык и литература для 8–11 классов. Очно и онлайн.</p>
-        <p class="footer-theme">Тема:
-          <button type="button" data-theme-set="auto">как в телефоне</button> ·
-          <button type="button" data-theme-set="light">светлая</button> ·
-          <button type="button" data-theme-set="dark">тёмная</button></p>
-        <p class="footer-admin"><a href="#/cabinet">Вход для преподавателя</a></p>
+        : isHome || active === "login"
+          ? `<footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <p class="footer-name">Студия Лексикон</p>
+          <p class="footer-note">Русский язык и литература для 8–11 классов. Очно и онлайн.</p>
+          <p>Основатель и руководитель — П. В. Алексеев · <a href="https://palekseev.ru/" target="_blank" rel="noopener noreferrer">личный сайт</a></p>
+        </div>
+        <div>
+          <p class="footer-h">Где мы</p>
+          <p><a href="https://go.2gis.com/lknNX" target="_blank" rel="noopener noreferrer">г. Горно-Алтайск, пр. Коммунистический, 47</a><br><span class="muted">вход со стороны ул. Головина</span></p>
+        </div>
+        <div>
+          <p class="footer-h">Оформление</p>
+          ${themeSwitchHtml()}
+          <p class="footer-admin"><a href="#/cabinet">Вход для преподавателя</a></p>
+        </div>
+      </div>
+    </footer>`
+          : `<footer class="site-footer is-compact">
+      <div class="wrap footer-line">
+        <span>© Студия Лексикон</span>
+        ${themeSwitchHtml()}
+        <a class="footer-admin" href="#/cabinet">Вход для преподавателя</a>
       </div>
     </footer>`
     }

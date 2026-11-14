@@ -8,7 +8,7 @@
  * Координаты на фото — доли ширины/высоты (0…1), чтобы не зависеть от размера экрана.
  */
 import { escapeHtml } from "./ui.js";
-import { MARKS, RUBRICS, applyRules, countWords, rubricFor } from "./rubrics.js?v=land108";
+import { MARKS, RUBRICS, applyRules, countWords, rubricFor } from "./rubrics.js?v=land110";
 
 /* ------------------------------------------------------------------ */
 /* Текст с пометками                                                    */
