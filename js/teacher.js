@@ -1,15 +1,16 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land115";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land117";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land115";
+import { taskHref } from "./account.js?v=land117";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land115";
-import { readingView } from "./teacher-reading.js?v=land115";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land115";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land117";
+import { readingView } from "./teacher-reading.js?v=land117";
+import { optionsOf } from "./practice.js?v=land117";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land117";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land115";
+} from "./review.js?v=land117";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -827,7 +828,7 @@ async function worksView(host, render, workId) {
   await Promise.all((timed || []).map((l) => supa.rpc("finalize_exam_works", { p_lesson: l.id })));
   const { data, error } = await supa
     .from("written_works")
-    .select("id, status, submitted_at, score, max_score, body, item_id, profiles(full_name, email), tasks(source, task_no, source_ref), lesson_items(lessons(title))")
+    .select("id, status, submitted_at, score, max_score, body, item_id, choice, profiles(full_name, email), tasks(source, task_no, source_ref, work:data->>work), lesson_items(lessons(title))")
     .in("status", ["submitted", "returned", "graded"])
     .order("submitted_at", { ascending: false })
     .limit(200);
@@ -836,7 +837,7 @@ async function worksView(host, render, workId) {
     <a class="lit-item" href="#/cabinet/works/${w.id}">
       <span class="lit-item-n">${w.tasks?.task_no ?? "·"}</span>
       <span class="lit-item-body">
-        <strong>${escapeHtml(w.profiles?.full_name || w.profiles?.email || "ученик")} · ${escapeHtml(SOURCES[w.tasks?.source]?.title || "")} № ${w.tasks?.task_no ?? ""}</strong>
+        <strong>${escapeHtml(w.profiles?.full_name || w.profiles?.email || "ученик")} · ${escapeHtml(SOURCES[w.tasks?.source]?.title || "")} № ${w.tasks?.task_no ?? ""}${w.tasks?.work ? ` · «${escapeHtml(w.tasks.work)}»` : ""}${w.choice ? ` · вариант ${w.choice}` : ""}</strong>
         <span>${w.item_id ? `из занятия «${escapeHtml(w.lesson_items?.lessons?.title || "…")}»` : "сам, по желанию"} · ${WORK_STATUS[w.status]} · ${fmtDateTime(w.submitted_at)}${w.score != null ? ` · ${w.score}${w.max_score ? `/${w.max_score}` : ""}` : ""}</span>
         <span class="muted">${escapeHtml((w.body || "фото").slice(0, 120))}</span>
       </span>
@@ -915,7 +916,25 @@ async function workReview(host, render, id) {
     <h1>${escapeHtml(w.profiles?.full_name || w.profiles?.email || "Работа")}</h1>
     <p class="rv-origin">${origin}</p>
     <p class="lede">${escapeHtml(SOURCES[w.tasks?.source]?.title || "")} · задание ${w.tasks?.task_no ?? ""} · № ${escapeHtml(String(w.tasks?.source_ref || ""))} · ${WORK_STATUS[w.status]} · сдано ${fmtDateTime(w.submitted_at)}</p>
-    <details class="lit-solution"${openText}><summary>${passage ? "Исходный текст и задание" : "Условие задания"}</summary>${passage ? `<div class="lit-html rv-passage">${passage}</div>` : ""}<div class="lit-html">${w.tasks?.data?.questionHtml || ""}</div></details>
+    ${(() => {
+      const opts = optionsOf(w.tasks?.data?.questionHtml || "");
+      const work = w.tasks?.data?.work ? `«${escapeHtml(w.tasks.data.work)}»${w.tasks.data.author ? `, ${escapeHtml(w.tasks.data.author)}` : ""}` : "";
+      const chosen = opts.length && w.choice ? opts[w.choice - 1] : null;
+      return `
+      <section class="rv-task card">
+        ${work ? `<p class="eyebrow">${work}</p>` : ""}
+        ${
+          opts.length
+            ? chosen
+              ? `<p class="rv-choice"><span class="chip is-hot">${opts.length === 2 ? "вопрос" : "тема"} ${w.choice}</span> ${escapeHtml(chosen)}</p>
+                 <details><summary class="muted">Полное условие с остальными вариантами</summary><div class="lit-html">${w.tasks?.data?.questionHtml || ""}</div></details>`
+              : `<p class="rv-choice is-missing">Ученик не отметил, ${opts.length === 2 ? "какой вопрос" : "какую тему"} выбрал — посмотрите по тексту ответа.</p>
+                 <div class="lit-html">${w.tasks?.data?.questionHtml || ""}</div>`
+            : `<div class="lit-html">${w.tasks?.data?.questionHtml || ""}</div>`
+        }
+      </section>
+      ${passage ? `<details class="lit-solution"${openText}><summary>Исходный текст (фрагмент / стихотворение)</summary><div class="lit-html rv-passage">${passage}</div></details>` : ""}`;
+    })()}
     ${full?.key?.solution_html ? `<details class="lit-solution"><summary>Образец / пояснение</summary><div class="lit-html">${full.key.solution_html}</div></details>` : ""}
 
     <section class="me-section">

@@ -4,8 +4,8 @@
  * Очки начисляет сервер (таблица xp_events), здесь — только показ и подсказки.
  */
 import { escapeHtml } from "./ui.js";
-import { currentTrack } from "./track.js?v=land115";
-import { EXAMS, autoNumbers, composeVariant, durationText } from "./exams.js?v=land115";
+import { currentTrack } from "./track.js?v=land117";
+import { EXAMS, autoNumbers, composeVariant, durationText } from "./exams.js?v=land117";
 import { currentUser, humanError, supa } from "./supa.js";
 
 const LEVELS = [
@@ -66,7 +66,7 @@ export async function loadDashboard() {
     supa.from("my_days").select("*").order("d", { ascending: false }).limit(120),
     supa.from("task_stats").select("*").eq("student_id", uid),
     supa.from("my_mistakes").select("task_id, source, bank_file, source_ref, task_no").limit(500),
-    supa.from("written_works").select("id, status").eq("student_id", uid),
+    supa.from("written_works").select("id, status, score, max_score, reviewed_at, tasks(source, bank_file, source_ref, task_no)").eq("student_id", uid),
     supa.from("lessons").select("id, created_at").eq("self_made", true).order("created_at", { ascending: false }).limit(5),
   ]);
   const events = xp.data || [];
@@ -472,7 +472,7 @@ export async function mountDaily(root, d, profile) {
   try {
     localStorage.setItem(`daily-done-${currentUser()?.id}-${today}`, JSON.stringify(list.filter((t) => solvedToday(t.id)).map((t) => t.id)));
   } catch {}
-  import("./session.js?v=land115").then((m) => m.maybeCelebrateDaily(doneN, list.length)).catch(() => {});
+  import("./session.js?v=land117").then((m) => m.maybeCelebrateDaily(doneN, list.length)).catch(() => {});
   host.querySelector("#daily-new").addEventListener("click", () => {
     try {
       localStorage.removeItem(dailyKey());

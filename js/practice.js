@@ -5,7 +5,7 @@
  *  - письменная работа: черновик, фото, сдача на проверку, оценка.
  */
 import { escapeHtml } from "./ui.js";
-import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land115";
+import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land117";
 import {
   accessState,
   currentUser,
@@ -238,6 +238,18 @@ export function bindCheck(root, problem, { sanitize, onCorrect, item = null, exa
 /* Письменная работа                                                   */
 /* ------------------------------------------------------------------ */
 
+/** Варианты на выбор в условии: абзацы «1. …», «2. …» (задание 4 — два вопроса, задание 11 — пять тем). */
+export function optionsOf(html) {
+  const doc = new DOMParser().parseFromString(`<div>${html || ""}</div>`, "text/html");
+  const out = [];
+  doc.querySelectorAll("p, li").forEach((el) => {
+    const t = el.textContent.replace(/\s+/g, " ").trim();
+    const m = t.match(/^(\d{1,2})[.)]\s+(.{8,})$/);
+    if (m && Number(m[1]) === out.length + 1) out.push(m[2]);
+  });
+  return out.length >= 2 ? out : [];
+}
+
 export function writtenBlockHtml({ label = "Ваш ответ" } = {}) {
   return `
     <section class="lit-write" data-practice="written" id="pr-work">
@@ -263,6 +275,14 @@ export function bindWritten(
   }
 
   const draftKey = `work-draft-${problem._tid}${item ? `-${item.id}` : ""}`;
+  const options = optionsOf(problem.questionHtml);
+  const savedChoice = () => {
+    try {
+      return Number(localStorage.getItem(draftKey + "-choice")) || null;
+    } catch {
+      return null;
+    }
+  };
   let work = null;
   let files = [];
 
@@ -339,6 +359,19 @@ export function bindWritten(
     box.innerHTML = `
       ${review}
       ${work && status !== "draft" ? `<p class="pr-status pr-status-${status}">${escapeHtml(STATUS_TEXT[status])}${work.submitted_at ? ` · сдано ${new Date(work.submitted_at).toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" })}` : ""}</p>` : ""}
+      ${
+        options.length
+          ? `<fieldset class="pr-choice">
+              <legend>${options.length === 2 ? "На какой вопрос отвечаешь?" : "Какую тему выбрал?"}</legend>
+              ${options
+                .map((o, k) => {
+                  const cur = work?.choice ?? savedChoice();
+                  return `<label class="pr-choice-o${cur === k + 1 ? " is-on" : ""}"><input type="radio" name="pr-choice" value="${k + 1}" ${cur === k + 1 ? "checked" : ""} ${editable ? "" : "disabled"}/> <b>${k + 1}</b> <span>${escapeHtml(o.length > 160 ? o.slice(0, 157) + "…" : o)}</span></label>`;
+                })
+                .join("")}
+            </fieldset>`
+          : ""
+      }
       <label for="pr-essay">${escapeHtml(label)}</label>
       <textarea id="pr-essay" class="lit-essay" ${editable ? "" : "readonly"} placeholder="Напишите ответ здесь. Можно также приложить фото тетради.">${escapeHtml(text)}</textarea>
       <div id="pr-files">${await filesHtml(files)}</div>
@@ -357,6 +390,15 @@ export function bindWritten(
 
     drawFiles();
     const area = box.querySelector("#pr-essay");
+    const choiceNow = () => Number(box.querySelector('input[name="pr-choice"]:checked')?.value) || null;
+    box.querySelectorAll('input[name="pr-choice"]').forEach((r) =>
+      r.addEventListener("change", () => {
+        box.querySelectorAll(".pr-choice-o").forEach((l) => l.classList.toggle("is-on", l.contains(r) && r.checked));
+        try {
+          localStorage.setItem(draftKey + "-choice", r.value);
+        } catch {}
+      })
+    );
     const statusEl = box.querySelector("#pr-status");
     const say = (t) => (statusEl.textContent = t);
     let autosave = null;
@@ -394,7 +436,7 @@ export function bindWritten(
       const body = area.value.trim();
       if (quiet) {
         try {
-          work = await saveWork({ id: work?.id, taskId: problem._tid, itemId: item?.id || null, body, files, status: "draft" });
+          work = await saveWork({ id: work?.id, taskId: problem._tid, itemId: item?.id || null, body, files, status: "draft", choice: options.length ? choiceNow() : undefined });
           say(`Сохранено автоматически в ${new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}.`);
         } catch {
           /* следующая попытка — при следующем вводе */
@@ -405,9 +447,14 @@ export function bindWritten(
         say("Напишите ответ или приложите фото.");
         return;
       }
+      if (next === "submitted" && options.length && !choiceNow()) {
+        say(options.length === 2 ? "Отметьте, на какой вопрос вы отвечаете (1 или 2)." : "Отметьте номер выбранной темы.");
+        box.querySelector(".pr-choice")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
       say(next === "submitted" ? "Сдаём…" : "Сохраняем…");
       try {
-        work = await saveWork({ id: work?.id, taskId: problem._tid, itemId: item?.id || null, body, files, status: next });
+        work = await saveWork({ id: work?.id, taskId: problem._tid, itemId: item?.id || null, body, files, status: next, choice: options.length ? choiceNow() : undefined });
         if (next === "submitted") {
           try {
             localStorage.removeItem(draftKey);

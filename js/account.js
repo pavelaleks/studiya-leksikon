@@ -1,9 +1,9 @@
 /** Вход, регистрация и личный кабинет ученика (#/login, #/me). */
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, tracksOf } from "./track.js?v=land115";
+import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, tracksOf } from "./track.js?v=land117";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, recommendations, recsHtml, selfExamHtml,
-} from "./dashboard.js?v=land115";
+} from "./dashboard.js?v=land117";
 import {
   accessState,
   currentProfile,
@@ -28,6 +28,29 @@ const STATUS_TEXT = {
 };
 const DAILY_GOAL_HOME = 10;
 const WORK_STATUS = { draft: "черновик", submitted: "на проверке", returned: "вернули на доработку", graded: "проверена" };
+
+/** Свежепроверенные работы: «Работа проверена: 18 из 22 — посмотреть пометки». Скрываются, когда ученик открыл. */
+function checkedWorksHtml(d) {
+  if (!d?.works?.length) return "";
+  let seen = [];
+  try {
+    seen = JSON.parse(localStorage.getItem("seen-works") || "[]");
+  } catch {}
+  const fresh = d.works
+    .filter((w) => (w.status === "graded" || w.status === "returned") && w.reviewed_at && Date.now() - new Date(w.reviewed_at) < 21 * 86400000 && !seen.includes(w.id))
+    .slice(0, 3);
+  if (!fresh.length) return "";
+  return `<section class="me-section">${fresh
+    .map(
+      (w) => `<a class="me-checked card" href="${taskHref(w.tasks)}" data-seen-work="${w.id}">
+        <span class="me-rec-icon" aria-hidden="true">${w.status === "graded" ? "✅" : "✏️"}</span>
+        <span><strong>${w.status === "graded" ? `Работа проверена${w.score != null ? `: ${w.score}${w.max_score ? ` из ${w.max_score}` : ""}` : ""}` : "Работу вернули на доработку"}</strong>
+        <span class="muted">${escapeHtml(SOURCE_TITLE[w.tasks?.source] || "")} · задание ${w.tasks?.task_no ?? ""} — посмотри пометки и комментарий преподавателя</span></span>
+        <span class="me-rec-go" aria-hidden="true">›</span>
+      </a>`
+    )
+    .join("")}</section>`;
+}
 
 /** Письменные работы — отдельный трек по желанию: проверяет преподаватель, награда — после проверки. */
 const ESSAY_LINK = {
@@ -282,7 +305,7 @@ export async function mountMe(root) {
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land115").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
+    import("./lessons.js?v=land117").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
     isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },
     isProfile ? supa.from("my_mistakes").select("*").order("last_try", { ascending: false }) : { data: [] },
     isProfile
@@ -358,6 +381,7 @@ export async function mountMe(root) {
             </a>`
           : ""
       }
+      ${checkedWorksHtml(dash)}
       <section class="me-section me-today">
         <h2>Сегодня</h2>
         ${lessonsHtml || `<p class="muted me-empty">Новых заданий от преподавателя нет. Самое время для тренировки дня.</p>`}
@@ -459,6 +483,14 @@ export async function mountMe(root) {
     st.textContent = error ? (/invalid code/.test(error.message) ? "Такого кода нет — проверьте у преподавателя." : humanError(error).message) : "Готово, вы в группе.";
   });
   bindSelfExam(host);
+  host.querySelectorAll("[data-seen-work]").forEach((a) =>
+    a.addEventListener("click", () => {
+      try {
+        const seen = JSON.parse(localStorage.getItem("seen-works") || "[]");
+        localStorage.setItem("seen-works", JSON.stringify([...seen, a.dataset.seenWork].slice(-200)));
+      } catch {}
+    })
+  );
   host.querySelectorAll("[data-track]").forEach((b) =>
     b.addEventListener("click", () => {
       setTrack(b.dataset.track);

@@ -8,7 +8,7 @@
  * Координаты на фото — доли ширины/высоты (0…1), чтобы не зависеть от размера экрана.
  */
 import { escapeHtml } from "./ui.js";
-import { MARKS, RUBRICS, applyRules, countWords, rubricFor } from "./rubrics.js?v=land115";
+import { MARKS, RUBRICS, applyRules, countWords, rubricFor } from "./rubrics.js?v=land117";
 
 /* ------------------------------------------------------------------ */
 /* Текст с пометками                                                    */
@@ -320,7 +320,7 @@ export function studentReviewHtml(work) {
     ${rubric ? `<p class="muted">${escapeHtml(rubric.title)}</p>` : ""}
     ${rows ? `<div class="t-table-wrap"><table class="t-table rv-table"><tbody>${rows}</tbody></table></div>` : ""}
     ${(crit.fired || []).length ? `<p class="rv-fired">${crit.fired.map(escapeHtml).join("<br>")}</p>` : ""}
-    ${marks.length ? `<p class="muted">Пометки в тексте: ${legend || "—"}. Наведите на выделенное или смотрите список ниже.</p>` : ""}`;
+    ${marks.length ? `<p class="muted">Пометки в тексте: ${legend || "—"}. Выделенные места и комментарии к ним — в тексте и списке ниже.</p>` : ""}`;
 }
 
 export { rubricFor, countWords };

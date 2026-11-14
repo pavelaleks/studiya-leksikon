@@ -379,10 +379,11 @@ export async function signedFileUrl(path) {
 }
 
 /** Сохранить черновик или сдать работу (status: 'draft' | 'submitted'). */
-export async function saveWork({ id = null, taskId, itemId = null, body, files = [], status }) {
+export async function saveWork({ id = null, taskId, itemId = null, body, files = [], status, choice = undefined }) {
   const uid = session?.user?.id;
   if (!uid) throw new Error("Нужно войти.");
   const row = { body, files, status };
+  if (choice !== undefined) row.choice = choice;
   const q = id
     ? supa.from("written_works").update(row).eq("id", id)
     : supa.from("written_works").insert({ ...row, task_id: taskId, item_id: itemId, student_id: uid });

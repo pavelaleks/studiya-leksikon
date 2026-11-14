@@ -1761,3 +1761,76 @@ details.is-mastered {
   display: grid;
   gap: 6px;
 }
+
+/* Выбор варианта в письменной работе */
+.pr-choice {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 10px 12px 12px;
+  margin: 0 0 12px;
+  display: grid;
+  gap: 6px;
+}
+.pr-choice legend {
+  font-weight: 800;
+  padding: 0 6px;
+}
+.pr-choice-o {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+.pr-choice-o input {
+  margin-top: 3px;
+  flex: none;
+}
+.pr-choice-o b {
+  flex: none;
+}
+.pr-choice-o.is-on {
+  background: var(--accent-soft);
+}
+.rv-task {
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.rv-choice {
+  font-family: var(--serif);
+  font-size: 1.08rem;
+  line-height: 1.45;
+  margin: 4px 0 8px;
+}
+.rv-choice.is-missing {
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  color: var(--bad);
+}
+.me-checked {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 2px solid var(--ok);
+  color: var(--ink);
+  text-decoration: none;
+  margin-bottom: 8px;
+}
+.me-checked > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.me-checked .muted {
+  font-size: 0.88rem;
+}
+.lit-write .pr-choice-o {
+  display: flex;
+  margin: 0;
+  font-weight: 400;
+}
