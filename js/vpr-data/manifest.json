@@ -1,0 +1,300 @@
+{
+  "schema": 1,
+  "exam": "ВПР 8",
+  "subject": "русский язык",
+  "tasks": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "fetchedAt": "2026-11-14",
+  "source": {
+    "site": "https://rus8-vpr.sdamgia.ru/",
+    "catalog": "https://rus8-vpr.sdamgia.ru/prob_catalog",
+    "name": "Решу ВПР",
+    "note": "Задания и пояснения собраны с rus8-vpr.sdamgia.ru для учебной базы студии «Лексикон». При размещении на сайте указывайте источник."
+  },
+  "howToUse": {
+    "index": "index.json — карточки без полных текстов: фильтр по номеру задания, теме, типу ответа, источнику, актуальности.",
+    "bank": "bank/vpr-01.json … vpr-12.json — полная локальная база номера. Сайт её не качает: карточка лежит в problems/NN/id.json, общий текст — в passages/id.json, порядок для «следующее» — в bank/vpr-NN.order.json.",
+    "links": "links.json — какие задания делят один текст и какие входят в один вариант (testId источника).",
+    "rules": "rules/{id}.json — справочная статья к заданию. В карточке это ruleId и ruleUrl.",
+    "check": "answerMode=word: сравнивать answerNorm без пробелов, ё и е равны, годятся answerAlts. digits-any: цифры в любом порядке, эталон — answerNumbers или отсортированный answerNorm. digits-fixed: порядок цифр важен (соответствие, например задание 4). numbers: номера предложений, в том числе двузначные; если разобраны, они в answerNumbers, порядок не важен. essay и open: развёрнутый ответ (изложение 1, сочинение 13), ориентир в solutionHtml."
+  },
+  "answerModes": {
+    "word": "слово или несколько допустимых слов",
+    "digits-any": "номера, порядок не важен",
+    "digits-fixed": "последовательность цифр, порядок важен",
+    "numbers": "номера предложений, среди которых есть двузначные",
+    "essay": "сочинение",
+    "open": "развёрнутый ответ без краткого ключа"
+  },
+  "counts": {
+    "problems": 551,
+    "withSolution": 551,
+    "withAnswer": 206,
+    "withPassage": 549,
+    "withoutQuestion": 0,
+    "texts": 129,
+    "sharedTexts": 129,
+    "variants": 45,
+    "fullVariants": 1,
+    "rules": 0,
+    "duplicatesSkipped": 0,
+    "byAnswerMode": {
+      "open": 345,
+      "word": 102,
+      "digits-any": 100,
+      "numbers": 4
+    },
+    "byAnswerKind": {
+      "open": 345,
+      "short": 102,
+      "digits": 104
+    }
+  },
+  "files": [
+    {
+      "file": "bank/vpr-01.json",
+      "id": "vpr-01",
+      "task": 1,
+      "title": "Осложненное списывание",
+      "count": 110,
+      "passageCount": 109,
+      "topics": [
+        {
+          "id": 1,
+          "title": "Задания для подготовки",
+          "count": 49
+        },
+        {
+          "id": 27,
+          "title": "Задания прошедших ВПР",
+          "count": 17
+        },
+        {
+          "id": 52,
+          "title": "На основе заданий прошедших ВПР",
+          "count": 44
+        }
+      ]
+    },
+    {
+      "file": "bank/vpr-02.json",
+      "id": "vpr-02",
+      "task": 2,
+      "title": "Замена подчинительных словосочетаний",
+      "count": 21,
+      "passageCount": 21,
+      "topics": [
+        {
+          "id": 55,
+          "title": "Задания для подготовки",
+          "count": 21
+        }
+      ]
+    },
+    {
+      "file": "bank/vpr-03.json",
+      "id": "vpr-03",
+      "task": 3,
+      "title": "Нахождение грамматической основы",
+      "count": 41,
+      "passageCount": 41,
+      "topics": [
+        {
+          "id": 46,
+          "title": "Задания для подготовки",
+          "count": 24
+        },
+        {
+          "id": 20,
+          "title": "Задания прошедших ВПР",
+          "count": 17
+        }
+      ]
+    },
+    {
+      "file": "bank/vpr-04.json",
+      "id": "vpr-04",
+      "task": 4,
+      "title": "Определение односоставного предложения",
+      "count": 41,
+      "passageCount": 40,
+      "topics": [
+        {
+          "id": 47,
+          "title": "Задания для подготовки",
+          "count": 24
+        },
+        {
+          "id": 21,
+          "title": "Задания прошедших ВПР",
+          "count": 17
+        }
+      ]
+    },
+    {
+      "file": "bank/vpr-05.json",
+      "id": "vpr-05",
+      "task": 5,
+      "title": "Опознавание предложения по графической схеме",
+      "count": 41,
+      "passageCount": 40,
+      "topics": [
+        {
+          "id": 51,
+          "title": "Задания для подготовки",
+          "count": 24
+        },
+        {
+          "id": 22,
+          "title": "Задания прошедших ВПР",
+          "count": 17
+        }
+      ]
+    },
+    {
+      "file": "bank/vpr-06.json",
+      "id": "vpr-06",
+      "task": 6,
+      "title": "Определение предложения с обособленными определениями и обстоятельствами",
+      "count": 83,
+      "passageCount": 41,
+      "topics": [
+        {
+          "id": 50,
+          "title": "Задания для подготовки (обстоятельства)",
+          "count": 24
+        },
+        {
+          "id": 49,
+          "title": "Задания для подготовки (определения)",
+          "count": 25
+        },
+        {
+          "id": 24,
+          "title": "Задания прошедших ВПР (обстоятельства)",
+          "count": 17
+        },
+        {
+          "id": 23,
+          "title": "Задания прошедших ВПР (определения)",
+          "count": 17
+        }
+      ]
+    },
+    {
+      "file": "bank/vpr-07.json",
+      "id": "vpr-07",
+      "task": 7,
+      "title": "Синтаксический анализ предложения",
+      "count": 109,
+      "passageCount": 109,
+      "topics": [
+        {
+          "id": 36,
+          "title": "Задания для подготовки",
+          "count": 48
+        },
+        {
+          "id": 26,
+          "title": "Задания прошедших ВПР",
+          "count": 17
+        },
+        {
+          "id": 2,
+          "title": "На основе заданий прошедших ВПР",
+          "count": 44
+        }
+      ]
+    },
+    {
+      "file": "bank/vpr-08.json",
+      "id": "vpr-08",
+      "task": 8,
+      "title": "Нахождение высказываний, соответствующих тексту",
+      "count": 21,
+      "passageCount": 20,
+      "topics": [
+        {
+          "id": 56,
+          "title": "Задания для подготовки",
+          "count": 21
+        }
+      ]
+    },
+    {
+      "file": "bank/vpr-09.json",
+      "id": "vpr-09",
+      "task": 9,
+      "title": "Анализ высказываний (функционально-смысловые типы речи)",
+      "count": 21,
+      "passageCount": 20,
+      "topics": [
+        {
+          "id": 57,
+          "title": "Задания для подготовки",
+          "count": 21
+        }
+      ]
+    },
+    {
+      "file": "bank/vpr-10.json",
+      "id": "vpr-10",
+      "task": 10,
+      "title": "Анализ средств связи",
+      "count": 21,
+      "passageCount": 20,
+      "topics": [
+        {
+          "id": 58,
+          "title": "Задания для подготовки",
+          "count": 21
+        }
+      ]
+    },
+    {
+      "file": "bank/vpr-11.json",
+      "id": "vpr-11",
+      "task": 11,
+      "title": "Развёрнутый ответ на вопрос",
+      "count": 21,
+      "passageCount": 20,
+      "topics": [
+        {
+          "id": 59,
+          "title": "Задания для подготовки",
+          "count": 21
+        }
+      ]
+    },
+    {
+      "file": "bank/vpr-12.json",
+      "id": "vpr-12",
+      "task": 12,
+      "title": "Анализ предложений с грамматической (синтаксической ошибкой)",
+      "count": 21,
+      "passageCount": 20,
+      "topics": [
+        {
+          "id": 60,
+          "title": "Задания для подготовки",
+          "count": 21
+        }
+      ]
+    }
+  ],
+  "mismatches": [],
+  "errors": [],
+  "weirdAnswers": []
+}

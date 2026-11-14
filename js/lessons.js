@@ -5,13 +5,13 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land120";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land120";
-import { SOURCES, bankFiles } from "./teacher.js?v=land120";
+import { taskHref } from "./account.js?v=land121";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land121";
+import { SOURCES, bankFiles } from "./teacher.js?v=land121";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land120";
+} from "./exams.js?v=land121";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -41,7 +41,7 @@ const toLocalInput = (d) => {
   return new Date(x.getTime() - x.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 };
 const fromLocalInput = (v) => (v ? new Date(v).toISOString() : null);
-const shortSource = (s) => ({ "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "ege-lit": "Лит." }[s] || s);
+const shortSource = (s) => ({ "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Лит." }[s] || s);
 
 function snippet(task, n = 110) {
   const t = String(task?.list_item?.questionText || task?.data?.questionText || "").replace(/\s+/g, " ").trim();

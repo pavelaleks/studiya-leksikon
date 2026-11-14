@@ -33,6 +33,18 @@ export const EXAMS = {
     minutesNoWriting: 90,
     bank: (n) => `oge-${String(n).padStart(2, "0")}`,
   },
+  "vpr-rus": {
+    title: "ВПР по русскому языку, 8 класс",
+    minutes: 90,
+    note: "как на проверочной работе — 90 минут",
+    numbers: range(1, 12),
+    // все задания ВПР — по одному тексту
+    groups: [range(1, 12)],
+    written: [1, 6, 7, 11, 12],
+    writtenDefault: true,
+    minutesNoWriting: 45,
+    bank: (n) => `vpr-${String(n).padStart(2, "0")}`,
+  },
   "ege-lit": {
     title: "ЕГЭ по литературе",
     minutes: 235,

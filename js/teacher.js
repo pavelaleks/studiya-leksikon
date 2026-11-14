@@ -1,17 +1,17 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land120";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land121";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land120";
+import { taskHref } from "./account.js?v=land121";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land120";
-import { readingView } from "./teacher-reading.js?v=land120";
-import { optionsOf } from "./practice.js?v=land120";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land120";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land120";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land121";
+import { readingView } from "./teacher-reading.js?v=land121";
+import { optionsOf } from "./practice.js?v=land121";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land121";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land121";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land120";
+} from "./review.js?v=land121";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -20,6 +20,7 @@ import {
 export const SOURCES = {
   "ege-rus": { title: "ЕГЭ · русский язык", manifest: "js/russian-data/manifest.json", dir: "js/russian-data" },
   "oge-rus": { title: "ОГЭ · русский язык", manifest: "js/oge-data/manifest.json", dir: "js/oge-data" },
+  "vpr-rus": { title: "ВПР · русский язык, 8 класс", manifest: "js/vpr-data/manifest.json", dir: "js/vpr-data" },
   "ege-lit": { title: "ЕГЭ · литература", manifest: "js/literature-data/manifest.json", dir: "js/literature-data" },
 };
 
@@ -36,6 +37,11 @@ const MODES = {
     ["digits-fixed", "Цифры по порядку (соответствие)"],
     ["word", "Слово / краткий ответ"],
     ["essay", "Изложение / сочинение — проверяет преподаватель"],
+    ["open", "Развёрнутый ответ — проверяет преподаватель"],
+  ],
+  "vpr-rus": [
+    ["digits-any", "Номера в любом порядке (24 = 42)"],
+    ["word", "Слово / краткий ответ"],
     ["open", "Развёрнутый ответ — проверяет преподаватель"],
   ],
   "ege-lit": [
@@ -74,6 +80,7 @@ export async function bankFiles(source) {
 function defaultMode(source, taskNo) {
   if (source === "ege-rus") return taskNo === 27 ? "essay" : "digits-any";
   if (source === "oge-rus") return taskNo === 1 || taskNo === 13 ? "essay" : "digits-any";
+  if (source === "vpr-rus") return [1, 6, 7, 11, 12].includes(taskNo) ? "open" : [2, 3, 4].includes(taskNo) ? "word" : "digits-any";
   if (taskNo === 11) return "essay";
   if ([4, 5, 9, 10].includes(taskNo)) return "open";
   if (taskNo === 2) return "lit-match";
@@ -1979,13 +1986,14 @@ async function importView(host, render) {
     <h1>Импорт банка сайта</h1>
     ${bankSubnav("import")}
     <div class="card stack t-task-form">
-      <p>Переносит задания из JSON-файлов сайта (ЕГЭ и ОГЭ по русскому, литература) в базу. Ответы и разборы попадают в закрытую таблицу.
+      <p>Переносит задания из JSON-файлов сайта (ЕГЭ, ОГЭ и ВПР по русскому, литература) в базу. Ответы и разборы попадают в закрытую таблицу.
       Первые ${DEMO_PER_FILE} задания каждого номера отмечаются как демо для гостей — это можно поменять в банке.</p>
       <p>Сейчас в базе импортированных заданий: <strong>${count ?? 0}</strong>. Повторный импорт безопасен: задания обновятся, ваши авторские не тронутся.</p>
       <p class="muted">Импорт работает там, где лежат файлы банка (локальная копия сайта). Займёт несколько минут — не закрывайте вкладку.</p>
       <div class="actions">
         <label class="t-inline"><input type="checkbox" name="s" value="ege-rus" checked /> ЕГЭ · русский</label>
         <label class="t-inline"><input type="checkbox" name="s" value="oge-rus" checked /> ОГЭ · русский</label>
+        <label class="t-inline"><input type="checkbox" name="s" value="vpr-rus" checked /> ВПР · русский, 8 кл.</label>
         <label class="t-inline"><input type="checkbox" name="s" value="ege-lit" checked /> Литература</label>
       </div>
       <button class="btn" id="t-import">Начать импорт</button>

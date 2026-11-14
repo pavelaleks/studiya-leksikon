@@ -49,3 +49,7 @@ tools/library/_cache/
 # Ответы к тестам по чтению — только в Supabase
 tools/library/quizzes.py
 supabase/seed_*
+js/vpr-data/index.json
+js/vpr-data/problems/
+js/vpr-data/passages/
+js/vpr-data/bank/

@@ -480,7 +480,7 @@ export function homePage(content) {
     <section class="landing-learn" id="learn" aria-labelledby="learn-title">
       <p class="eyebrow">На сайте</p>
       <h2 id="learn-title">Материалы для занятий</h2>
-      <p class="lede">Русский язык и литература: правила, тренажёры и темы для ЕГЭ. Работаем с ними на уроках, заниматься можно и дома.</p>
+      <p class="lede">Русский язык и литература: правила, тренажёры, задания ВПР, ОГЭ и ЕГЭ. Работаем с ними на уроках, заниматься можно и дома.</p>
       ${continueHtml(true)}
       ${accessNoteHtml()}
 
@@ -488,11 +488,12 @@ export function homePage(content) {
         <article class="landing-learn-subject">
           <header class="landing-learn-subject-head">
             <p class="landing-learn-label">Русский язык</p>
-            <p class="landing-learn-subject-note">ОГЭ и ЕГЭ</p>
+            <p class="landing-learn-subject-note">ВПР, ОГЭ и ЕГЭ</p>
           </header>
           <div class="landing-learn-links landing-learn-links-ru">
             <a href="#/ege"><strong>ЕГЭ</strong><span>Задания 1–27</span></a>
             <a href="#/oge"><strong>ОГЭ</strong><span>Задания 1–13 · ${ogeTrainers} тренажёра</span></a>
+            <a href="#/vpr"><strong>ВПР, 8 класс</strong><span>Задания 1–12</span></a>
             <a href="#/rules"><strong>Правила</strong><span>${ruleCount} ${ruleWord(ruleCount)}</span></a>
           </div>
         </article>

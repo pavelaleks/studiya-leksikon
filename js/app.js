@@ -1,22 +1,23 @@
-import { mountHelper } from "./helper.js?v=land120";
-import { applyTheme, layout } from "./ui.js?v=land120";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land120";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land120";
-import { mountLiterature } from "./literature.js?v=land120";
-import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land120";
-import { mountRussian } from "./russian.js?v=land120";
-import { mountOge } from "./oge.js?v=land120";
-import { bindApplyForm } from "./apply.js?v=land120";
-import { EGE_TITLES } from "./ege.js?v=land120";
-import { renderExercise } from "./exercises.js?v=land120";
-import { mountTrainer } from "./trainers.js?v=land120";
-import { parseRoute } from "./route.js?v=land120";
+import { mountHelper } from "./helper.js?v=land121";
+import { applyTheme, layout } from "./ui.js?v=land121";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land121";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land121";
+import { mountLiterature } from "./literature.js?v=land121";
+import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land121";
+import { mountRussian } from "./russian.js?v=land121";
+import { mountOge } from "./oge.js?v=land121";
+import { markVprDone, mountVpr } from "./vpr.js?v=land121";
+import { bindApplyForm } from "./apply.js?v=land121";
+import { EGE_TITLES } from "./ege.js?v=land121";
+import { renderExercise } from "./exercises.js?v=land121";
+import { mountTrainer } from "./trainers.js?v=land121";
+import { parseRoute } from "./route.js?v=land121";
 import { accessState, hasAccess, initAuth, mySolved, onAuthChange, supa } from "./supa.js";
 import { markEgeDone, markOgeDone } from "./progress.js";
-import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land120";
-import { mountTeacher, teacherPage } from "./teacher.js?v=land120";
-import "./session.js?v=land120";
-import { lessonPage, mountLesson } from "./lessons.js?v=land120";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land121";
+import { mountTeacher, teacherPage } from "./teacher.js?v=land121";
+import "./session.js?v=land121";
+import { lessonPage, mountLesson } from "./lessons.js?v=land121";
 
 const app = document.getElementById("app");
 let content = null;
@@ -75,7 +76,7 @@ function bindSearch(sectionId, q) {
   if (!search) return;
   search.addEventListener("input", () => {
     mountHtml(rulesIndex(content, sectionId, search.value), "rules", { scroll: false });
-    import("./rulequiz.js?v=land120").then((m) => m.markRulesIndex(app)).catch(() => {});
+    import("./rulequiz.js?v=land121").then((m) => m.markRulesIndex(app)).catch(() => {});
     bindSearch(sectionId, search.value);
     const again = app.querySelector("#rule-search");
     if (again) {
@@ -182,7 +183,7 @@ async function render() {
 
   if (a === "rules") {
     mountHtml(rulesIndex(content, b || "", q), "rules");
-    import("./rulequiz.js?v=land120").then((m) => m.markRulesIndex(app)).catch(() => {});
+    import("./rulequiz.js?v=land121").then((m) => m.markRulesIndex(app)).catch(() => {});
     bindSearch(b || "", q);
     setTitle(b ? "Правила" : "Правила");
     return;
@@ -201,7 +202,7 @@ async function render() {
       : {};
     mountHtml(rulePage(rule, neighbors), "rules");
     bindRulePrint();
-    import("./rulequiz.js?v=land120").then((m) => m.mountRuleQuiz(app)).catch((e) => console.warn(e));
+    import("./rulequiz.js?v=land121").then((m) => m.mountRuleQuiz(app)).catch((e) => console.warn(e));
     setTitle(rule?.title || "Правило");
     return;
   }
@@ -229,6 +230,14 @@ async function render() {
     setTitle("ОГЭ по русскому");
     const root = app.querySelector("#oge-root");
     if (root) await mountOge(root, parts.slice(1));
+    return;
+  }
+
+  if (a === "vpr") {
+    mountHtml(`<div class="lit-page" id="vpr-root"><p class="lede muted">Загружаем задания…</p></div>`, "vpr");
+    setTitle("ВПР по русскому, 8 класс");
+    const root = app.querySelector("#vpr-root");
+    if (root) await mountVpr(root, parts.slice(1));
     return;
   }
 
@@ -494,6 +503,7 @@ async function syncSolved() {
     const map = await mySolved();
     Object.entries(map["ege-rus"] || {}).forEach(([no, refs]) => refs.forEach((id) => markEgeDone({ id, egeTask: Number(no) })));
     Object.entries(map["oge-rus"] || {}).forEach(([no, refs]) => refs.forEach((id) => markOgeDone({ id, ogeTask: Number(no) })));
+    Object.entries(map["vpr-rus"] || {}).forEach(([no, refs]) => refs.forEach((id) => markVprDone({ id, task: Number(no) })));
   } catch (err) {
     console.warn("sync", err);
   }

@@ -1,5 +1,5 @@
 import { accessState, currentProfile } from "./supa.js";
-import { TRACK_HREF, currentTrack } from "./track.js?v=land120";
+import { TRACK_HREF, currentTrack } from "./track.js?v=land121";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -43,7 +43,7 @@ function tabbar(active) {
     items = [
       ["#/", "home", "Студия", active === "home"],
       ["#/rules", "rules", "Правила", active === "rules" || active === "practice"],
-      ["#/ege", "pencil", "Задания", active === "ege" || active === "oge"],
+      ["#/ege", "pencil", "Задания", ["ege", "oge", "vpr"].includes(active)],
       ["#/library", "books", "Читать", active === "literature"],
       ["#/login", "login", "Войти", active === "login"],
     ];
@@ -51,7 +51,7 @@ function tabbar(active) {
     const tasks = tasksHref();
     items = [
       ["#/me", "home", "Главная", active === "me" && !hash.startsWith("#/me/password") && !hash.startsWith("#/me/profile")],
-      [tasks, "pencil", "Задания", ["ege", "oge"].includes(active) || (active === "literature" && hash.startsWith("#/literature"))],
+      [tasks, "pencil", "Задания", ["ege", "oge", "vpr"].includes(active) || (active === "literature" && hash.startsWith("#/literature"))],
       ["#/rules", "rules", "Правила", active === "rules" || active === "practice"],
       ["#/library", "books", "Читать", active === "literature" && hash.startsWith("#/library")],
       ["#/me/profile", "user", "Я", active === "me" && (hash.startsWith("#/me/profile") || hash.startsWith("#/me/password"))],
@@ -146,6 +146,7 @@ export function layout(content, active = "", { hideFooter = false } = {}) {
           <a href="#/rules" class="${active === "rules" ? "active" : ""}">Правила</a>
           <a href="#/ege" class="${active === "ege" ? "active" : ""}">ЕГЭ</a>
           <a href="#/oge" class="${active === "oge" ? "active" : ""}">ОГЭ</a>
+          <a href="#/vpr" class="${active === "vpr" ? "active" : ""}">ВПР</a>
           <a href="#/literature" class="${active === "literature" ? "active" : ""}">Литература</a>
           ${accountLink(active)}`;
   return `

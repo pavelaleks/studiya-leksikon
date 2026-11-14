@@ -1,10 +1,10 @@
 /** Вход, регистрация и личный кабинет ученика (#/login, #/me). */
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land120";
-import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, tracksOf } from "./track.js?v=land120";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land121";
+import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, tracksOf } from "./track.js?v=land121";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, recommendations, recsHtml, selfExamHtml,
-} from "./dashboard.js?v=land120";
+} from "./dashboard.js?v=land121";
 import {
   accessState,
   currentProfile,
@@ -20,7 +20,7 @@ import {
 } from "./supa.js";
 
 const EXAMS = ["ЕГЭ по русскому", "ОГЭ по русскому", "ЕГЭ по литературе", "ВПР", "Олимпиада", "Другое"];
-const SOURCE_TITLE = { "ege-rus": "ЕГЭ · русский", "oge-rus": "ОГЭ · русский", "ege-lit": "ЕГЭ · литература" };
+const SOURCE_TITLE = { "ege-rus": "ЕГЭ · русский", "oge-rus": "ОГЭ · русский", "vpr-rus": "ВПР · русский", "ege-lit": "ЕГЭ · литература" };
 const STATUS_TEXT = {
   pending: "ждёт подтверждения",
   active: "ученик студии",
@@ -57,6 +57,7 @@ function checkedWorksHtml(d) {
 const ESSAY_LINK = {
   "ege-rus": ["#/ege/27", "Сочинение ЕГЭ (задание 27)"],
   "oge-rus": ["#/oge/13", "Сочинение ОГЭ (задание 13)"],
+  "vpr-rus": ["#/vpr/11", "Развёрнутый ответ ВПР (задание 11)"],
   "ege-lit": ["#/literature/11", "Сочинение ЕГЭ по литературе (задание 11)"],
 };
 function writtenTrackHtml(d, code) {
@@ -90,6 +91,7 @@ export function taskHref(t) {
   if (!t) return "#/";
   if (t.source === "ege-rus") return `#/ege/${t.task_no}/${encodeURIComponent(t.source_ref)}`;
   if (t.source === "oge-rus") return `#/oge/${t.task_no}/${encodeURIComponent(t.source_ref)}`;
+  if (t.source === "vpr-rus") return `#/vpr/${t.task_no}/${encodeURIComponent(t.source_ref)}`;
   if (t.source === "ege-lit") {
     if (String(t.bank_file).startsWith("extra-")) return `#/literature/archive/${t.bank_file}/${encodeURIComponent(t.source_ref)}`;
     return `#/literature/${t.task_no}/${encodeURIComponent(t.source_ref)}`;
@@ -306,7 +308,7 @@ export async function mountMe(root) {
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land120").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
+    import("./lessons.js?v=land121").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
     isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },
     isProfile ? supa.from("my_mistakes").select("*").order("last_try", { ascending: false }) : { data: [] },
     isProfile
