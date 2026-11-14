@@ -333,9 +333,38 @@ export async function myWorkFor(taskId, itemId = null) {
   return data;
 }
 
-export async function uploadWorkFile(file) {
+/**
+ * Фото страницы работы: до 1600 px по длинной стороне, JPEG ≈ 85%.
+ * Снимок телефона 3–5 МБ превращается в 200–400 КБ, текст читается так же.
+ * Если браузер не может открыть файл (например, HEIC не в Safari) — грузим как есть.
+ */
+export async function shrinkImage(file, max = 1600) {
+  if (!/^image\/(jpeg|png|webp|heic|heif)$/i.test(file.type || "") || file.size < 350 * 1024) return file;
+  try {
+    const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const w = Math.round(bmp.width * k);
+    const h = Math.round(bmp.height * k);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(bmp, 0, 0, w, h);
+    bmp.close?.();
+    const blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", 0.85));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.[a-z0-9]+$/i, "") + ".jpg", { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
+
+export async function uploadWorkFile(original) {
   const uid = session?.user?.id;
   if (!uid) throw new Error("Нужно войти.");
+  const file = await shrinkImage(original);
   const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
   const path = `${uid}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supa.storage.from("works").upload(path, file, { contentType: file.type || undefined });

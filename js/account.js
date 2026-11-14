@@ -2,7 +2,7 @@
 import { escapeHtml } from "./ui.js";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, recommendations, recsHtml, selfExamHtml,
-} from "./dashboard.js?v=land102";
+} from "./dashboard.js?v=land103";
 import {
   accessState,
   currentProfile,
@@ -281,7 +281,7 @@ export async function mountMe(root) {
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land102").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
+    import("./lessons.js?v=land103").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
     isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },
     isProfile ? supa.from("my_mistakes").select("*").order("last_try", { ascending: false }) : { data: [] },
     isProfile

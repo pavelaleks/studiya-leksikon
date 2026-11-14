@@ -1,0 +1,26 @@
+name: Keep Supabase awake
+
+# Бесплатный проект Supabase ставится на паузу после недели без запросов.
+# Раз в три дня просим у базы одну строчку — данные не меняются.
+on:
+  schedule:
+    - cron: "17 3 */3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping database
+        env:
+          URL: https://mhlpcwquvphrnpxsjzne.supabase.co
+          # Публикуемый ключ — тот же, что открыт на сайте (доступ ограничивают правила RLS).
+          KEY: sb_publishable_bPGGvWOilhwuzM0EzIPNzQ_LtyHfT9_
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$URL/rest/v1/reading_quizzes?select=id&limit=1" \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+          echo "HTTP $code"
+          test "$code" = "200"
