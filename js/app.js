@@ -1,19 +1,20 @@
-import { layout } from "./ui.js?v=land83";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land83";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land83";
-import { mountLiterature } from "./literature.js?v=land83";
-import { mountRussian } from "./russian.js?v=land83";
-import { mountOge } from "./oge.js?v=land83";
-import { bindApplyForm } from "./apply.js?v=land83";
-import { EGE_TITLES } from "./ege.js?v=land83";
-import { renderExercise } from "./exercises.js?v=land83";
-import { mountTrainer } from "./trainers.js?v=land83";
-import { parseRoute } from "./route.js?v=land83";
+import { layout } from "./ui.js?v=land84";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land84";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land84";
+import { mountLiterature } from "./literature.js?v=land84";
+import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land84";
+import { mountRussian } from "./russian.js?v=land84";
+import { mountOge } from "./oge.js?v=land84";
+import { bindApplyForm } from "./apply.js?v=land84";
+import { EGE_TITLES } from "./ege.js?v=land84";
+import { renderExercise } from "./exercises.js?v=land84";
+import { mountTrainer } from "./trainers.js?v=land84";
+import { parseRoute } from "./route.js?v=land84";
 import { hasAccess, initAuth, mySolved, onAuthChange } from "./supa.js";
 import { markEgeDone, markOgeDone } from "./progress.js";
-import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land83";
-import { mountTeacher, teacherPage } from "./teacher.js?v=land83";
-import { lessonPage, mountLesson } from "./lessons.js?v=land83";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land84";
+import { mountTeacher, teacherPage } from "./teacher.js?v=land84";
+import { lessonPage, mountLesson } from "./lessons.js?v=land84";
 
 const app = document.getElementById("app");
 let content = null;
@@ -145,6 +146,7 @@ async function render() {
   }
 
   document.body.classList.remove("is-landing");
+  document.body.classList.remove("is-reading");
 
   if (a === "thanks") {
     mountHtml(thanksPage(), "home");
@@ -213,6 +215,13 @@ async function render() {
     await mountTrainer(host, decodeURIComponent(b));
     scrollToTop();
     setTitle("Тренажёр ОГЭ");
+    return;
+  }
+
+  if (a === "library") {
+    mountHtml(libraryPage(), "literature");
+    setTitle(libraryTitle(parts.slice(1)));
+    await mountLibrary(app, parts.slice(1));
     return;
   }
 

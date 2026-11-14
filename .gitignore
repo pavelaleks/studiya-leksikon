@@ -44,3 +44,8 @@ js/oge-data/passages/
 js/oge-data/bank/
 js/literature-data/bank/
 js/literature-data/index.json
+tools/library/_cache/
+
+# Ответы к тестам по чтению — только в Supabase
+tools/library/quizzes.py
+supabase/seed_*

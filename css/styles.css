@@ -5207,3 +5207,152 @@ body.rv-lock {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- Библиотека ---------- */
+.lit-tools-lib { margin-bottom: 12px; }
+.lit-tool-lib { border-color: var(--forest); }
+.lit-tool-lib strong { color: var(--forest); }
+.lib-head h1 { margin-bottom: 8px; }
+.lib-tabs { margin: 18px 0 20px; }
+.lib-tools { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.lib-tools .search { flex: 1 1 260px; margin: 0; }
+.lib-check { display: inline-flex; gap: 8px; align-items: center; font-size: 0.95rem; color: var(--ink-soft); }
+.lib-legend { margin: 10px 0 0; font-size: 0.9rem; }
+.lib-period { margin-top: 28px; }
+.lib-period h2 { font-family: var(--serif); font-size: 1.3rem; margin: 0 0 12px; }
+.lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.lib-card {
+  display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border: 1px solid var(--line);
+  border-radius: 14px; background: var(--card); color: var(--ink); text-decoration: none; transition: border-color .15s, transform .15s;
+}
+.lib-card:hover { border-color: var(--accent); transform: translateY(-1px); color: var(--ink); }
+.lib-card strong { font-family: var(--serif); font-size: 1.12rem; line-height: 1.25; }
+.lib-card-author { font-size: 0.85rem; color: var(--ink-soft); }
+.lib-marks { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.lib-mark {
+  display: inline-block; font-size: 0.75rem; line-height: 1; padding: 5px 8px; border-radius: 999px;
+  background: var(--paper-deep); color: var(--ink-soft); text-decoration: none; white-space: nowrap;
+}
+a.lib-mark:hover { color: var(--accent); }
+.lib-mark.is-focus { background: var(--accent-soft); color: var(--accent); }
+.lib-mark.is-quiz { background: #e9efe9; color: var(--forest); }
+.lib-mark.is-done { background: var(--ok-bg); color: var(--ok); }
+.lib-progress { display: block; height: 4px; border-radius: 4px; background: var(--paper-deep); overflow: hidden; margin-top: 2px; }
+.lib-progress span { display: block; height: 100%; background: var(--forest); }
+.lib-source { margin-top: 28px; font-size: 0.88rem; }
+.lib-work-head { margin-bottom: 14px; }
+.lib-work-head h1 { margin: 4px 0 10px; }
+.lib-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 6px 0 12px; }
+.lib-hint { font-size: 0.92rem; max-width: 60ch; }
+.lib-toc { margin-top: 18px; }
+.lib-toc h2 { font-size: 1.1rem; display: flex; justify-content: space-between; gap: 12px; margin-top: 0; }
+.lib-toc ol { margin: 0; padding-left: 1.6em; columns: 2 280px; column-gap: 32px; }
+.lib-toc li { margin: 0 0 6px; break-inside: avoid; }
+.lib-toc li.is-read a { color: var(--ink-soft); }
+.lib-toc li.is-read::marker { color: var(--ok); }
+.lib-toc li.is-read a::after { content: " ✓"; color: var(--ok); }
+.lib-notext { margin-top: 18px; }
+.lib-learned { margin: 0 0 12px; color: var(--forest); }
+.lib-themes { margin-bottom: 12px; }
+
+/* Читалка */
+body.is-reading .site-footer { display: none; }
+.reader { --reader-size: 19px; --r-bg: #fbf8f1; --r-ink: #1e1914; --r-soft: #6a6157; --r-line: #e4dccd;
+  margin: -12px -4px 0; background: var(--r-bg); color: var(--r-ink); border-radius: 16px; }
+.reader.theme-sepia { --r-bg: #f1e5cc; --r-ink: #3b2f20; --r-soft: #7a6a52; --r-line: #dccaa5; }
+.reader.theme-night { --r-bg: #1c1b19; --r-ink: #e6dfd2; --r-soft: #9d958a; --r-line: #3a3833; }
+.reader-bar {
+  position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 6px; padding: 8px 10px;
+  background: var(--r-bg); border-bottom: 1px solid var(--r-line); border-radius: 16px 16px 0 0;
+}
+.reader-back { font-size: 1.3rem; text-decoration: none; color: var(--r-ink); padding: 4px 10px; }
+.reader-title { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.reader-title strong, .reader-title span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reader-title strong { font-size: 0.92rem; }
+.reader-title span { font-size: 0.8rem; color: var(--r-soft); }
+.reader-btn {
+  border: 1px solid var(--r-line); background: transparent; color: var(--r-ink); border-radius: 10px;
+  min-width: 40px; height: 36px; font-size: 0.9rem; cursor: pointer;
+}
+.reader-progress { height: 3px; background: var(--r-line); }
+.reader-progress span { display: block; height: 100%; background: var(--accent); }
+.reader-text {
+  font-family: var(--serif); font-size: var(--reader-size); line-height: 1.65; max-width: 38em; margin: 0 auto;
+  padding: 18px 18px 8px; hyphens: auto; -webkit-hyphens: auto; overflow-wrap: break-word;
+}
+.reader-text p { margin: 0 0 0.85em; text-indent: 1.4em; }
+.reader-text p.c, .reader-text .c { text-align: center; text-indent: 0; }
+.reader-text p.r, .reader-text .r { text-align: right; text-indent: 0; font-style: italic; }
+.reader-text h2.reader-ch { font-size: 1.25em; text-align: center; margin: 0.4em 0 1em; }
+.reader-text h4 { font-size: 1em; text-align: center; margin: 1.4em 0 0.8em; letter-spacing: 0.02em; }
+.reader-text .poem, .reader-text .poem p { text-indent: 0; }
+.reader-text .poem { margin: 0 0 0.9em 1.2em; }
+.reader-text .sp { letter-spacing: 0.08em; font-weight: 600; }
+.reader-text dl, .reader-text dd { margin: 0 0 0.6em; }
+.reader-text dd { font-style: italic; color: var(--r-soft); }
+.reader-text sup.fn {
+  cursor: pointer; color: var(--accent); font-family: var(--sans); font-size: 0.65em; padding: 0 2px; font-weight: 700;
+}
+.reader.theme-night sup.fn { color: #e3a3a7; }
+.fn-pop {
+  display: block; margin: 0.4em 0 0.6em; padding: 8px 12px; border-left: 3px solid var(--accent);
+  background: rgba(127, 110, 90, 0.12); font-family: var(--sans); font-size: 0.8em; line-height: 1.45; text-indent: 0;
+}
+.reader-notes { border-top: 1px solid var(--r-line); margin-top: 2em; padding-top: 0.6em; font-family: var(--sans); font-size: 0.78em; color: var(--r-soft); }
+.reader-notes h3 { font-size: 1em; margin: 0 0 0.4em; }
+.reader-notes li { margin-bottom: 0.3em; }
+.reader-nav {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 16px 18px;
+  border-top: 1px solid var(--r-line); max-width: 38em; margin: 0 auto;
+}
+.reader.theme-night .btn.secondary { background: transparent; color: var(--r-ink); border-color: var(--r-line); }
+
+/* Стихи */
+.poem-list { margin-top: 16px; }
+.poem-author h2 { font-family: var(--serif); font-size: 1.15rem; margin: 22px 0 8px; }
+.poem-author ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.poem-author li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+.poem-head h1 { margin: 4px 0 10px; }
+.poem-modes { margin: 14px 0 12px; }
+.poem-modes button { cursor: pointer; font: inherit; }
+.poem-body { font-family: var(--serif); font-size: 1.18rem; line-height: 1.6; padding: 22px 24px; }
+.poem-st { margin: 0 0 1em; }
+.poem-st:last-child { margin-bottom: 0; }
+.poem-hidden { background: var(--paper-deep); color: transparent; border-radius: 4px; cursor: pointer; user-select: none; }
+.poem-hidden.is-open { background: transparent; color: inherit; }
+.poem-date { margin-top: 6px; }
+.poem-check textarea { width: 100%; font-family: var(--serif); font-size: 1.08rem; line-height: 1.55; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: #fff; }
+.poem-score { font-weight: 700; margin: 14px 0 6px; }
+.poem-score.is-ok { color: var(--ok); }
+.poem-diff { font-family: var(--serif); font-size: 1.05rem; line-height: 1.55; margin-top: 10px; padding: 14px 16px; border-radius: 12px; background: var(--paper); }
+.poem-miss { background: var(--bad-bg); color: var(--bad); border-radius: 3px; padding: 0 2px; }
+.poem-pairs { margin-top: 26px; }
+.poem-pairs h2 { font-size: 1.15rem; margin-bottom: 4px; }
+.poem-pairs ul { padding-left: 1.2em; }
+
+/* Тест по статье */
+.quiz { display: grid; gap: 18px; padding: 20px; }
+.quiz-q { border: 0; padding: 0; margin: 0; }
+.quiz-q legend { font-weight: 700; margin-bottom: 8px; line-height: 1.35; }
+.quiz-n { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 0.85rem; margin-right: 4px; }
+.quiz-o { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 10px; cursor: pointer; }
+.quiz-o:hover { background: var(--paper); }
+.quiz-o input { margin-top: 4px; }
+.quiz-o.is-right { background: var(--ok-bg); }
+.quiz-o.is-wrong { background: var(--bad-bg); }
+.quiz-hint { margin: 4px 0 0 10px; font-size: 0.88rem; }
+
+@media (max-width: 640px) {
+  .reader { margin: -12px -16px 0; border-radius: 0; }
+  .reader-bar { border-radius: 0; }
+  .reader-text { padding: 14px 16px 6px; }
+  .reader-nav .btn { padding-inline: 14px; }
+  .poem-body { padding: 16px; font-size: 1.1rem; }
+  .lib-grid { grid-template-columns: 1fr; }
+  .lib-toc ol { columns: 1; }
+}
+.poem-check[hidden], .poem-body[hidden], .lib-card[hidden], .lib-period[hidden], .poem-list li[hidden], .poem-author[hidden] { display: none !important; }
+.t-row-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.t-reading-list { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 6px; }
+.t-reading-list li { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+.t-reading-list li.is-off > a:first-child { color: var(--ink-soft); }

@@ -1,13 +1,14 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land83";
+import { taskHref } from "./account.js?v=land84";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land83";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land83";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land84";
+import { readingView } from "./teacher-reading.js?v=land84";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land84";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land83";
+} from "./review.js?v=land84";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -218,6 +219,7 @@ const TABS = [
   ["works", "Проверка работ"],
   ["bank", "Банк заданий"],
   ["groups", "Группы"],
+  ["reading", "Чтение"],
 ];
 
 export function teacherPage() {
@@ -265,6 +267,7 @@ export async function mountTeacher(root, parts) {
     if (tab === "student") return await studentView(host, render, sub);
     if (tab === "works") return await worksView(host, render, sub);
     if (tab === "groups") return await groupsView(host, render);
+    if (tab === "reading") return await readingView(host, render, sub);
     if (tab === "bank") {
       if (sub === "new" || sub === "edit") return await taskFormView(host, render, arg);
       if (sub === "batch") return await batchView(host, render);

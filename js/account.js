@@ -2,7 +2,7 @@
 import { escapeHtml } from "./ui.js";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, recommendations, recsHtml, selfExamHtml,
-} from "./dashboard.js?v=land83";
+} from "./dashboard.js?v=land84";
 import {
   accessState,
   currentProfile,
@@ -280,7 +280,7 @@ export async function mountMe(root) {
         <p class="lit-result" id="me-join-status"></p>
       </form>
     </section>` : ""}
-    ${await (await import("./lessons.js?v=land83")).myLessonsHtml().catch(() => "")}
+    ${await (await import("./lessons.js?v=land84")).myLessonsHtml().catch(() => "")}
     ${dash ? selfExamHtml(examCodeOf(p)) + badgesHtml(badges(dash, examCodeOf(p))) + howPointsHtml() : ""}
     <section class="me-section"><h2>Прогресс по номерам</h2>${statsHtml(stats.data || [])}</section>
     <section class="me-section"><h2>Тетрадь ошибок</h2>${mistakesHtml(mistakes.data || [])}</section>

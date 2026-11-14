@@ -4,7 +4,7 @@
  * Очки начисляет сервер (таблица xp_events), здесь — только показ и подсказки.
  */
 import { escapeHtml } from "./ui.js";
-import { EXAMS, composeVariant, durationText } from "./exams.js?v=land83";
+import { EXAMS, composeVariant, durationText } from "./exams.js?v=land84";
 import { currentUser, humanError, supa } from "./supa.js";
 
 const LEVELS = [
@@ -157,6 +157,24 @@ export function recommendations(d, code) {
       cta: "К пробному",
     });
   }
+  const readDone = d.events.filter((e) => e.kind === "reading").length;
+  const poemsDone = d.events.filter((e) => e.kind === "poem").length;
+  if (code === "ege-lit") {
+    out.push({
+      icon: "📖",
+      title: readDone ? `Статьи «Полки»: пройдено ${readDone}` : "Прочитай статью о книге и ответь на вопросы",
+      text: "Короткие статьи «Полки» о главных книгах: о чём, как написано, как приняли. Потом 6 вопросов — и +20 очков.",
+      href: "#/library/read",
+      cta: "Читать и отвечать",
+    });
+    out.push({
+      icon: "🎭",
+      title: poemsDone ? `Выучено стихов: ${poemsDone}` : "Выучи стихотворение для задания 10",
+      text: "В задании 10 нужно сопоставить стихи. Выбери тему, выучи стихотворение и проверь себя на сайте.",
+      href: "#/library/poems",
+      cta: "Стихи наизусть",
+    });
+  }
   if (d.todayCorrect < DAILY_GOAL) {
     out.push({
       icon: "🎯",
@@ -190,6 +208,8 @@ export function badges(d, code) {
     ["🏔", "Неделя", "Заниматься 7 дней подряд", d.streak >= 7],
     ["✍️", "Перо", "Сдать письменную работу", d.works.some((w) => w.status !== "draft")],
     ["⏱", "Как на экзамене", "Завершить пробный экзамен", d.events.some((e) => e.kind === "exam")],
+    ["📖", "Читатель", "Пройти 3 теста по статьям «Полки»", d.events.filter((e) => e.kind === "reading").length >= 3],
+    ["🎭", "Наизусть", "Выучить 3 стихотворения", d.events.filter((e) => e.kind === "poem").length >= 3],
     ["🧭", "Все номера", `Решать все ${ex.numbers.length} номеров`, ex.numbers.every((n) => mine.some((s) => s.task_no === n))],
   ];
   return list.map(([icon, name, hint, got]) => ({ icon, name, hint, got }));
@@ -281,6 +301,7 @@ export function howPointsHtml() {
         <li>Верно с первой попытки — <b>10</b>, после ошибки — <b>5</b>, после разбора — <b>2</b> (за каждое задание один раз).</li>
         <li>Сдал сочинение или развёрнутый ответ — <b>15</b>, после проверки — ещё до <b>10</b>.</li>
         <li>Завершил пробный экзамен — <b>30</b> и по <b>3</b> за каждый верный ответ; контрольная — <b>15</b>.</li>
+        <li>Прочитал статью на «Полке» и ответил на вопросы — <b>20</b>; выучил стихотворение наизусть — от <b>10</b> до <b>40</b> (чем длиннее, тем больше).</li>
         <li>Цель дня — ${DAILY_GOAL} верных заданий. Каждый день с занятиями продлевает серию 🔥.</li>
       </ul>
     </details>`;

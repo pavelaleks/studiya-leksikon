@@ -1,7 +1,7 @@
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
 import { accessState, bankFull, bankList, clearBankCache } from "./supa.js";
-import { bindCheck, bindWritten, checkBlockHtml, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js?v=land83";
+import { bindCheck, bindWritten, checkBlockHtml, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js?v=land84";
 
 const SOURCE = "ege-lit";
 
@@ -252,6 +252,20 @@ function hubHtml(manifest) {
       <h1>Задания 1–11</h1>
       <p class="lede">Краткий ответ проверяется на сайте. Задания 4, 5, 9, 10 и 11 сдаются на проверку в личный кабинет. Полный банк с разборами открыт ученикам студии.</p>
     </header>
+    <div class="lit-tools lit-tools-lib">
+      <a class="lit-tool-card lit-tool-lib" href="#/library">
+        <strong>Библиотека</strong>
+        <span>Тексты произведений из кодификатора — удобно читать с телефона</span>
+      </a>
+      <a class="lit-tool-card lit-tool-lib" href="#/library/poems">
+        <strong>Стихи наизусть</strong>
+        <span>Подборка по темам для задания 10 и проверка «наизусть» с очками</span>
+      </a>
+      <a class="lit-tool-card lit-tool-lib" href="#/library/read">
+        <strong>Читать и отвечать</strong>
+        <span>Статьи «Полки» о главных книгах и вопросы по ним — за очки</span>
+      </a>
+    </div>
     <div class="lit-tools">
       <a class="lit-tool-card" href="#/literature/terms">
         <strong>Словарь терминов</strong>
