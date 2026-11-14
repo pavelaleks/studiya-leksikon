@@ -69,7 +69,7 @@ async function onUpdate(u: any) {
       await tg("sendMessage", { chat_id: chat, text: "Ссылка устарела. Откройте сайт студии и нажмите «Подключить Telegram» ещё раз." });
       return;
     }
-    const name = (data.full_name || "").split(" ").slice(-1)[0] || "";
+    const name = (data.full_name || "").trim().split(/\s+/)[0] || "";
     await tg("sendMessage", {
       chat_id: chat,
       text: data.role === "teacher"
