@@ -4,7 +4,7 @@ import { EGE_TITLES } from "./ege.js";
 import { readProgress } from "./progress.js";
 import { STUDIO, studioTelegram, studioWhatsApp } from "./config.js";
 import { iconTelegram, iconWhatsApp } from "./icons.js";
-import { accessState } from "./supa.js";
+import { accessState, currentProfile } from "./supa.js";
 
 function contactsBlock(extraClass = "", { mail = true } = {}) {
   const tg = studioTelegram();
@@ -211,6 +211,52 @@ function accessNoteHtml() {
   </div>`;
 }
 
+/** Первый экран: «Что вы хотите сделать?» — три пути; для вошедших — «С возвращением». */
+function homeStartHtml() {
+  const state = accessState();
+  const p = currentProfile();
+  const first = String(p?.full_name || "").trim().split(/\s+/)[0];
+  if (state === "teacher")
+    return `<div class="home-back card"><p><strong>Вы вошли как преподаватель.</strong></p><p class="actions"><a class="btn btn-lg" href="#/cabinet/today">В кабинет преподавателя →</a></p></div>`;
+  if (state === "student" || state === "expired" || state === "paused")
+    return `<div class="home-back card">
+        <p><strong>С возвращением${first ? `, ${escapeHtml(first)}` : ""}!</strong></p>
+        <p class="muted">Занятия от преподавателя, тренировка дня и ваш прогресс — в кабинете.</p>
+        <p class="actions"><a class="btn btn-lg" href="#/me">Продолжить в кабинете →</a></p>
+      </div>`;
+  if (state === "pending")
+    return `<div class="home-back card">
+        <p><strong>Регистрация прошла — ждём подтверждения преподавателя.</strong></p>
+        <p class="muted">Как только Павел Викторович подтвердит доступ, откроются все задания. Пока можно решать демо-задания и читать правила.</p>
+        <p class="actions"><a class="btn btn-lg" href="#/me">Мой кабинет →</a></p>
+      </div>`;
+  let been = false;
+  try {
+    been = !!localStorage.getItem("lx-was-student");
+  } catch {}
+  const join = `<a class="home-path" href="#apply">
+        <span class="home-path-ico" aria-hidden="true">🙋</span>
+        <span><strong>Хочу заниматься в студии</strong><span>Оставьте заявку — договоримся о времени и формате</span></span>
+        <span class="home-path-go" aria-hidden="true">›</span>
+      </a>`;
+  const login = `<a class="home-path${been ? " is-main" : ""}" href="#/login">
+        <span class="home-path-ico" aria-hidden="true">🔑</span>
+        <span><strong>${been ? "Войти в кабинет" : "Я уже занимаюсь в студии"}</strong><span>${been ? "Вы уже заходили с этого устройства" : "Вход в кабинет ученика. Первый раз — зарегистрируйтесь"}</span></span>
+        <span class="home-path-go" aria-hidden="true">›</span>
+      </a>`;
+  const tryit = `<a class="home-path" href="#/rules">
+        <span class="home-path-ico" aria-hidden="true">✏️</span>
+        <span><strong>Посмотреть, как всё устроено</strong><span>Правила и демо-задания ОГЭ и ЕГЭ — без регистрации</span></span>
+        <span class="home-path-go" aria-hidden="true">›</span>
+      </a>`;
+  return `<div class="home-start">
+      <p class="home-start-q">Что вы хотите сделать?</p>
+      ${been ? login + join : join + login}
+      ${tryit}
+      ${been ? "" : `<p class="home-start-note muted">Ученик студии? Зарегистрируйтесь <a href="#/login?mode=signup">здесь</a> — преподаватель подтвердит доступ, и откроется кабинет с занятиями.</p>`}
+    </div>`;
+}
+
 export function homePage(content) {
   const ruleCount = content.sections.reduce(
     (a, s) => a + s.chapters.reduce((b, c) => b + c.rules.length, 0),
@@ -237,23 +283,8 @@ export function homePage(content) {
           <li>Очно и онлайн</li>
           <li>Индивидуально или в группе до четырёх</li>
         </ul>
-        <a class="landing-teacher-hero" href="#teacher">
-          <img
-            class="landing-teacher-hero-photo"
-            src="./css/art/alekseev.jpg"
-            alt=""
-            width="48"
-            height="48"
-            decoding="async"
-          />
-          <span class="landing-teacher-hero-copy">
-            <strong>Павел Викторович Алексеев</strong>
-            <small>Основатель и ведущий преподаватель студии</small>
-          </span>
-        </a>
-        <div class="landing-cta home-actions">
-          <a class="btn btn-lg" href="#apply">Записаться</a>
-        </div>
+        <p class="landing-teacher-line">Ведёт <a href="#teacher">Павел Викторович Алексеев</a>, доктор филологических наук</p>
+        ${homeStartHtml()}
       </div>
       <figure class="landing-hero-art">
         <div class="landing-hero-frame">

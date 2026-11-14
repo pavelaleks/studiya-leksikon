@@ -5,13 +5,13 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land119";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land119";
-import { SOURCES, bankFiles } from "./teacher.js?v=land119";
+import { taskHref } from "./account.js?v=land120";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land120";
+import { SOURCES, bankFiles } from "./teacher.js?v=land120";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land119";
+} from "./exams.js?v=land120";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {

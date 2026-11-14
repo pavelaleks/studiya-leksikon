@@ -1843,3 +1843,104 @@ details.is-mastered {
 /* Черновик занятия */
 .l-draft { padding: 14px 16px; margin: 10px 0; border-left: 4px solid var(--accent, #8b2c2c); }
 .l-draft p { margin: 0 0 6px; }
+
+/* ---------- Помощник «Перо» ---------- */
+.lh-btn {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 45;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--accent);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
+  cursor: pointer;
+}
+.lh-btn svg { width: 26px; height: 26px; }
+.lh-btn:hover { transform: translateY(-1px); }
+body.is-reading .lh-btn { display: none; }
+.lh-bubble {
+  position: fixed;
+  right: 18px;
+  bottom: 82px;
+  z-index: 46;
+  max-width: 300px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px 16px 4px 16px;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+  animation: lh-pop 0.25s ease;
+}
+.lh-bubble p { margin: 0 0 10px; }
+.lh-bubble .actions { margin: 0; display: flex; gap: 8px; flex-wrap: wrap; }
+@keyframes lh-pop { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.lh-sheet { position: fixed; inset: 0; z-index: 70; }
+.lh-sheet[hidden] { display: none; }
+.lh-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.38); opacity: 0; transition: opacity 0.2s ease; }
+.lh-panel {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  width: min(420px, calc(100% - 36px));
+  max-height: min(78vh, 640px);
+  overflow: auto;
+  padding: 14px 16px 16px;
+  border-radius: 20px;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+  transform: translateY(16px);
+  opacity: 0;
+  transition: transform 0.22s ease, opacity 0.22s ease;
+}
+.lh-sheet.is-open .lh-backdrop { opacity: 1; }
+.lh-sheet.is-open .lh-panel { transform: none; opacity: 1; }
+.lh-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.lh-head > div { display: grid; flex: 1; }
+.lh-face { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent); }
+.lh-face svg { width: 22px; height: 22px; }
+.lh-x { border: 0; background: none; font-size: 28px; line-height: 1; color: var(--ink-soft); cursor: pointer; padding: 4px 8px; }
+.lh-item { border-top: 1px solid var(--line); padding: 10px 2px; }
+.lh-item summary { font-weight: 700; cursor: pointer; }
+.lh-item p { margin: 8px 0 0; }
+.lh-foot { margin: 10px 0 0; font-size: 14px; }
+@media (max-width: 760px) {
+  .lh-btn { right: 12px; bottom: calc(78px + env(safe-area-inset-bottom, 0px)); width: 46px; height: 46px; }
+  .lh-bubble { right: 66px; left: 12px; max-width: none; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); padding: 10px 12px; font-size: 14px; border-radius: 16px 16px 4px 16px; }
+  .lh-bubble p { margin-bottom: 8px; }
+  .lh-bubble .btn { padding: 6px 12px; min-height: 0; font-size: 14px; }
+  .lh-panel { left: 0; right: 0; bottom: 0; width: auto; border-radius: 22px 22px 0 0; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ---------- Главная: «Что вы хотите сделать?» ---------- */
+.landing-teacher-line { margin: 4px 0 14px; color: var(--ink-soft); }
+.home-start { display: grid; gap: 10px; margin-top: 8px; max-width: 560px; }
+.home-start-q { margin: 0 0 2px; font-weight: 700; font-size: 18px; }
+.home-path {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.home-path:hover { border-color: var(--accent); transform: translateY(-1px); }
+.home-path > span:nth-child(2) { display: grid; gap: 2px; flex: 1; }
+.home-path > span:nth-child(2) span { color: var(--ink-soft); font-size: 14px; }
+.home-path-ico { font-size: 24px; width: 32px; text-align: center; }
+.home-path-go { font-size: 24px; color: var(--ink-soft); }
+.home-path.is-main, .home-start > .home-path:first-of-type { border-color: var(--accent); background: var(--accent-soft); }
+.home-start-note { margin: 2px 0 0; font-size: 14px; }
+.home-back { padding: 16px 18px; margin-top: 10px; max-width: 560px; }
+.home-back p { margin: 0 0 6px; }
