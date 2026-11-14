@@ -1,20 +1,20 @@
-import { applyTheme, layout } from "./ui.js?v=land89";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land89";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land89";
-import { mountLiterature } from "./literature.js?v=land89";
-import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land89";
-import { mountRussian } from "./russian.js?v=land89";
-import { mountOge } from "./oge.js?v=land89";
-import { bindApplyForm } from "./apply.js?v=land89";
-import { EGE_TITLES } from "./ege.js?v=land89";
-import { renderExercise } from "./exercises.js?v=land89";
-import { mountTrainer } from "./trainers.js?v=land89";
-import { parseRoute } from "./route.js?v=land89";
+import { applyTheme, layout } from "./ui.js?v=land97";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land97";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land97";
+import { mountLiterature } from "./literature.js?v=land97";
+import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land97";
+import { mountRussian } from "./russian.js?v=land97";
+import { mountOge } from "./oge.js?v=land97";
+import { bindApplyForm } from "./apply.js?v=land97";
+import { EGE_TITLES } from "./ege.js?v=land97";
+import { renderExercise } from "./exercises.js?v=land97";
+import { mountTrainer } from "./trainers.js?v=land97";
+import { parseRoute } from "./route.js?v=land97";
 import { hasAccess, initAuth, mySolved, onAuthChange } from "./supa.js";
 import { markEgeDone, markOgeDone } from "./progress.js";
-import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land89";
-import { mountTeacher, teacherPage } from "./teacher.js?v=land89";
-import { lessonPage, mountLesson } from "./lessons.js?v=land89";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land97";
+import { mountTeacher, teacherPage } from "./teacher.js?v=land97";
+import { lessonPage, mountLesson } from "./lessons.js?v=land97";
 
 const app = document.getElementById("app");
 let content = null;
@@ -285,7 +285,7 @@ async function render() {
       return;
     }
     mountHtml(mePage(), "me");
-    setTitle(b === "daily" ? "Тренировка дня" : "Личный кабинет");
+    setTitle(b === "daily" ? "Тренировка дня" : String(b || "").startsWith("profile") ? "Мой профиль" : "Главная");
     await mountMe(app);
     return;
   }
@@ -325,6 +325,52 @@ app.addEventListener("click", (e) => {
     scrollToTop();
   }
 });
+
+/**
+ * Экран задания на телефоне: сверху «‹ 3 из 8 ›» с полосой прогресса, листание свайпом.
+ * Работает для всех разделов, где есть .lit-pager (ЕГЭ, ОГЭ, литература, занятия).
+ */
+function enhanceTask(root) {
+  const nav = root.querySelector(".lit-task-nav:not([data-done])");
+  if (nav) {
+    nav.dataset.done = "1";
+    const on = nav.querySelector(".is-active");
+    if (on) nav.scrollLeft = on.offsetLeft - nav.clientWidth / 2 + on.clientWidth / 2;
+  }
+  const article = root.querySelector(".lit-problem");
+  const pager = article?.querySelector(".lit-pager");
+  if (!article || !pager || article.querySelector(".task-bar")) return;
+  const links = [...pager.querySelectorAll("a")];
+  const prev = links.find((a) => /Предыдущ/.test(a.textContent));
+  const next = links.find((a) => /Следующ/.test(a.textContent));
+  const text = (pager.textContent + " " + (article.querySelector(".eyebrow")?.textContent || "")).replace(/\s+/g, " ");
+  const m = text.match(/(\d+) из (\d+)/);
+  const all = links.find((a) => /Все задания/.test(a.textContent));
+  const bar = document.createElement("div");
+  bar.className = "task-bar";
+  const pct = m ? Math.round((100 * Number(m[1])) / Number(m[2])) : 0;
+  bar.innerHTML = `
+    ${prev ? `<a class="tb-btn" href="${prev.getAttribute("href")}" aria-label="Предыдущее задание">‹</a>` : `<span class="tb-btn is-off" aria-hidden="true">‹</span>`}
+    <span class="tb-mid">${m ? `<span>${m[1]} из ${m[2]}</span><span class="today-bar"><span style="width:${pct}%"></span></span>` : all ? `<a href="${all.getAttribute("href")}">Все задания</a>` : ""}</span>
+    ${next ? `<a class="tb-btn" href="${next.getAttribute("href")}" aria-label="Следующее задание">›</a>` : `<span class="tb-btn is-off" aria-hidden="true">›</span>`}`;
+  article.prepend(bar);
+  let sx = 0, sy = 0, st = 0;
+  article.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1 || e.target.closest("input, textarea, canvas, select, .table-scroll, .lit-check")) return (st = 0);
+    sx = e.touches[0].clientX;
+    sy = e.touches[0].clientY;
+    st = Date.now();
+  }, { passive: true });
+  article.addEventListener("touchend", (e) => {
+    if (!st || Date.now() - st > 600 || String(getSelection?.() || "")) return;
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) < 80 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+    const go = dx < 0 ? next : prev;
+    if (go) location.hash = go.getAttribute("href");
+  }, { passive: true });
+}
+new MutationObserver(() => enhanceTask(app)).observe(app, { childList: true, subtree: true });
 
 // Нижнее меню «Ещё» и переключатель темы — делегированием, переживают перерисовку.
 app.addEventListener("click", (e) => {

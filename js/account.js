@@ -2,7 +2,7 @@
 import { escapeHtml } from "./ui.js";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, recommendations, recsHtml, selfExamHtml,
-} from "./dashboard.js?v=land89";
+} from "./dashboard.js?v=land97";
 import {
   accessState,
   currentProfile,
@@ -25,6 +25,7 @@ const STATUS_TEXT = {
   paused: "доступ приостановлен",
   archived: "в архиве",
 };
+const DAILY_GOAL_HOME = 10;
 const WORK_STATUS = { draft: "черновик", submitted: "на проверке", returned: "вернули на доработку", graded: "проверена" };
 
 /** Ссылка на задание по его месту в банке. */
@@ -244,18 +245,21 @@ export async function mountMe(root) {
     await mountDaily(root, await loadDashboard(), p);
     return;
   }
+  const isProfile = location.hash.startsWith("#/me/profile");
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land89").then((m) => m.myLessonsHtml()).catch(() => ""),
-    supa.from("task_stats").select("*").eq("student_id", user.id),
-    supa.from("my_mistakes").select("*").order("last_try", { ascending: false }),
-    supa
-      .from("written_works")
-      .select("id, status, score, max_score, body, created_at, tasks(source, bank_file, source_ref, task_no)")
-      .eq("student_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(50),
+    import("./lessons.js?v=land97").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
+    isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },
+    isProfile ? supa.from("my_mistakes").select("*").order("last_try", { ascending: false }) : { data: [] },
+    isProfile
+      ? supa
+          .from("written_works")
+          .select("id, status, score, max_score, body, created_at, tasks(source, bank_file, source_ref, task_no)")
+          .eq("student_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(50)
+      : { data: [] },
     supa.from("group_members").select("groups(title)").eq("student_id", user.id),
   ]);
   const groupNames = (myGroups.data || []).map((g) => g.groups?.title).filter(Boolean);
@@ -268,40 +272,116 @@ export async function mountMe(root) {
       : state === "paused" || state === "expired"
         ? `<div class="gate card"><p><strong>Доступ к банку приостановлен.</strong> Напишите преподавателю, чтобы продлить.</p></div>`
         : "";
-
-  host.innerHTML = `
-    <p class="eyebrow">Личный кабинет</p>
-    <h1>${escapeHtml(p?.full_name || user.email)}</h1>
-    <p class="lede">${p?.role === "teacher" ? "преподаватель" : escapeHtml(STATUS_TEXT[p?.status] || "")}${p?.grade && p?.role !== "teacher" ? ` · ${p.grade} класс` : ""}${p?.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""}${
-      p?.access_until ? ` · доступ до ${new Date(p.access_until).toLocaleDateString("ru-RU")}` : ""
-    }${groupNames.length ? ` · группа: ${escapeHtml(groupNames.join(", "))}` : ""}</p>
-    ${p?.role === "teacher" ? `<p class="actions"><a class="btn" href="#/cabinet">Кабинет преподавателя</a></p>` : ""}
-    ${pendingNote}
-    ${dash ? heroHtml(dash, p) + recsHtml(recommendations(dash, examCodeOf(p))) : ""}
-    ${p?.role !== "teacher" ? `
+  const code = examCodeOf(p);
+  const firstName = String(p?.full_name || "").trim().split(/\s+/)[0] || "";
+  const joinHtml = `
     <section class="me-section">
       <form id="me-join" class="t-filter card">
         <label>Код группы от преподавателя<input name="code" maxlength="12" autocomplete="off" placeholder="например, a1b2c3" /></label>
         <button class="btn secondary" type="submit">Вступить в группу</button>
         <p class="lit-result" id="me-join-status"></p>
       </form>
-    </section>` : ""}
-    ${lessonsHtml}
-    ${dash ? selfExamHtml(examCodeOf(p)) + badgesHtml(badges(dash, examCodeOf(p))) + howPointsHtml() : ""}
-    <section class="me-section"><h2>Прогресс по номерам</h2>${statsHtml(stats.data || [])}</section>
-    <section class="me-section"><h2>Тетрадь ошибок</h2>${mistakesHtml(mistakes.data || [])}</section>
-    <section class="me-section"><h2>Письменные работы</h2>${worksHtml(works.data || [])}</section>
-    <section class="me-section">
-      <h2>Профиль</h2>
-      <form id="me-form" class="stack card" style="padding:20px;max-width:560px">
-        <label>Имя и фамилия<input name="full_name" value="${escapeHtml(p?.full_name || "")}" maxlength="120" /></label>
-        <label>Telegram или телефон<input name="contact" value="${escapeHtml(p?.contact || "")}" maxlength="120" /></label>
-        <label>Новый пароль (если хотите сменить)<input type="password" name="password" minlength="8" autocomplete="new-password" /></label>
-        <div class="actions"><button class="btn" type="submit">Сохранить</button><button class="btn secondary" type="button" id="me-logout">Выйти</button></div>
-        <p class="lit-result" id="me-status" aria-live="polite"></p>
-      </form>
     </section>`;
 
+  if (!isProfile) {
+    const recs = dash ? recommendations(dash, code).filter((r) => !/^Цель дня/.test(r.title)).slice(0, 2) : [];
+    const lv = dash?.level;
+    const pct = lv ? (lv.to ? Math.round(((dash.total - lv.from) / (lv.to - lv.from)) * 100) : 100) : 0;
+    const goal = dash ? Math.min(100, Math.round((dash.todayCorrect / DAILY_GOAL_HOME) * 100)) : 0;
+    const today = new Date().toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" });
+    host.innerHTML = `
+      <header class="me-hello">
+        <div>
+          <p class="eyebrow">${escapeHtml(today)}</p>
+          <h1>${firstName ? `Привет, ${escapeHtml(firstName)}` : "Привет!"}</h1>
+        </div>
+        <span class="me-hello-side">
+          <a class="me-profile-link btn secondary" href="#/me/profile">Прогресс и профиль</a>
+          ${dash ? `<a class="me-streak" href="#/me/profile" aria-label="Серия дней: ${dash.streak}">🔥 ${dash.streak}</a>` : ""}
+        </span>
+      </header>
+      ${pendingNote}
+      ${
+        dash
+          ? `<a class="me-level card" href="#/me/profile">
+              <span class="me-level-n">${lv.n}</span>
+              <span class="me-level-body">
+                <span class="me-level-top"><strong>${escapeHtml(lv.name)}</strong><span class="muted">${dash.total} очков${dash.todayXp ? ` · +${dash.todayXp} сегодня` : ""}</span></span>
+                <span class="today-bar"><span style="width:${pct}%"></span></span>
+              </span>
+            </a>`
+          : ""
+      }
+      <section class="me-section me-today">
+        <h2>Сегодня</h2>
+        ${lessonsHtml || `<p class="muted me-empty">Новых заданий от преподавателя нет. Самое время для тренировки дня.</p>`}
+        ${
+          dash
+            ? `<a class="today-cta" href="#/me/daily">
+                <span><strong>Тренировка дня</strong><span>${dash.todayCorrect >= DAILY_GOAL_HOME ? "Цель выполнена — можно ещё" : "10 заданий: ошибки, слабые места и новое"}</span></span>
+                <span class="today-cta-n">${dash.todayCorrect}/${DAILY_GOAL_HOME}<span class="today-ring" style="--p:${goal}"></span></span>
+              </a>`
+            : ""
+        }
+      </section>
+      ${
+        recs.length
+          ? `<section class="me-section"><h2>Что дальше</h2><div class="me-recs">${recs
+              .map(
+                (r) => `<a class="me-rec" href="${r.href}"${r.scroll ? ` data-goto="${r.scroll}"` : ""}>
+                  <span class="me-rec-icon" aria-hidden="true">${r.icon}</span>
+                  <span><strong>${escapeHtml(r.title)}</strong><span class="muted">${escapeHtml(r.text)}</span></span>
+                  <span class="me-rec-go" aria-hidden="true">›</span>
+                </a>`
+              )
+              .join("")}</div></section>`
+          : ""
+      }
+      ${
+        state === "student"
+          ? `<section class="me-section"><div class="me-quick">
+              <a href="#/me/profile#mistakes"><span aria-hidden="true">↺</span>Тетрадь ошибок${dash?.mistakes?.length ? ` <b>${dash.mistakes.length}</b>` : ""}</a>
+              <a href="#/me/profile#self-exam"><span aria-hidden="true">⏱</span>Пробный экзамен</a>
+              <a href="#/library/poems"><span aria-hidden="true">🎭</span>Стихи наизусть</a>
+              <a href="#/library/read"><span aria-hidden="true">📖</span>Читать и отвечать</a>
+            </div></section>`
+          : ""
+      }
+      ${state !== "student" && !groupNames.length ? joinHtml : ""}`;
+  } else {
+    host.innerHTML = `
+      <header class="me-hello">
+        <div>
+          <p class="eyebrow">Мой профиль</p>
+          <h1>${escapeHtml(p?.full_name || user.email)}</h1>
+          <p class="muted">${escapeHtml(STATUS_TEXT[p?.status] || "")}${p?.grade ? ` · ${p.grade} класс` : ""}${p?.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""}${
+            p?.access_until ? ` · доступ до ${new Date(p.access_until).toLocaleDateString("ru-RU")}` : ""
+          }${groupNames.length ? ` · группа: ${escapeHtml(groupNames.join(", "))}` : ""}</p>
+        </div>
+      </header>
+      ${pendingNote}
+      ${dash ? heroHtml(dash, p) : ""}
+      ${dash ? badgesHtml(badges(dash, code)) : ""}
+      ${dash ? selfExamHtml(code) : ""}
+      ${lessonsHtml}
+      <section class="me-section"><h2>Прогресс по номерам</h2>${statsHtml(stats.data || [])}</section>
+      <section class="me-section" id="mistakes"><h2>Тетрадь ошибок</h2>${mistakesHtml(mistakes.data || [])}</section>
+      <section class="me-section"><h2>Письменные работы</h2>${worksHtml(works.data || [])}</section>
+      ${joinHtml}
+      ${dash ? howPointsHtml() : ""}
+      <section class="me-section">
+        <h2>Профиль</h2>
+        <form id="me-form" class="stack card" style="padding:20px;max-width:560px">
+          <label>Имя и фамилия<input name="full_name" value="${escapeHtml(p?.full_name || "")}" maxlength="120" autocomplete="name" /></label>
+          <label>Telegram или телефон<input name="contact" value="${escapeHtml(p?.contact || "")}" maxlength="120" /></label>
+          <label>Новый пароль (если хотите сменить)<input type="password" name="password" minlength="8" autocomplete="new-password" /></label>
+          <div class="actions"><button class="btn" type="submit">Сохранить</button><button class="btn secondary" type="button" id="me-logout">Выйти</button></div>
+          <p class="lit-result" id="me-status" aria-live="polite"></p>
+        </form>
+      </section>`;
+    const anchor = location.hash.split("#")[2];
+    if (anchor) requestAnimationFrame(() => host.querySelector(`#${CSS.escape(anchor)}`)?.scrollIntoView({ block: "start" }));
+  }
   host.querySelector("#me-join")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const st = host.querySelector("#me-join-status");
@@ -312,6 +392,12 @@ export async function mountMe(root) {
     st.textContent = error ? (/invalid code/.test(error.message) ? "Такого кода нет — проверьте у преподавателя." : humanError(error).message) : "Готово, вы в группе.";
   });
   bindSelfExam(host);
+  host.querySelectorAll("[data-goto]").forEach((a) =>
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      location.hash = `#/me/profile#${a.dataset.goto}`;
+    })
+  );
   host.querySelectorAll("[data-scroll]").forEach((a) =>
     a.addEventListener("click", (e) => {
       e.preventDefault();

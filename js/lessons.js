@@ -5,13 +5,13 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land89";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land89";
-import { SOURCES, bankFiles } from "./teacher.js?v=land89";
+import { taskHref } from "./account.js?v=land97";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land97";
+import { SOURCES, bankFiles } from "./teacher.js?v=land97";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land89";
+} from "./exams.js?v=land97";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -969,7 +969,7 @@ export async function lessonEditView(host, render, id) {
 const KIND_LABEL = { lesson: "Занятие", test: "Контрольная работа", exam: "Пробный экзамен" };
 
 /** Блок «Мои занятия и работы» для личного кабинета. */
-export async function myLessonsHtml() {
+export async function myLessonsHtml({ today = false } = {}) {
   const { data: lessons } = await supa
     .from("lessons")
     .select("id, title, status, kind, duration_minutes, starts_at, closes_at, notes, lesson_items(id, due_at, kind)")
@@ -985,6 +985,7 @@ export async function myLessonsHtml() {
   ]);
   const done = (itemId) =>
     (att || []).some((a) => a.item_id === itemId) || (works || []).some((w) => w.item_id === itemId && w.status !== "draft");
+  if (today) return todayLessonsHtml(lessons, done, sessions || []);
   const rows = lessons
     .map((l) => {
       const its = l.lesson_items || [];
@@ -1008,6 +1009,63 @@ export async function myLessonsHtml() {
     })
     .join("");
   return `<section class="me-section"><h2>Мои занятия и работы</h2><div class="lit-list">${rows}</div></section>`;
+}
+
+/** «сегодня до 18:00», «завтра до 9:30», «до 17 нояб., 18:00». */
+function fmtDue(d) {
+  const t = new Date(d);
+  const time = t.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((day(t) - day(new Date())) / 86400000);
+  if (diff === 0) return `сегодня до ${time}`;
+  if (diff === 1) return `завтра до ${time}`;
+  if (diff < 0) return `срок прошёл ${t.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}`;
+  return `до ${t.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}, ${time}`;
+}
+
+/** Главная ученика: только то, что ещё нужно сделать, — ближайший срок сверху. */
+function todayLessonsHtml(lessons, done, sessions) {
+  const now = Date.now();
+  const open = lessons
+    .map((l) => {
+      const its = l.lesson_items || [];
+      const n = its.filter((i) => done(i.id)).length;
+      const due = its.map((i) => i.due_at).filter(Boolean).sort()[0] || null;
+      const s = sessions.find((x) => x.lesson_id === l.id);
+      let finished = n === its.length && its.length > 0;
+      let state = "";
+      if (l.duration_minutes) {
+        const ends = s ? new Date(s.started_at).getTime() + l.duration_minutes * 60000 : 0;
+        finished = !!s && (!!s.finished_at || now > ends);
+        state = !s ? `${durationText(l.duration_minutes)} на работу` : "идёт — вернись к работе";
+      }
+      const closed = l.closes_at && !s && new Date(l.closes_at).getTime() < now;
+      return { l, its, n, due, finished: finished || closed || l.status === "done", state, live: !!s && !finished };
+    })
+    .filter((x) => !x.finished && x.its.length)
+    .sort((a, b) => (b.live - a.live) || ((a.due ? Date.parse(a.due) : Infinity) - (b.due ? Date.parse(b.due) : Infinity)));
+  if (!open.length) return "";
+  return open
+    .map(({ l, its, n, due, state, live }) => {
+      const pct = its.length ? Math.round((100 * n) / its.length) : 0;
+      const soon = due && Date.parse(due) - now < 36 * 3600000;
+      return `
+      <a class="today-card${live ? " is-live" : ""}" href="#/lesson/${l.id}">
+        <span class="today-chips">
+          <span class="chip">${escapeHtml(KIND_LABEL[l.kind] || "Занятие")}</span>
+          ${due ? `<span class="chip ${soon ? "is-hot" : ""}">${fmtDue(due)}</span>` : ""}
+          ${l.closes_at ? `<span class="chip">начать ${fmtDue(l.closes_at).replace(/^до /, "до ")}</span>` : ""}
+        </span>
+        <strong>${escapeHtml(l.title)}</strong>
+        ${
+          l.duration_minutes
+            ? `<span class="muted">${escapeHtml(state)}</span>`
+            : `<span class="muted">${its.length} ${its.length % 10 === 1 && its.length % 100 !== 11 ? "задание" : its.length % 10 >= 2 && its.length % 10 <= 4 && (its.length % 100 < 12 || its.length % 100 > 14) ? "задания" : "заданий"} · сделано ${n}</span>
+               <span class="today-bar"><span style="width:${pct}%"></span></span>`
+        }
+      </a>`;
+    })
+    .join("");
 }
 
 async function loadMyLesson(id) {
@@ -1121,7 +1179,7 @@ function lessonOverview(host, { lesson, items }, att, works, timed) {
     })
     .join("");
   host.innerHTML = `
-    <p class="crumbs"><a href="#/me">← Личный кабинет</a></p>
+    <p class="crumbs"><a href="#/me">← Главная</a></p>
     <p class="eyebrow">${escapeHtml(KIND_LABEL[lesson.kind] || "Занятие")}${lesson.starts_at ? ` · ${fmtDT(lesson.starts_at)}` : ""}${lesson.status === "done" ? " · завершено" : ""}</p>
     <h1>${escapeHtml(lesson.title)}</h1>
     ${lesson.notes ? `<p class="lede">${escapeHtml(lesson.notes)}</p>` : ""}

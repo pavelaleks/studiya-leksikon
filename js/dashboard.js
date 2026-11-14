@@ -4,7 +4,7 @@
  * Очки начисляет сервер (таблица xp_events), здесь — только показ и подсказки.
  */
 import { escapeHtml } from "./ui.js";
-import { EXAMS, composeVariant, durationText } from "./exams.js?v=land89";
+import { EXAMS, composeVariant, durationText } from "./exams.js?v=land97";
 import { currentUser, humanError, supa } from "./supa.js";
 
 const LEVELS = [
@@ -406,7 +406,7 @@ export async function mountDaily(root, d, profile) {
   const href = (t) =>
     t.source === "ege-rus" ? `#/ege/${t.task_no}/${t.source_ref}` : t.source === "oge-rus" ? `#/oge/${t.task_no}/${t.source_ref}` : `#/literature/${t.task_no}/${t.source_ref}`;
   host.innerHTML = `
-    <p class="crumbs"><a href="#/me">← Личный кабинет</a></p>
+    <p class="crumbs"><a href="#/me">← Главная</a></p>
     <p class="eyebrow">Тренировка дня · ${escapeHtml(EXAMS[code].title)}</p>
     <h1>${doneN === list.length && list.length ? "Тренировка выполнена! 🎉" : `Решено ${doneN} из ${list.length}`}</h1>
     <p class="lede">Подборка на сегодня: ошибки, слабые места и новые номера. Открой задание, реши и возвращайся сюда.</p>

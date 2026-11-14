@@ -5196,7 +5196,7 @@ body.rv-lock {
   filter: none;
   border-style: solid;
   border-color: var(--gold);
-  background: #fff8e8;
+  background: color-mix(in srgb, var(--gold) 12%, var(--card));
 }
 .dash-how {
   padding: 12px 16px;

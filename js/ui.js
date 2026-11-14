@@ -52,10 +52,11 @@ function tabbar(active) {
   } else {
     const tasks = tasksHref();
     items = [
-      ["#/me", "home", "Главная", active === "me" && !hash.startsWith("#/me/password")],
+      ["#/me", "home", "Главная", active === "me" && !hash.startsWith("#/me/password") && !hash.startsWith("#/me/profile")],
       [tasks, "pencil", "Задания", ["ege", "oge"].includes(active) || (active === "literature" && hash.startsWith("#/literature"))],
       ["#/rules", "rules", "Правила", active === "rules" || active === "practice"],
       ["#/library", "books", "Читать", active === "literature" && hash.startsWith("#/library")],
+      ["#/me/profile", "user", "Я", active === "me" && (hash.startsWith("#/me/profile") || hash.startsWith("#/me/password"))],
     ];
   }
   const links = items

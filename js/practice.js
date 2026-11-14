@@ -5,7 +5,7 @@
  *  - письменная работа: черновик, фото, сдача на проверку, оценка.
  */
 import { escapeHtml } from "./ui.js";
-import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land89";
+import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land97";
 import {
   accessState,
   currentUser,
@@ -171,6 +171,9 @@ export function bindCheck(root, problem, { sanitize, onCorrect, item = null, exa
       }
       if (res.correct) {
         setResult("Верно!", "is-ok");
+        try {
+          navigator.vibrate?.(25);
+        } catch {}
         revealRow.hidden = true;
         solution.innerHTML = solutionHtml(sanitize, res);
         onCorrect?.();
