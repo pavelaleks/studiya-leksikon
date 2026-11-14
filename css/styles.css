@@ -18,6 +18,10 @@
   --radius: 18px;
   --serif: "Literata", "Iowan Old Style", "Palatino Linotype", serif;
   --sans: "Manrope", "Segoe UI", sans-serif;
+  --surface: #ffffff;
+  --accent-fill: #6f2d32;
+  --accent-fill-hover: #8a3b41;
+  --on-accent: #ffffff;
 }
 
 * {
@@ -61,7 +65,7 @@ a:hover {
   left: 12px;
   top: -48px;
   z-index: 40;
-  background: var(--accent);
+  background: var(--accent-fill);
   color: #fff;
   padding: 8px 12px;
   border-radius: 8px;
@@ -109,7 +113,7 @@ a:hover {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--paper);
   display: grid;
   place-items: center;
@@ -444,7 +448,7 @@ h1 {
 
 .lg-z {
   color: var(--accent);
-  background: #fff;
+  background: var(--surface);
   border-bottom: 2px solid var(--gold);
   padding: 0 4px;
 }
@@ -606,7 +610,7 @@ h1 {
 .btn {
   appearance: none;
   border: 0;
-  background: linear-gradient(180deg, var(--accent-hover) 0%, var(--accent) 100%);
+  background: var(--accent-fill);
   color: #fff;
   font: inherit;
   font-weight: 700;
@@ -649,7 +653,7 @@ h1 {
 
 .btn.secondary:hover {
   color: var(--accent);
-  background: #fff;
+  background: var(--surface);
   box-shadow: 0 12px 24px rgba(30, 25, 20, 0.1);
 }
 
@@ -674,7 +678,7 @@ h1 {
 }
 
 .pill.active {
-  background: var(--accent);
+  background: var(--accent-fill);
   color: #fff;
   border-color: var(--accent);
 }
@@ -690,7 +694,7 @@ h1 {
   padding: 12px 14px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--surface);
   font: inherit;
   cursor: pointer;
 }
@@ -752,7 +756,7 @@ select {
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--surface);
 }
 
 textarea {
@@ -1250,7 +1254,7 @@ body.is-loading .site-footer {
   padding: 12px 14px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--surface);
   font: inherit;
 }
 
@@ -1682,7 +1686,7 @@ body.is-landing main {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--accent-fill);
 }
 
 .landing-teacher-hero {
@@ -1699,14 +1703,14 @@ body.is-landing main {
   text-decoration: none;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: rgba(255, 253, 248, 0.62);
+  background: color-mix(in srgb, var(--card) 62%, transparent);
   transition: border-color 0.16s ease, background 0.16s ease;
 }
 
 .landing-teacher-hero:hover {
   color: var(--ink);
   border-color: rgba(111, 45, 50, 0.32);
-  background: rgba(255, 253, 248, 0.92);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
 }
 
 .landing-teacher-hero-copy {
@@ -2001,7 +2005,7 @@ body.is-landing main {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--accent-fill);
 }
 
 .landing-program-focus {
@@ -2025,7 +2029,7 @@ body.is-landing main {
   margin: 0 0 10px;
   padding: 14px 18px;
   border-left: 3px solid var(--accent);
-  background: rgba(255, 253, 248, 0.6);
+  background: color-mix(in srgb, var(--card) 60%, transparent);
   color: var(--ink);
   font-size: 15px;
   line-height: 1.5;
@@ -2115,7 +2119,7 @@ body.is-landing main {
   padding: 0;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: rgba(255, 253, 248, 0.55);
+  background: color-mix(in srgb, var(--card) 55%, transparent);
 }
 
 .landing-faq-item summary {
@@ -2356,7 +2360,7 @@ body.is-landing main {
   padding: 18px 18px 16px;
   border-radius: 20px;
   border: 1px solid var(--line);
-  background: rgba(255, 253, 248, 0.72);
+  background: color-mix(in srgb, var(--card) 72%, transparent);
   box-shadow: 0 10px 24px rgba(30, 25, 20, 0.04);
 }
 
@@ -2398,7 +2402,7 @@ body.is-landing main {
   padding: 18px 20px;
   border-radius: 16px;
   border: 1px dashed var(--line);
-  background: rgba(255, 253, 248, 0.5);
+  background: color-mix(in srgb, var(--card) 50%, transparent);
 }
 
 .landing-learn-soon {
@@ -2429,7 +2433,7 @@ body.is-landing main {
 
 .landing-learn-links a:hover {
   border-color: rgba(111, 45, 50, 0.35);
-  background: #fff;
+  background: var(--surface);
   color: inherit;
   transform: translateY(-1px);
 }
@@ -2476,7 +2480,7 @@ body.is-landing main {
 .lit-task-chip.is-active {
   color: #fff;
   border-color: transparent;
-  background: linear-gradient(180deg, var(--accent-hover) 0%, var(--accent) 100%);
+  background: var(--accent-fill);
   box-shadow: 0 8px 18px rgba(111, 45, 50, 0.2);
 }
 
@@ -2504,7 +2508,7 @@ body.is-landing main {
 .landing-studio-meta {
   padding: 18px 20px;
   border-radius: 18px;
-  background: rgba(255, 253, 248, 0.72);
+  background: color-mix(in srgb, var(--card) 72%, transparent);
   border: 1px solid var(--line);
 }
 
@@ -2658,7 +2662,7 @@ body.is-landing main {
 .trainer-progress span {
   display: block;
   height: 100%;
-  background: var(--accent);
+  background: var(--accent-fill);
 }
 
 .trainer-title {
@@ -2680,7 +2684,7 @@ body.is-landing main {
   padding: 2px 10px;
   border: 2px solid var(--line);
   border-radius: 10px;
-  background: rgba(255, 253, 248, 0.8);
+  background: color-mix(in srgb, var(--card) 80%, transparent);
   font-weight: 700;
   color: var(--ink-soft);
 }
@@ -2696,7 +2700,7 @@ body.is-landing main {
   padding: 6px;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: rgba(255, 253, 248, 0.7);
+  background: color-mix(in srgb, var(--card) 70%, transparent);
   margin-bottom: 8px;
 }
 
@@ -2715,7 +2719,7 @@ body.is-landing main {
 }
 
 .trainer-nn-btn.active {
-  background: var(--accent);
+  background: var(--accent-fill);
   color: #fff;
 }
 
@@ -2739,7 +2743,7 @@ body.is-landing main {
 }
 
 .trainer-comma-slot:hover {
-  background: rgba(30, 25, 20, 0.06);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
   color: var(--ink-soft);
 }
 
@@ -2875,7 +2879,7 @@ body.is-landing main {
   overflow: auto;
   border-radius: 14px;
   background:
-    linear-gradient(135deg, rgba(246, 240, 230, 0.95), rgba(255, 252, 246, 0.98));
+    linear-gradient(135deg, color-mix(in srgb, var(--paper) 95%, transparent), color-mix(in srgb, var(--card) 98%, transparent));
   border: 1px solid var(--line);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
   font-size: clamp(0.95rem, 1.5vw, 1.08rem);
@@ -2926,7 +2930,7 @@ body.is-landing main {
   padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: rgba(255, 253, 248, 0.85);
+  background: color-mix(in srgb, var(--card) 85%, transparent);
   color: inherit;
   font: inherit;
   cursor: pointer;
@@ -2970,14 +2974,14 @@ body.is-landing main {
   width: 28px;
   height: 28px;
   border-radius: 999px;
-  background: rgba(30, 25, 20, 0.06);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
   font-weight: 700;
   font-size: 0.92rem;
   flex-shrink: 0;
 }
 
 .basis-option.on .basis-opt-id {
-  background: var(--accent);
+  background: var(--accent-fill);
   color: #fff;
 }
 
@@ -3030,7 +3034,7 @@ body.is-landing main {
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid var(--line);
-  background: rgba(255, 253, 248, 0.92);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
 }
 
 .basis-reveal-head {
@@ -3241,7 +3245,7 @@ body.is-landing main {
   padding: 12px 14px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: rgba(255, 253, 248, 0.7);
+  background: color-mix(in srgb, var(--card) 70%, transparent);
 }
 
 .basis-comment summary {
@@ -3464,7 +3468,7 @@ body.is-landing main {
 }
 
 .lit-topic:hover {
-  background: rgba(255, 255, 255, 0.55);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
 }
 
 .lit-topic-n {
@@ -3627,7 +3631,7 @@ body.is-landing main {
 .lit-topic-chip.is-active {
   color: #fff;
   border-color: transparent;
-  background: var(--accent);
+  background: var(--accent-fill);
 }
 
 .lit-topic-chip.is-active small {
@@ -3705,7 +3709,7 @@ body.is-landing main {
   padding: 14px 16px;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: rgba(255, 253, 248, 0.78);
+  background: color-mix(in srgb, var(--card) 78%, transparent);
 }
 
 .lit-html {
@@ -3777,7 +3781,7 @@ body.is-landing main {
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: #fff;
+  background: var(--surface);
   color: inherit;
   font: inherit;
   line-height: 1.5;
@@ -4358,7 +4362,7 @@ body.is-landing main {
   min-width: 20px;
   padding: 0 7px;
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--accent-fill);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -4530,7 +4534,7 @@ tr.t-bad strong {
 .l-head .l-title:hover,
 .l-head .l-title:focus {
   border-color: var(--line);
-  background: #fff;
+  background: var(--surface);
 }
 .lesson-status {
   display: inline-block;
@@ -4766,7 +4770,7 @@ tr.l-hidden td {
   padding: 4px 8px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: #fff;
+  background: var(--surface);
   font-weight: 600;
   cursor: pointer;
 }
@@ -4859,7 +4863,7 @@ tr.l-hidden td {
   border-radius: 999px;
   border: 1px solid #d0021b;
   color: #d0021b;
-  background: #fff;
+  background: var(--surface);
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
@@ -4922,7 +4926,7 @@ tr.l-hidden td {
   border-radius: 10px;
   border: 1px solid var(--line);
   cursor: zoom-in;
-  background: #fff;
+  background: var(--surface);
 }
 .rv-photo canvas {
   cursor: crosshair;
@@ -4980,7 +4984,7 @@ tr.l-hidden td {
   height: auto;
   touch-action: none;
   cursor: crosshair;
-  background: #fff;
+  background: var(--surface);
 }
 .rv-loading {
   color: #fff;
@@ -4996,7 +5000,7 @@ body.rv-lock {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 8px 12px 10px;
-  background: #fff;
+  background: var(--surface);
 }
 .rv-crit legend {
   padding: 0 4px;
@@ -5060,7 +5064,7 @@ body.rv-lock {
     min-height: 36px;
     padding: 6px 14px;
     border-radius: 999px;
-    background: var(--accent);
+    background: var(--accent-fill);
     color: #fff !important;
     font-size: 14px;
     font-weight: 700;
@@ -5099,7 +5103,7 @@ body.rv-lock {
   width: 58px;
   height: 58px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--accent-fill);
   color: #fff;
   font-family: var(--serif);
   font-size: 26px;
@@ -5109,7 +5113,7 @@ body.rv-lock {
 .dash-bar {
   height: 10px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.08);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
   overflow: hidden;
   margin: 6px 0 4px;
 }
@@ -5117,7 +5121,7 @@ body.rv-lock {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--accent), #c0563c);
+  background: linear-gradient(90deg, var(--accent-fill), #c0563c);
   transition: width 0.6s ease;
 }
 .dash-bar-goal span {
@@ -5134,7 +5138,7 @@ body.rv-lock {
   flex-direction: column;
   padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.7);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
 }
 .dash-stats strong {
   font-size: 22px;
@@ -5275,7 +5279,7 @@ body.is-reading .site-footer { display: none; }
   min-width: 40px; height: 36px; font-size: 0.9rem; cursor: pointer;
 }
 .reader-progress { height: 3px; background: var(--r-line); }
-.reader-progress span { display: block; height: 100%; background: var(--accent); }
+.reader-progress span { display: block; height: 100%; background: var(--accent-fill); }
 .reader-text {
   font-family: var(--serif); font-size: var(--reader-size); line-height: 1.65; max-width: 38em; margin: 0 auto;
   padding: 18px 18px 8px; hyphens: auto; -webkit-hyphens: auto; overflow-wrap: break-word;
@@ -5321,7 +5325,7 @@ body.is-reading .site-footer { display: none; }
 .poem-hidden { background: var(--paper-deep); color: transparent; border-radius: 4px; cursor: pointer; user-select: none; }
 .poem-hidden.is-open { background: transparent; color: inherit; }
 .poem-date { margin-top: 6px; }
-.poem-check textarea { width: 100%; font-family: var(--serif); font-size: 1.08rem; line-height: 1.55; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: #fff; }
+.poem-check textarea { width: 100%; font-family: var(--serif); font-size: 1.08rem; line-height: 1.55; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); }
 .poem-score { font-weight: 700; margin: 14px 0 6px; }
 .poem-score.is-ok { color: var(--ok); }
 .poem-diff { font-family: var(--serif); font-size: 1.05rem; line-height: 1.55; margin-top: 10px; padding: 14px 16px; border-radius: 12px; background: var(--paper); }

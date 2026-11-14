@@ -2,7 +2,7 @@
 import { escapeHtml } from "./ui.js";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, recommendations, recsHtml, selfExamHtml,
-} from "./dashboard.js?v=land84";
+} from "./dashboard.js?v=land89";
 import {
   accessState,
   currentProfile,
@@ -232,6 +232,10 @@ export async function mountMe(root) {
   }
   const p = currentProfile() || (await refreshProfile());
   const state = accessState();
+  if (state === "teacher" && !location.hash.startsWith("#/me/")) {
+    location.hash = "#/cabinet";
+    return;
+  }
   if (location.hash.startsWith("#/me/daily")) {
     if (state !== "student") {
       location.hash = "#/me";
@@ -240,8 +244,10 @@ export async function mountMe(root) {
     await mountDaily(root, await loadDashboard(), p);
     return;
   }
-  const dash = state === "student" ? await loadDashboard().catch(() => null) : null;
-  const [stats, mistakes, works, myGroups] = await Promise.all([
+  // Все запросы кабинета — одной волной.
+  const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
+    state === "student" ? loadDashboard().catch(() => null) : null,
+    import("./lessons.js?v=land89").then((m) => m.myLessonsHtml()).catch(() => ""),
     supa.from("task_stats").select("*").eq("student_id", user.id),
     supa.from("my_mistakes").select("*").order("last_try", { ascending: false }),
     supa
@@ -280,7 +286,7 @@ export async function mountMe(root) {
         <p class="lit-result" id="me-join-status"></p>
       </form>
     </section>` : ""}
-    ${await (await import("./lessons.js?v=land84")).myLessonsHtml().catch(() => "")}
+    ${lessonsHtml}
     ${dash ? selfExamHtml(examCodeOf(p)) + badgesHtml(badges(dash, examCodeOf(p))) + howPointsHtml() : ""}
     <section class="me-section"><h2>Прогресс по номерам</h2>${statsHtml(stats.data || [])}</section>
     <section class="me-section"><h2>Тетрадь ошибок</h2>${mistakesHtml(mistakes.data || [])}</section>

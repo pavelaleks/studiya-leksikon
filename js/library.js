@@ -212,7 +212,9 @@ async function workView(host, id) {
 const THEMES = ["paper", "sepia", "night"];
 
 function readerPrefs() {
-  return { size: 19, theme: "paper", ...(store("prefs") || {}) };
+  const t = document.documentElement.getAttribute("data-theme");
+  const dark = t === "dark" || (!t && matchMedia("(prefers-color-scheme: dark)").matches);
+  return { size: 19, theme: dark ? "night" : "paper", ...(store("prefs") || {}) };
 }
 
 async function readerView(host, id, n) {

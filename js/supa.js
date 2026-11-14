@@ -19,21 +19,52 @@ let session = null;
 let profile = null;
 const listeners = new Set();
 
+const PROFILE_KEY = "leksikon-profile";
+
+function cachedProfile(uid) {
+  try {
+    const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || "null");
+    return p && p.id === uid ? p : null;
+  } catch {
+    return null;
+  }
+}
+
 async function loadProfile() {
   if (!session) {
     profile = null;
+    try {
+      localStorage.removeItem(PROFILE_KEY);
+    } catch {}
     return null;
   }
   const { data, error } = await supa.from("me").select("*").maybeSingle();
-  if (error) console.warn("profile", error);
+  if (error) {
+    console.warn("profile", error);
+    return profile;
+  }
   profile = data || null;
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  } catch {}
   return profile;
 }
 
 export async function initAuth() {
   const { data } = await supa.auth.getSession();
   session = data.session;
-  await loadProfile();
+  // Профиль с прошлого раза — страница открывается сразу; свежий подтягиваем фоном.
+  // Доступ к данным всё равно проверяет база (RLS), кэш влияет только на вид страницы.
+  const cached = session ? cachedProfile(session.user.id) : null;
+  if (cached) {
+    profile = cached;
+    const before = JSON.stringify(cached);
+    loadProfile().then((p) => {
+      if (JSON.stringify(p) !== before) listeners.forEach((fn) => fn(p));
+    });
+  } else {
+    await loadProfile();
+  }
   // Внутри обработчика нельзя ждать других запросов к Supabase: они делят блокировку сессии
   // (иначе «Lock … was released because another request stole it»). Поэтому работа — после него.
   supa.auth.onAuthStateChange((event, next) => {

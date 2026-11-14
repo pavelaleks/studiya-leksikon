@@ -1,20 +1,20 @@
-import { layout } from "./ui.js?v=land84";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land84";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land84";
-import { mountLiterature } from "./literature.js?v=land84";
-import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land84";
-import { mountRussian } from "./russian.js?v=land84";
-import { mountOge } from "./oge.js?v=land84";
-import { bindApplyForm } from "./apply.js?v=land84";
-import { EGE_TITLES } from "./ege.js?v=land84";
-import { renderExercise } from "./exercises.js?v=land84";
-import { mountTrainer } from "./trainers.js?v=land84";
-import { parseRoute } from "./route.js?v=land84";
+import { applyTheme, layout } from "./ui.js?v=land89";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land89";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land89";
+import { mountLiterature } from "./literature.js?v=land89";
+import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land89";
+import { mountRussian } from "./russian.js?v=land89";
+import { mountOge } from "./oge.js?v=land89";
+import { bindApplyForm } from "./apply.js?v=land89";
+import { EGE_TITLES } from "./ege.js?v=land89";
+import { renderExercise } from "./exercises.js?v=land89";
+import { mountTrainer } from "./trainers.js?v=land89";
+import { parseRoute } from "./route.js?v=land89";
 import { hasAccess, initAuth, mySolved, onAuthChange } from "./supa.js";
 import { markEgeDone, markOgeDone } from "./progress.js";
-import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land84";
-import { mountTeacher, teacherPage } from "./teacher.js?v=land84";
-import { lessonPage, mountLesson } from "./lessons.js?v=land84";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land89";
+import { mountTeacher, teacherPage } from "./teacher.js?v=land89";
+import { lessonPage, mountLesson } from "./lessons.js?v=land89";
 
 const app = document.getElementById("app");
 let content = null;
@@ -101,8 +101,12 @@ function bindHomeSearch() {
   });
 }
 
+// Правила (≈1 МБ) нужны только этим разделам; кабинеты и библиотека их не ждут.
+const NEEDS_CONTENT = new Set(["", "formats", "apply", "learn", "contact", "materials", "about", "teacher", "faq", "rules", "rule", "practice", "exercise"]);
+
 async function render() {
-  if (!content) {
+  const first = parseRoute().parts[0] || "";
+  if (!content && NEEDS_CONTENT.has(first)) {
     document.body.classList.add("is-loading");
     mountHtml(skeletonHtml(), "", { hideFooter: true });
     setTitle("Загрузка");
@@ -118,6 +122,7 @@ async function render() {
     }
     document.body.classList.remove("is-loading");
   }
+  document.body.classList.remove("is-loading");
 
   const { parts, q } = parseRoute();
   const [a, b] = parts;
@@ -320,6 +325,34 @@ app.addEventListener("click", (e) => {
     scrollToTop();
   }
 });
+
+// Нижнее меню «Ещё» и переключатель темы — делегированием, переживают перерисовку.
+app.addEventListener("click", (e) => {
+  const sheet = app.querySelector("#more-sheet");
+  if (e.target.closest("[data-more]") && sheet) {
+    sheet.hidden = false;
+    requestAnimationFrame(() => sheet.classList.add("is-open"));
+    return;
+  }
+  if (sheet && !sheet.hidden && (e.target.closest("[data-close]") || e.target.closest(".sheet-panel a"))) {
+    sheet.classList.remove("is-open");
+    setTimeout(() => (sheet.hidden = true), 200);
+  }
+  const t = e.target.closest("[data-theme-set]");
+  if (t) {
+    applyTheme(t.dataset.themeSet);
+    markTheme();
+  }
+});
+function markTheme() {
+  let m = "auto";
+  try {
+    m = localStorage.getItem("leksikon-theme") || "auto";
+  } catch {}
+  app.querySelectorAll("[data-theme-set]").forEach((b) => b.classList.toggle("is-on", b.dataset.themeSet === m));
+}
+new MutationObserver(markTheme).observe(app, { childList: true });
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => applyTheme());
 
 // Заставка сразу, а не пустой экран; правила грузятся параллельно с проверкой входа.
 document.body.classList.add("is-loading");
