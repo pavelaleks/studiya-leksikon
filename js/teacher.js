@@ -1,18 +1,18 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land123";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land124";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land123";
+import { taskHref } from "./account.js?v=land124";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land123";
-import { readingView } from "./teacher-reading.js?v=land123";
-import { optionsOf } from "./practice.js?v=land123";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land123";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land123";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land123";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land124";
+import { readingView } from "./teacher-reading.js?v=land124";
+import { optionsOf } from "./practice.js?v=land124";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land124";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land124";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land124";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land123";
+} from "./review.js?v=land124";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -493,22 +493,55 @@ const fmtDateTime = (d) => (d ? new Date(d).toLocaleString("ru-RU", { dateStyle:
 
 /* ---------- Ученики под псевдонимами ---------- */
 const SITE_URL = "https://pavelaleks.github.io/studiya-leksikon/";
-const credsHtml = (login, password, name) => `
+/** Готовое сообщение ученику: сайт, логин, пароль и короткая инструкция. */
+function studentMessage(login, password, fresh = true) {
+  return [
+    fresh ? "Привет! Это твой доступ к кабинету студии «Лексикон»." : "Привет! Твой новый пароль для кабинета студии «Лексикон».",
+    "",
+    `Сайт: ${SITE_URL}#/login`,
+    `Логин: ${login}`,
+    password ? `Пароль: ${password}` : "",
+    "",
+    "Как войти:",
+    "1. Открой ссылку выше (или сайт → «Войти», на телефоне кнопка внизу экрана).",
+    "2. Введи логин и пароль — так, как они написаны здесь.",
+    "3. На «Главной» — задания от меня и «Тренировка дня». Заходи каждый день: растёт серия и очки.",
+    "",
+    "Совет: добавь сайт на экран телефона — в браузере «Поделиться» → «На экран „Домой“».",
+    "Пароль можно сменить в разделе «Я». Забудешь пароль — напиши мне, я задам новый.",
+  ]
+    .filter((line, i, arr) => !(line === "" && arr[i - 1] === ""))
+    .join("\n");
+}
+export const credsHtml = (login, password, name, fresh = true) => {
+  const msg = studentMessage(login, password, fresh);
+  return `
   <div class="t-creds card">
-    <p><strong>Передайте ученику${name ? ` (${escapeHtml(name)})` : ""}:</strong></p>
-    <p>Сайт: <b>${SITE_URL}</b> → «Войти»<br>Логин: <b class="t-mono">${escapeHtml(login)}</b>${password ? `<br>Пароль: <b class="t-mono">${escapeHtml(password)}</b>` : ""}</p>
-    <p class="actions"><button class="btn secondary" type="button" data-copy="${escapeHtml(`Сайт: ${SITE_URL}\nЛогин: ${login}${password ? `\nПароль: ${password}` : ""}`)}">Скопировать</button></p>
-    <p class="muted">Кто скрывается за псевдонимом, записывайте у себя (в блокноте или телефоне), а не на сайте.</p>
+    <p><strong>Сообщение для ученика${name ? ` (${escapeHtml(name)})` : ""}</strong> — скопируйте и отправьте в мессенджер:</p>
+    <textarea class="t-msg" readonly rows="${msg.split("\n").length + 1}">${escapeHtml(msg)}</textarea>
+    <p class="actions"><button class="btn" type="button" data-copy>Скопировать сообщение</button> <span class="muted" data-copy-status></span></p>
+    <p class="muted">Кто скрывается за псевдонимом, запишите у себя (в блокноте или телефоне), а не на сайте. Пароль после закрытия страницы больше не показывается — при необходимости задайте новый.</p>
   </div>`;
-function bindCopy(root) {
+};
+export function bindCopy(root) {
   root.querySelectorAll("[data-copy]").forEach((b) =>
     b.addEventListener("click", async () => {
+      const box = b.closest(".t-creds");
+      const area = box.querySelector(".t-msg");
+      const status = box.querySelector("[data-copy-status]");
+      let ok = false;
       try {
-        await navigator.clipboard.writeText(b.dataset.copy);
-        b.textContent = "Скопировано";
+        await navigator.clipboard.writeText(area.value);
+        ok = true;
       } catch {
-        b.textContent = "Выделите и скопируйте вручную";
+        area.focus();
+        area.select();
+        try {
+          ok = document.execCommand("copy");
+        } catch {}
       }
+      status.textContent = ok ? "Скопировано — вставьте в чат с учеником" : "Не получилось скопировать автоматически: текст выделен, нажмите «Копировать» вручную";
+      if (ok) b.textContent = "Скопировано ✓";
     })
   );
 }
@@ -614,7 +647,7 @@ function bindAccountBlock(host, p) {
     e.target.disabled = true;
     try {
       await resetStudentPassword(p.id, pw);
-      out.innerHTML = credsHtml(loginOf(p.email), pw, p.full_name);
+      out.innerHTML = credsHtml(loginOf(p.email), pw, p.full_name, false);
       bindCopy(out);
     } catch (err) {
       out.innerHTML = `<p class="lit-result is-bad">${escapeHtml(err.message)}</p>`;
