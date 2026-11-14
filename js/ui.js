@@ -35,11 +35,11 @@ function tabbar(active) {
   if (state === "teacher") {
     const sub = (hash.match(/^#\/cabinet\/?([a-z]*)/) || [])[1] || "";
     items = [
-      ["#/cabinet/lessons", "calendar", "Занятия", active === "teacher" && (sub === "" || sub === "lessons" || sub === "lesson")],
+      ["#/cabinet/today", "home", "Сегодня", active === "teacher" && (sub === "" || sub === "today")],
+      ["#/cabinet/lessons", "calendar", "Занятия", active === "teacher" && (sub === "lessons" || sub === "lesson")],
       ["#/cabinet/students", "users", "Ученики", active === "teacher" && (sub === "students" || sub === "student")],
       ["#/cabinet/works", "check", "Работы", active === "teacher" && sub === "works"],
-      ["#/library", "books", "Читать", active === "literature" && hash.startsWith("#/library")],
-      ["more", "dots", "Ещё", active === "teacher" && ["bank", "groups", "reading"].includes(sub)],
+      ["more", "dots", "Ещё", (active === "teacher" && ["bank", "groups", "reading"].includes(sub)) || active === "literature" || active === "rules"],
     ];
   } else if (state === "guest") {
     items = [
@@ -75,6 +75,7 @@ function tabbar(active) {
             <a role="menuitem" href="#/cabinet/bank">Банк заданий</a>
             <a role="menuitem" href="#/cabinet/groups">Группы</a>
             <a role="menuitem" href="#/cabinet/reading">Чтение и стихи</a>
+            <a role="menuitem" href="#/library">Библиотека</a>
             <a role="menuitem" href="#/rules">Правила</a>
             <a role="menuitem" href="#/ege">ЕГЭ</a>
             <a role="menuitem" href="#/oge">ОГЭ</a>

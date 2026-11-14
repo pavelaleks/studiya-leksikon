@@ -5,13 +5,13 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land97";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land97";
-import { SOURCES, bankFiles } from "./teacher.js?v=land97";
+import { taskHref } from "./account.js?v=land100";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land100";
+import { SOURCES, bankFiles } from "./teacher.js?v=land100";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land97";
+} from "./exams.js?v=land100";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -194,8 +194,19 @@ export async function lessonsListView(host, render) {
     .join("");
   const examOpts = Object.entries(EXAMS).map(([k, v]) => `<option value="${k}">${escapeHtml(v.title)} — ${durationText(v.minutes)}</option>`).join("");
   render(`
-    <h1>Занятия и работы</h1>
-    <form id="l-new" class="card stack l-new">
+    <header class="tt-head">
+      <h1>Занятия и работы</h1>
+      <button type="button" class="btn l-open-desk" data-open-new>+ Новое занятие</button>
+    </header>
+    <button type="button" class="fab" data-open-new aria-label="Новое занятие">+</button>
+    <form id="l-new" class="card stack l-new" data-step="1" hidden>
+      <div class="l-sheet-head">
+        <strong>Новая работа</strong>
+        <span class="l-steps muted"><span id="l-step-n">1</span> из 3</span>
+        <button type="button" class="l-x" data-close-new aria-label="Закрыть">×</button>
+      </div>
+      <fieldset class="l-step" data-n="1">
+      <legend class="l-step-title">Что за работа</legend>
       <div class="grid-2">
         <label>Вид работы<select name="kind">${Object.entries(WORK_KIND).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label>
         <label>Название<input name="title" placeholder="Задание 16: запятые при однородных членах" /></label>
@@ -209,19 +220,66 @@ export async function lessonsListView(host, render) {
         <label>Время на работу, мин<input type="number" name="duration" min="5" max="600" placeholder="без ограничения" /></label>
         <label>Результат ученику<select name="show_results">${Object.entries(SHOW_RESULTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label>
       </div>
-      ${targetPickerHtml(groups, students)}
-      <div class="grid-2">
-        <label>Когда (открыть с)<input type="datetime-local" name="starts_at" /></label>
-        <label data-for="timed" hidden>Начать можно до<input type="datetime-local" name="closes_at" /></label>
-      </div>
-      <button class="btn" type="submit">Создать</button>
+      </fieldset>
+      <fieldset class="l-step" data-n="2">
+        <legend class="l-step-title">Кому назначить</legend>
+        ${targetPickerHtml(groups, students)}
+      </fieldset>
+      <fieldset class="l-step" data-n="3">
+        <legend class="l-step-title">Когда открыть</legend>
+        <div class="grid-2">
+          <label>Когда (открыть с)<input type="datetime-local" name="starts_at" /></label>
+          <label data-for="timed" hidden>Начать можно до<input type="datetime-local" name="closes_at" /></label>
+        </div>
+      </fieldset>
       <p class="lit-result" id="l-new-status"></p>
+      <div class="l-step-nav">
+        <button type="button" class="btn secondary" data-step-prev>Назад</button>
+        <button type="button" class="btn" data-step-next>Далее</button>
+        <button class="btn" type="submit">Создать</button>
+      </div>
     </form>
     <p class="muted">Новая работа — черновик: ученики увидят её, когда вы нажмёте «Открыть ученикам».</p>
     <div class="lit-list">${rows || '<p class="muted">Пока ничего нет.</p>'}</div>`);
 
   const form = host.querySelector("#l-new");
   bindPicker(form);
+  // Создание: на компьютере — карточка целиком, на телефоне — шторка по шагам «Что → Кому → Когда».
+  const stepNo = form.querySelector("#l-step-n");
+  const setStep = (n) => {
+    form.dataset.step = String(n);
+    stepNo.textContent = String(n);
+    form.scrollTop = 0;
+  };
+  const openNew = () => {
+    form.hidden = false;
+    setStep(1);
+    document.body.classList.add("is-sheet");
+    requestAnimationFrame(() => form.classList.add("is-open"));
+    if (matchMedia("(min-width: 761px)").matches) form.scrollIntoView({ behavior: "smooth", block: "start" });
+    form.querySelector('[name="title"]').focus({ preventScroll: true });
+  };
+  const closeNew = () => {
+    form.classList.remove("is-open");
+    document.body.classList.remove("is-sheet");
+    setTimeout(() => (form.hidden = true), 200);
+  };
+  host.querySelectorAll("[data-open-new]").forEach((b) => b.addEventListener("click", openNew));
+  form.querySelector("[data-close-new]").addEventListener("click", closeNew);
+  form.querySelector("[data-step-prev]").addEventListener("click", () => setStep(Math.max(1, Number(form.dataset.step) - 1)));
+  form.querySelector("[data-step-next]").addEventListener("click", () => {
+    const n = Number(form.dataset.step);
+    const st = form.querySelector("#l-new-status");
+    if (n === 2 && !form.querySelector('[name="group_id"]')?.value && !pickedStudents(form).length) {
+      st.className = "lit-result is-bad";
+      st.textContent = "Выберите группу и/или отдельных учеников.";
+      return;
+    }
+    st.textContent = "";
+    setStep(Math.min(3, n + 1));
+  });
+  window.addEventListener("hashchange", () => document.body.classList.remove("is-sheet"), { once: true });
+  if (/[?&]new=1/.test(location.hash)) openNew();
   const kindSel = form.querySelector('[name="kind"]');
   const examSel = form.querySelector('[name="exam_code"]');
   const dur = form.querySelector('[name="duration"]');

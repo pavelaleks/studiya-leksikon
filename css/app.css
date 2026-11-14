@@ -758,3 +758,328 @@ label,
     display: none;
   }
 }
+
+/* ---------- Преподаватель: «Сегодня» ---------- */
+.tt-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.tt-head h1 {
+  margin: 2px 0 0;
+}
+.tt-head .eyebrow::first-letter {
+  text-transform: uppercase;
+}
+.tt-list {
+  display: grid;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--card);
+}
+.tt-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  min-height: 64px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.tt-row + .tt-row {
+  border-top: 1px solid var(--line);
+}
+.tt-row:hover {
+  background: color-mix(in srgb, var(--paper-deep) 50%, transparent);
+}
+.tt-row:active {
+  background: var(--paper-deep);
+}
+.tt-body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.tt-body .muted {
+  font-size: 0.88rem;
+}
+.tt-go {
+  color: var(--ink-soft);
+  font-size: 1.4rem;
+}
+.tt-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  margin-left: 4px;
+  border-radius: 999px;
+  background: var(--accent-fill);
+  color: #fff;
+  font-size: 0.8rem;
+}
+.tt-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.tt-stats > div {
+  display: grid;
+  gap: 2px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+.tt-stats strong {
+  font-size: 1.4rem;
+}
+.tt-stats span {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+/* ---------- Новое занятие: «+» и шаги ---------- */
+.fab {
+  display: none;
+}
+.l-sheet-head,
+.l-step-nav [data-step-prev],
+.l-step-nav [data-step-next] {
+  display: none;
+}
+.l-step {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.l-step-title {
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding: 0;
+  margin-bottom: 4px;
+}
+@media (min-width: 761px) {
+  .l-new[hidden] {
+    display: none !important;
+  }
+  .l-sheet-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .l-sheet-head .l-steps {
+    display: none;
+  }
+  .l-x {
+    margin-left: auto;
+    border: 0;
+    background: none;
+    font-size: 1.6rem;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+}
+@media (max-width: 760px) {
+  .l-open-desk {
+    display: none;
+  }
+  .fab {
+    display: grid;
+    place-items: center;
+    position: fixed;
+    right: 16px;
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    z-index: 30;
+    width: 58px;
+    height: 58px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--accent-fill);
+    color: #fff;
+    font-size: 2rem;
+    line-height: 1;
+    box-shadow: 0 10px 26px rgba(60, 20, 25, 0.35);
+    cursor: pointer;
+  }
+  body.is-sheet {
+    overflow: hidden;
+  }
+  body.is-sheet .tabbar,
+  body.is-sheet .fab {
+    display: none;
+  }
+  .l-new {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 70;
+    max-height: 92vh;
+    overflow: auto;
+    margin: 0;
+    padding: 0 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.3);
+    transform: translateY(100%);
+    transition: transform 0.22s ease;
+  }
+  .l-new.is-open {
+    transform: none;
+  }
+  .l-sheet-head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 0 10px;
+    background: var(--card);
+  }
+  .l-sheet-head strong {
+    font-size: 1.1rem;
+  }
+  .l-x {
+    margin-left: auto;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 1.4rem;
+    cursor: pointer;
+  }
+  .l-new .l-step {
+    display: none;
+  }
+  .l-new[data-step="1"] .l-step[data-n="1"],
+  .l-new[data-step="2"] .l-step[data-n="2"],
+  .l-new[data-step="3"] .l-step[data-n="3"] {
+    display: grid;
+  }
+  .l-step-nav {
+    display: flex;
+    gap: 10px;
+    position: sticky;
+    bottom: 0;
+    padding-top: 10px;
+    background: var(--card);
+  }
+  .l-step-nav .btn {
+    flex: 1;
+  }
+  .l-new[data-step="1"] [data-step-prev] {
+    visibility: hidden;
+  }
+  .l-new:not([data-step="3"]) [data-step-next],
+  .l-new[data-step="2"] [data-step-prev],
+  .l-new[data-step="3"] [data-step-prev] {
+    display: inline-flex;
+  }
+  .l-new:not([data-step="3"]) button[type="submit"] {
+    display: none;
+  }
+  .l-new[data-step="1"] [data-step-prev] {
+    display: inline-flex;
+  }
+}
+
+/* ---------- Проверка работы ---------- */
+.rv-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 12px;
+}
+.rv-nav .tb-btn {
+  flex: none;
+  width: 44px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 1.5rem;
+  text-decoration: none;
+}
+.rv-nav .tb-btn.is-off {
+  opacity: 0.35;
+}
+.rv-nav .tb-mid {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  text-align: center;
+  font-weight: 700;
+}
+.rv-nav .tb-mid .muted {
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+.rv-dock {
+  display: none;
+}
+@media (max-width: 760px) {
+  .rv-dock {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+    z-index: 35;
+    padding: 10px 14px;
+    background: color-mix(in srgb, var(--card) 94%, transparent);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--line);
+  }
+  .rv-dock-total {
+    font-size: 1.05rem;
+    min-width: 56px;
+  }
+  .rv-dock-total b {
+    font-size: 1.3rem;
+  }
+  .rv-dock .btn {
+    flex: 1;
+    min-height: 46px;
+  }
+  /* поле главы формы с кнопками внизу уже есть в доке — оставляем «Сохранить без отправки» */
+  #t-grade .actions .btn:not([value="keep"]) {
+    display: none;
+  }
+  #t-grade {
+    margin-bottom: 70px;
+  }
+}
+.l-step-title {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 1rem;
+  color: var(--ink);
+}
+@media (max-width: 760px) {
+  body.is-sheet::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 65;
+    background: rgba(0, 0, 0, 0.38);
+  }
+}

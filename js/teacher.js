@@ -1,14 +1,14 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land97";
+import { taskHref } from "./account.js?v=land100";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land97";
-import { readingView } from "./teacher-reading.js?v=land97";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land97";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land100";
+import { readingView } from "./teacher-reading.js?v=land100";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land100";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land97";
+} from "./review.js?v=land100";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -214,6 +214,7 @@ async function saveTasks(built) {
 /* ------------------------------------------------------------------ */
 
 const TABS = [
+  ["today", "Сегодня"],
   ["lessons", "Занятия"],
   ["students", "Ученики"],
   ["works", "Проверка работ"],
@@ -256,11 +257,12 @@ export async function mountTeacher(root, parts) {
     host.innerHTML = `<div class="empty">Этот раздел — только для преподавателя. Вы вошли как ученик. <a href="#/me">В личный кабинет</a></div>`;
     return;
   }
-  const [tab = "lessons", sub, arg] = parts;
+  const [tab = "today", sub, arg] = parts;
   const b = await badges().catch(() => ({}));
   const active = tab === "student" ? "students" : tab === "lesson" ? "lessons" : tab;
   const render = (body) => (host.innerHTML = shell(active, body, b));
   try {
+    if (tab === "today") return await todayView(host, render);
     if (tab === "lessons") return await lessonsListView(host, render);
     if (tab === "lesson") return await lessonEditView(host, render, sub);
     if (tab === "students") return await studentsView(host, render);
@@ -280,6 +282,115 @@ export async function mountTeacher(root, parts) {
     console.error(err);
     render(`<div class="empty">Ошибка: ${escapeHtml(err.message)}</div>`);
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Сегодня: только то, что требует внимания                            */
+/* ------------------------------------------------------------------ */
+
+function agoText(d) {
+  const h = Math.floor((Date.now() - new Date(d).getTime()) / 3600000);
+  if (h < 1) return "меньше часа назад";
+  if (h < 24) return `${h} ч назад`;
+  const days = Math.floor(h / 24);
+  return `${days} ${days % 10 === 1 && days % 100 !== 11 ? "день" : days % 10 >= 2 && days % 10 <= 4 && (days % 100 < 12 || days % 100 > 14) ? "дня" : "дней"} назад`;
+}
+
+async function todayView(host, render) {
+  const dayStart = new Date();
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(dayStart.getTime() + 86400000);
+  const fiveDays = new Date(Date.now() - 5 * 86400000).toISOString();
+  const [pending, queue, live, todayLessons, todayAtt, recentAtt, recentWorks, students] = await Promise.all([
+    supa.from("profiles").select("id, full_name, email, created_at").eq("status", "pending").order("created_at"),
+    supa.from("written_works").select("id, submitted_at, profiles(full_name, email), tasks(source, task_no)").eq("status", "submitted").order("submitted_at"),
+    supa.from("lessons").select("id, title, kind, duration_minutes, exam_sessions(student_id, started_at, finished_at)").eq("status", "live").not("duration_minutes", "is", null),
+    supa.from("lessons").select("id, title, kind, status, starts_at").gte("starts_at", dayStart.toISOString()).lt("starts_at", dayEnd.toISOString()).order("starts_at"),
+    supa.from("attempts").select("student_id, is_correct").gte("created_at", dayStart.toISOString()).limit(5000),
+    supa.from("attempts").select("student_id").gte("created_at", fiveDays).limit(5000),
+    supa.from("written_works").select("student_id").gte("updated_at", fiveDays).limit(2000),
+    supa.from("profiles").select("id, full_name, email").neq("role", "teacher").eq("status", "active").order("full_name"),
+  ]);
+  const now = Date.now();
+  const liveRows = (live.data || [])
+    .map((l) => {
+      const ss = l.exam_sessions || [];
+      const going = ss.filter((x) => !x.finished_at && now < new Date(x.started_at).getTime() + l.duration_minutes * 60000);
+      return { l, going: going.length, done: ss.filter((x) => x.finished_at).length, started: ss.length };
+    })
+    .filter((x) => x.going > 0);
+  const active = new Set([...(recentAtt.data || []).map((a) => a.student_id), ...(recentWorks.data || []).map((w) => w.student_id)]);
+  const idle = (students.data || []).filter((p) => !active.has(p.id));
+  const att = todayAtt.data || [];
+  const solvers = new Set(att.map((a) => a.student_id)).size;
+  const q = queue.data || [];
+  const name = (p) => escapeHtml(p?.full_name || p?.email || "ученик");
+  const row = (href, title, sub, extra = "") => `
+    <a class="tt-row" href="${href}">
+      <span class="tt-body"><strong>${title}</strong><span class="muted">${sub}</span></span>
+      ${extra}<span class="tt-go" aria-hidden="true">›</span>
+    </a>`;
+  const blocks = [];
+  if (liveRows.length)
+    blocks.push(
+      liveRows
+        .map(({ l, going, done, started }) =>
+          row(`#/cabinet/lesson/${l.id}`, `<span class="chip is-hot">идёт сейчас</span> ${escapeHtml(l.title)}`, `пишут ${going} · сдали ${done} · начали ${started}`)
+        )
+        .join("")
+    );
+  blocks.push(
+    row(
+      q.length ? `#/cabinet/works/${q[0].id}` : "#/cabinet/works",
+      q.length ? `Проверить работы <span class="tt-count">${q.length}</span>` : "Работы проверены",
+      q.length ? `самая давняя — ${name(q[0].profiles)}, ${agoText(q[0].submitted_at)}` : "новых работ нет"
+    )
+  );
+  if ((pending.data || []).length)
+    blocks.push(
+      row(
+        "#/cabinet/students",
+        `Заявки учеников <span class="tt-count">${pending.data.length}</span>`,
+        pending.data.slice(0, 3).map(name).join(", ") + (pending.data.length > 3 ? "…" : "")
+      )
+    );
+  (todayLessons.data || []).forEach((l) =>
+    blocks.push(
+      row(
+        `#/cabinet/lesson/${l.id}`,
+        escapeHtml(l.title),
+        `сегодня в ${new Date(l.starts_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}${l.status === "draft" ? " · черновик — откройте ученикам" : ""}`
+      )
+    )
+  );
+  render(`
+    <header class="tt-head">
+      <div>
+        <p class="eyebrow">${escapeHtml(new Date().toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" }))}</p>
+        <h1>Сегодня</h1>
+      </div>
+      <a class="btn" href="#/cabinet/lessons?new=1">+ Новое занятие</a>
+    </header>
+    <div class="tt-list">${blocks.join("")}</div>
+    <section class="me-section">
+      <h2>Ученики сегодня</h2>
+      <div class="tt-stats">
+        <div><strong>${solvers}</strong><span>занимались</span></div>
+        <div><strong>${att.length}</strong><span>ответов</span></div>
+        <div><strong>${att.length ? Math.round((100 * att.filter((a) => a.is_correct).length) / att.length) : 0}%</strong><span>верных</span></div>
+      </div>
+    </section>
+    ${
+      idle.length
+        ? `<section class="me-section">
+        <h2>Не занимались 5+ дней <span class="muted">${idle.length}</span></h2>
+        <div class="tt-list">${idle
+          .slice(0, 8)
+          .map((p) => row(`#/cabinet/student/${p.id}`, name(p), "ни заданий, ни работ за 5 дней"))
+          .join("")}</div>
+      </section>`
+        : ""
+    }`);
 }
 
 /** Отдельная страница входа для преподавателя (ссылка внизу сайта). Регистрации здесь нет. */
@@ -562,6 +673,18 @@ async function workReview(host, render, id) {
     .maybeSingle();
   if (error) throw humanError(error);
   if (!w) return render(`<div class="empty">Работа не найдена.</div>`);
+  // Очередь «ждут проверки»: стрелки к соседним работам, после оценки — сразу следующая.
+  const { data: queueRows } = await supa
+    .from("written_works")
+    .select("id, profiles(full_name, email)")
+    .eq("status", "submitted")
+    .order("submitted_at", { ascending: true })
+    .limit(300);
+  const queue = queueRows || [];
+  const qi = queue.findIndex((x) => x.id === id);
+  const qPrev = qi > 0 ? queue[qi - 1] : null;
+  const qNext = qi >= 0 ? queue[qi + 1] || null : queue[0] && queue[0].id !== id ? queue[0] : null;
+  const studentName = w.profiles?.full_name || w.profiles?.email || "ученик";
   const { data: full } = w.task_id ? await supa.rpc("teacher_get_task", { p_task: w.task_id }) : { data: null };
   let passage = "";
   if (w.tasks?.passage_id) {
@@ -587,6 +710,11 @@ async function workReview(host, render, id) {
 
   render(`
     <p class="crumbs"><a href="#/cabinet/works">← Все работы</a></p>
+    <nav class="rv-nav" aria-label="Очередь проверки">
+      ${qPrev ? `<a class="tb-btn" href="#/cabinet/works/${qPrev.id}" aria-label="Предыдущая работа">‹</a>` : `<span class="tb-btn is-off" aria-hidden="true">‹</span>`}
+      <span class="tb-mid"><span>${escapeHtml(studentName)}</span><span class="muted">${qi >= 0 ? `в очереди ${qi + 1} из ${queue.length}` : queue.length ? `в очереди ещё ${queue.length}` : "очередь пуста"}</span></span>
+      ${qNext ? `<a class="tb-btn" href="#/cabinet/works/${qNext.id}" aria-label="Следующая работа">›</a>` : `<span class="tb-btn is-off" aria-hidden="true">›</span>`}
+    </nav>
     <h1>${escapeHtml(w.profiles?.full_name || w.profiles?.email || "Работа")}</h1>
     <p class="lede">${escapeHtml(SOURCES[w.tasks?.source]?.title || "")} · задание ${w.tasks?.task_no ?? ""} · № ${escapeHtml(String(w.tasks?.source_ref || ""))} · ${WORK_STATUS[w.status]} · сдано ${fmtDateTime(w.submitted_at)}</p>
     <details class="lit-solution"><summary>Условие задания</summary>${passage ? `<div class="lit-html rv-passage">${passage}</div>` : ""}<div class="lit-html">${w.tasks?.data?.questionHtml || ""}</div></details>
@@ -596,7 +724,7 @@ async function workReview(host, render, id) {
       <h2>Ответ ученика <small class="muted">${words} сл.</small></h2>
       ${
         body.trim()
-          ? `<p class="muted">Выделите мышью слово или фрагмент — появится панель пометок.</p>
+          ? `<p class="muted">Выделите слово или фрагмент (на телефоне — долгим нажатием) — появится панель пометок.</p>
         <div class="card rv-body" id="rv-body">${markedTextHtml(body, ann.text)}</div>
         <div id="rv-pop" class="rv-pop" hidden>
           ${Object.entries(MARKS).map(([k, m]) => `<button type="button" data-mark="${k}" class="rv-chip rv-${k}" title="${escapeHtml(m.title)}">${escapeHtml(m.label)}</button>`).join("")}
@@ -635,6 +763,11 @@ async function workReview(host, render, id) {
           <button class="btn secondary" type="submit" name="act" value="keep">Сохранить без отправки</button>
         </div>
         <p class="lit-result" id="t-grade-status"></p>
+        <div class="rv-dock" aria-label="Оценка">
+          <span class="rv-dock-total" id="rv-dock-total">—</span>
+          <button type="button" class="btn secondary" data-dock="returned">Вернуть</button>
+          <button type="button" class="btn" data-dock="graded">Готово</button>
+        </div>
       </form>
     </section>`);
 
@@ -664,7 +797,7 @@ async function workReview(host, render, id) {
     frag.querySelectorAll(".rv-tag").forEach((x) => x.remove());
     return frag.textContent.length;
   };
-  bodyEl?.addEventListener("mouseup", () => {
+  const onSelect = () => {
     const s = window.getSelection();
     if (!s || s.isCollapsed || !bodyEl.contains(s.anchorNode) || !bodyEl.contains(s.focusNode)) {
       pop.hidden = true;
@@ -684,7 +817,10 @@ async function workReview(host, render, id) {
     pop.style.top = `${rect.bottom - box.top + 6}px`;
     pop.hidden = false;
     pop.querySelector("#rv-note").value = "";
-  });
+  };
+  bodyEl?.addEventListener("mouseup", onSelect);
+  // на телефоне выделение заканчивается не «мышью», а пальцем
+  bodyEl?.addEventListener("touchend", () => setTimeout(onSelect, 350));
   pop?.querySelectorAll("[data-mark]").forEach((b) =>
     b.addEventListener("click", () => {
       if (!sel) return;
@@ -751,6 +887,11 @@ async function workReview(host, render, id) {
     form.querySelector("#rv-total").innerHTML = has
       ? `Итого: <b>${res.total}</b> из ${res.max}${res.filled ? "" : ' <span class="muted">— не все критерии отмечены</span>'}`
       : "";
+    const dock = host.querySelector("#rv-dock-total");
+    if (dock) {
+      const manual = form.querySelector('[name="score"]')?.value;
+      dock.innerHTML = has ? `<b>${res.total}</b>/${res.max}` : manual ? `<b>${escapeHtml(manual)}</b>` : "—";
+    }
     // выставить нули, которых требуют правила
     Object.entries(res.scores).forEach(([code, v]) => {
       if (res.raw[code] !== v) {
@@ -810,7 +951,15 @@ async function workReview(host, render, id) {
         : act === "returned"
           ? "Работа возвращена на доработку — ученик видит ваши пометки и комментарий."
           : "Оценка отправлена — ученик видит баллы, пометки и комментарий в кабинете.";
+    if (!err && act !== "keep" && qNext) {
+      st.textContent += " Открываю следующую работу…";
+      setTimeout(() => (location.hash = `#/cabinet/works/${qNext.id}`), 1200);
+    }
   });
+  host.querySelectorAll("[data-dock]").forEach((b) =>
+    b.addEventListener("click", () => form.requestSubmit(form.querySelector(`button[type="submit"][value="${b.dataset.dock}"]`)))
+  );
+  form.querySelector('[name="score"]')?.addEventListener("input", showTotal);
 }
 
 /* ------------------------------------------------------------------ */

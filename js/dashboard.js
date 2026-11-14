@@ -4,7 +4,7 @@
  * Очки начисляет сервер (таблица xp_events), здесь — только показ и подсказки.
  */
 import { escapeHtml } from "./ui.js";
-import { EXAMS, composeVariant, durationText } from "./exams.js?v=land97";
+import { EXAMS, composeVariant, durationText } from "./exams.js?v=land100";
 import { currentUser, humanError, supa } from "./supa.js";
 
 const LEVELS = [
