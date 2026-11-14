@@ -1680,3 +1680,84 @@ body.is-sheet-open {
 details.is-mastered {
   border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
 }
+
+/* ---------- Задания ЕГЭ к тексту в библиотеке ---------- */
+.reader-tasks {
+  margin: 2em 0 1em;
+  padding: 14px 14px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--r-line, var(--line));
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  font-family: var(--sans);
+}
+.reader-tasks-h {
+  margin: 0;
+  font-weight: 800;
+  font-size: 0.95rem;
+  text-indent: 0;
+}
+.reader-tasks-sub {
+  margin: 2px 0 10px;
+  font-size: 0.8rem;
+  opacity: 0.75;
+  text-indent: 0;
+}
+.reader-tasks-list,
+.wt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.rt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  font-family: var(--sans);
+  font-size: 0.85rem;
+}
+.rt-chip b {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-fill);
+  color: #fff;
+  font-size: 0.8rem;
+}
+.rt-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rt-chip.is-written b {
+  background: var(--forest);
+}
+.reader.theme-night .rt-chip {
+  background: #26231f;
+  color: var(--r-ink);
+  border-color: var(--r-line);
+}
+.wt-group {
+  margin-bottom: 10px;
+  padding: 12px 14px;
+}
+.wt-group summary {
+  cursor: pointer;
+  padding: 2px 0 8px;
+}
+.wt-topics {
+  margin: 0 0 8px;
+  padding-left: 1.2em;
+  display: grid;
+  gap: 6px;
+}

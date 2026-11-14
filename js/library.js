@@ -4,7 +4,7 @@ import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
 import { accessState, currentUser, humanError, supa } from "./supa.js";
 
-const DATA_VER = "lib1";
+const DATA_VER = "lib2";
 const ROOT = new URL("js/library-data/", new URL(BASE, location.href));
 const cache = new Map();
 
@@ -21,6 +21,66 @@ function load(path) {
 }
 
 const catalog = () => load("catalog.json");
+const workTasks = () => load("work-tasks.json").catch(() => ({}));
+
+const TASK_INFO = {
+  1: ["Краткий ответ", false],
+  2: ["Соответствие", false],
+  3: ["Термины", false],
+  4: ["Развёрнутый ответ", true],
+  5: ["Анализ и сопоставление", true],
+};
+
+/** Задания ЕГЭ к фрагменту главы — под текстом в читалке. */
+function chapterTasksHtml(list) {
+  if (!list.length) return "";
+  return `
+    <aside class="reader-tasks">
+      <p class="reader-tasks-h">Проверь себя по этому фрагменту</p>
+      <p class="reader-tasks-sub">Задания ЕГЭ по литературе, построенные на тексте этой главы</p>
+      <div class="reader-tasks-list">${list
+        .map(
+          ([id, n]) => `<a class="rt-chip${TASK_INFO[n]?.[1] ? " is-written" : ""}" href="#/literature/${n}/${id}">
+            <b>${n}</b><span>${escapeHtml(TASK_INFO[n]?.[0] || "Задание")}${TASK_INFO[n]?.[1] ? " · письменно" : ""}</span></a>`
+        )
+        .join("")}</div>
+    </aside>`;
+}
+
+/** Блок на странице произведения: задания 1–5 по номерам и сочинение (задание 11). */
+function workTasksHtml(w, wt) {
+  if (!wt || (!wt.tasks.length && !wt.essays.length)) return "";
+  const byNo = {};
+  wt.tasks.forEach(([id, n, ch]) => (byNo[n] = byNo[n] || []).push([id, ch]));
+  const tasksBlock = wt.tasks.length
+    ? `
+      <section class="me-section" id="tasks">
+        <h2>Задания ЕГЭ по тексту <span class="muted">${wt.tasks.length}</span></h2>
+        <p class="muted">Каждое задание построено на фрагменте произведения. ${w.toc ? "Номер главы — откуда фрагмент: можно сначала прочитать её." : ""} Задания 4 и 5 — развёрнутый ответ, его проверит преподаватель.</p>
+        ${Object.entries(byNo)
+          .map(
+            ([n, list]) => `
+          <details class="wt-group card" ${n === "1" ? "open" : ""}>
+            <summary><b>Задание ${n}</b> · ${escapeHtml(TASK_INFO[n]?.[0] || "")} <span class="muted">${list.length}</span></summary>
+            <div class="wt-chips">${list
+              .map(([id, ch], k) => `<a class="rt-chip" href="#/literature/${n}/${id}"><b>${k + 1}</b><span>${ch != null && w.toc?.[ch] ? escapeHtml(w.toc[ch].t.length <= 6 ? `гл. ${w.toc[ch].t}` : w.toc[ch].t) : "фрагмент"}</span></a>`)
+              .join("")}</div>
+          </details>`
+          )
+          .join("")}
+      </section>`
+    : "";
+  const essayBlock = wt.essays.length
+    ? `
+      <section class="me-section" id="essay">
+        <h2>Сочинение по произведению <span class="muted">· по желанию</span></h2>
+        ${wt.topics.length ? `<ul class="wt-topics">${wt.topics.slice(0, 6).map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ul>` : ""}
+        <p class="muted">В задании 11 пять тем — выбери ту, что про «${escapeHtml(w.title)}». Сочинение проверит преподаватель по критериям ФИПИ: 15 очков за сдачу и до 40 после проверки.</p>
+        <p class="actions"><a class="btn" href="#/literature/11/${wt.essays[Math.floor(Math.random() * wt.essays.length)]}">Написать сочинение</a></p>
+      </section>`
+    : "";
+  return tasksBlock + essayBlock;
+}
 const poemsData = () => load("poems.json");
 const textPart = (id, n) => load(`texts/${id}-${n}.json`);
 
@@ -160,7 +220,10 @@ async function worksView(host) {
 /* ---------- карточка произведения ---------- */
 
 async function workView(host, id) {
-  const [cat, qs, me] = await Promise.all([catalog(), quizzes().catch(() => []), myReading()]);
+  const [cat, qs, me, wtAll] = await Promise.all([catalog(), quizzes().catch(() => []), myReading(), workTasks()]);
+  const wt = wtAll[id];
+  const perChapter = {};
+  (wt?.tasks || []).forEach(([, , ch]) => ch != null && (perChapter[ch] = (perChapter[ch] || 0) + 1));
   const w = cat.works.find((x) => x.id === id);
   if (!w) {
     host.innerHTML = `<div class="empty">Произведение не найдено. <a href="#/library">К библиотеке</a></div>`;
@@ -174,7 +237,7 @@ async function workView(host, id) {
       <section class="lib-toc card">
         <h2>Оглавление <span class="muted">${read.size} из ${w.toc.length}</span></h2>
         <ol>${w.toc
-          .map((t, i) => `<li class="${read.has(i) ? "is-read" : ""}"><a href="#/library/w/${w.id}/${i + 1}">${escapeHtml(t.t)}</a></li>`)
+          .map((t, i) => `<li class="${read.has(i) ? "is-read" : ""}"><a href="#/library/w/${w.id}/${i + 1}">${escapeHtml(t.t)}</a>${perChapter[i] ? ` <span class="lib-mark is-quiz" title="Заданий ЕГЭ к фрагменту этой главы">${perChapter[i]} ЕГЭ</span>` : ""}</li>`)
           .join("")}</ol>
       </section>`
     : `
@@ -202,9 +265,19 @@ async function workView(host, id) {
       ${w.polka ? ext(polkaUrl(w.polka), "Статья на «Полке» ↗", "btn secondary") : ""}
       ${w.wiki ? ext(wikiUrl(w.wiki), "Википедия ↗", "btn secondary") : ""}
     </div>
+    ${wt?.tasks?.length || wt?.essays?.length ? `<p class="lib-actions"><a class="btn secondary" href="#/library/w/${w.id}" data-goto-tasks>Задания ЕГЭ${wt.tasks.length ? ` · ${wt.tasks.length}` : ""}</a>${wt.essays.length ? ` <a class="btn secondary" href="#/library/w/${w.id}" data-goto-essay>Сочинение</a>` : ""}</p>` : ""}
     ${w.polka ? `<p class="muted lib-hint">«Полка» отвечает на главные вопросы о книге: о чём она, как написана, как её приняли. Прочитай статью, потом пройди тест — за него начисляются очки.</p>` : ""}
     ${tocHtml}
+    ${workTasksHtml(w, wt)}
     ${w.src ? `<p class="lib-source muted">Текст: ${w.src.map((u, i) => ext(u, w.src.length > 1 ? `Викитека (${i + 1})` : "Викитека")).join(", ")}. Общественное достояние.</p>` : ""}`;
+  host.querySelector("[data-goto-tasks]")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    host.querySelector(wt?.tasks?.length ? "#tasks" : "#essay")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  host.querySelector("[data-goto-essay]")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    host.querySelector("#essay")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 }
 
 /* ---------- читалка ---------- */
@@ -218,7 +291,7 @@ function readerPrefs() {
 }
 
 async function readerView(host, id, n) {
-  const cat = await catalog();
+  const [cat, wtAll] = await Promise.all([catalog(), workTasks()]);
   const w = cat.works.find((x) => x.id === id);
   if (!w || !w.toc) {
     host.innerHTML = `<div class="empty">Текст не найден. <a href="#/library">К библиотеке</a></div>`;
@@ -243,6 +316,7 @@ async function readerView(host, id, n) {
       <article class="reader-text">
         <h2 class="reader-ch">${escapeHtml(t.t)}</h2>
         ${ch.h}
+        ${chapterTasksHtml((wtAll[w.id]?.tasks || []).filter(([, , ch]) => ch === idx))}
         ${notes ? `<aside class="reader-notes"><h3>Примечания</h3><ol>${notes}</ol></aside>` : ""}
         <div class="reader-end" aria-hidden="true"></div>
       </article>
