@@ -1,5 +1,5 @@
 import { accessState, currentProfile } from "./supa.js";
-import { TRACK_HREF, currentTrack } from "./track.js?v=land110";
+import { TRACK_HREF, currentTrack } from "./track.js?v=land111";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -175,7 +175,7 @@ export function layout(content, active = "", { hideFooter = false } = {}) {
         <div>
           <p class="footer-name">Студия Лексикон</p>
           <p class="footer-note">Русский язык и литература для 8–11 классов. Очно и онлайн.</p>
-          <p>Основатель и руководитель — П. В. Алексеев · <a href="https://palekseev.ru/" target="_blank" rel="noopener noreferrer">личный сайт</a></p>
+          <p>Основатель и руководитель — П. В. <a href="https://palekseev.ru/" target="_blank" rel="noopener noreferrer">Алексеев</a></p>
         </div>
         <div>
           <p class="footer-h">Где мы</p>
