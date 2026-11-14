@@ -5,7 +5,7 @@
  *  - письменная работа: черновик, фото, сдача на проверку, оценка.
  */
 import { escapeHtml } from "./ui.js";
-import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land107";
+import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land108";
 import {
   accessState,
   currentUser,
@@ -126,6 +126,11 @@ const REVEAL_HINT = {
   manual: "Разбор откроет преподаватель.",
 };
 
+/** Сообщить сайту об ответе: «+10», серия подряд, финал тренировки и занятия (js/session.js). */
+function emitAnswer(detail) {
+  window.dispatchEvent(new CustomEvent("lx:answer", { detail }));
+}
+
 export function bindCheck(root, problem, { sanitize, onCorrect, item = null, examMode = false } = {}) {
   const input = root.querySelector("#pr-answer");
   const result = root.querySelector("#pr-result");
@@ -166,6 +171,7 @@ export function bindCheck(root, problem, { sanitize, onCorrect, item = null, exa
         );
         revealRow.hidden = true;
         if (res.attempts_left === 0) (input.disabled = true), (btn.disabled = true);
+        emitAnswer({ taskId: problem._tid, itemId: item?.id || null, hidden: true, exam: examMode });
         onCorrect?.("submitted");
         return;
       }
@@ -176,6 +182,7 @@ export function bindCheck(root, problem, { sanitize, onCorrect, item = null, exa
         } catch {}
         revealRow.hidden = true;
         solution.innerHTML = solutionHtml(sanitize, res);
+        emitAnswer({ taskId: problem._tid, itemId: item?.id || null, correct: true, firstTry: tries === 1, anchor: result });
         onCorrect?.();
       } else {
         const exhausted = res.attempts_left === 0;
@@ -188,6 +195,7 @@ export function bindCheck(root, problem, { sanitize, onCorrect, item = null, exa
           "is-bad"
         );
         if (exhausted) input.disabled = true;
+        emitAnswer({ taskId: problem._tid, itemId: item?.id || null, correct: false });
         revealRow.hidden = !res.can_reveal;
         if (!res.can_reveal && item) {
           const hint = REVEAL_HINT[item.reveal];
@@ -410,7 +418,10 @@ export function bindWritten(
         await render();
         box.querySelector("#pr-status").textContent =
           next === "submitted" ? "Работа сдана. Преподаватель проверит её в кабинете." : "Черновик сохранён.";
-        if (next === "submitted") loadSolution();
+        if (next === "submitted") {
+          loadSolution();
+          emitAnswer({ taskId: problem._tid, itemId: item?.id || null, written: true });
+        }
       } catch (err) {
         say(err.message);
       }

@@ -4,8 +4,8 @@
  * Очки начисляет сервер (таблица xp_events), здесь — только показ и подсказки.
  */
 import { escapeHtml } from "./ui.js";
-import { currentTrack } from "./track.js?v=land107";
-import { EXAMS, autoNumbers, composeVariant, durationText } from "./exams.js?v=land107";
+import { currentTrack } from "./track.js?v=land108";
+import { EXAMS, autoNumbers, composeVariant, durationText } from "./exams.js?v=land108";
 import { currentUser, humanError, supa } from "./supa.js";
 
 const LEVELS = [
@@ -17,7 +17,7 @@ const LEVELS = [
   [3000, "Отличник"],
   [6000, "Легенда"],
 ];
-const DAILY_GOAL = 10;
+export const DAILY_GOAL = 10;
 
 // Правило к номеру ЕГЭ — через поиск по каталогу правил студии
 const EGE_RULE_QUERY = {
@@ -42,7 +42,7 @@ export function levelOf(xp) {
 }
 
 /** Дата в Горно-Алтайске (YYYY-MM-DD). */
-function barnaulDate(d = new Date()) {
+export function barnaulDate(d = new Date()) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Barnaul" }).format(d);
 }
 
@@ -361,7 +361,7 @@ export function bindSelfExam(root) {
 /* Тренировка дня: 10 заданий по ошибкам, слабым и новым номерам        */
 /* ------------------------------------------------------------------ */
 
-const dailyKey = () => `daily-${currentUser()?.id}-${barnaulDate()}`;
+export const dailyKey = () => `daily-${currentUser()?.id}-${barnaulDate()}`;
 
 async function buildDaily(code, d) {
   const ex = EXAMS[code];
@@ -445,6 +445,11 @@ export async function mountDaily(root, d, profile) {
       )
       .join("")}</div>
     <p class="actions"><button class="btn secondary" id="daily-new" type="button">Собрать новую подборку</button></p>`;
+  // отметки «решено» для перехода «Дальше →» с экрана задания
+  try {
+    localStorage.setItem(`daily-done-${currentUser()?.id}-${today}`, JSON.stringify(list.filter((t) => solvedToday(t.id)).map((t) => t.id)));
+  } catch {}
+  import("./session.js?v=land108").then((m) => m.maybeCelebrateDaily(doneN, list.length)).catch(() => {});
   host.querySelector("#daily-new").addEventListener("click", () => {
     try {
       localStorage.removeItem(dailyKey());
