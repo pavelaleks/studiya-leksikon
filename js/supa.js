@@ -169,7 +169,7 @@ export async function signOut() {
 export function humanError(err) {
   const msg = String(err?.message || err || "");
   const map = [
-    [/invalid login credentials/i, "Неверный e-mail или пароль."],
+    [/invalid login credentials/i, "Неверный логин или пароль."],
     [/email not confirmed/i, "E-mail ещё не подтверждён — откройте письмо со ссылкой."],
     [/user already registered/i, "Такой e-mail уже зарегистрирован. Войдите или восстановите пароль."],
     [/password should be at least/i, "Пароль слишком короткий — нужно не меньше 8 символов."],

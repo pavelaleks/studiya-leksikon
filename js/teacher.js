@@ -1,17 +1,18 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land121";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land123";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land121";
+import { taskHref } from "./account.js?v=land123";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land121";
-import { readingView } from "./teacher-reading.js?v=land121";
-import { optionsOf } from "./practice.js?v=land121";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land121";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land121";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land123";
+import { readingView } from "./teacher-reading.js?v=land123";
+import { optionsOf } from "./practice.js?v=land123";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land123";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land123";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land123";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land121";
+} from "./review.js?v=land123";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -490,6 +491,162 @@ const fmtDateTime = (d) => (d ? new Date(d).toLocaleString("ru-RU", { dateStyle:
 /* Ученики                                                              */
 /* ------------------------------------------------------------------ */
 
+/* ---------- Ученики под псевдонимами ---------- */
+const SITE_URL = "https://pavelaleks.github.io/studiya-leksikon/";
+const credsHtml = (login, password, name) => `
+  <div class="t-creds card">
+    <p><strong>Передайте ученику${name ? ` (${escapeHtml(name)})` : ""}:</strong></p>
+    <p>Сайт: <b>${SITE_URL}</b> → «Войти»<br>Логин: <b class="t-mono">${escapeHtml(login)}</b>${password ? `<br>Пароль: <b class="t-mono">${escapeHtml(password)}</b>` : ""}</p>
+    <p class="actions"><button class="btn secondary" type="button" data-copy="${escapeHtml(`Сайт: ${SITE_URL}\nЛогин: ${login}${password ? `\nПароль: ${password}` : ""}`)}">Скопировать</button></p>
+    <p class="muted">Кто скрывается за псевдонимом, записывайте у себя (в блокноте или телефоне), а не на сайте.</p>
+  </div>`;
+function bindCopy(root) {
+  root.querySelectorAll("[data-copy]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.copy);
+        b.textContent = "Скопировано";
+      } catch {
+        b.textContent = "Выделите и скопируйте вручную";
+      }
+    })
+  );
+}
+const pseudoFieldsHtml = (ps, pw) => `
+  <div class="grid-2">
+    <label>Псевдоним (так ученик виден на сайте)<input name="name" value="${escapeHtml(ps.name)}" maxlength="40" required /></label>
+    <label>Логин (латиница)<input name="login" value="${escapeHtml(ps.login)}" pattern="[a-z0-9][a-z0-9-]{2,30}[a-z0-9]" required autocomplete="off" /></label>
+  </div>
+  <label>Пароль<input name="password" value="${escapeHtml(pw)}" minlength="8" required autocomplete="off" /></label>
+  <p class="actions"><button class="btn secondary" type="button" data-regen>Другой псевдоним</button></p>`;
+function bindRegen(form) {
+  form.querySelector("[data-regen]")?.addEventListener("click", () => {
+    const ps = newPseudonym();
+    form.elements.namedItem("name").value = ps.name;
+    form.login.value = ps.login;
+  });
+}
+function newStudentHtml(groupOpts) {
+  return `
+    <section class="me-section">
+      <details class="card t-new-student" id="t-new-student">
+        <summary class="btn">+ Новый ученик</summary>
+        <form class="stack" id="t-new-student-form">
+          <p class="muted">Настоящее имя и почту не вводим: ученик получает псевдоним, логин и пароль. Пароль забыл — задаёте новый на его странице.</p>
+          ${pseudoFieldsHtml(newPseudonym(), newPassword())}
+          <div class="grid-2">
+            <label>Класс<select name="grade">${GRADES.map((g) => `<option value="${g}" ${g === 9 ? "selected" : ""}>${g} класс</option>`).join("")}</select></label>
+            <label>Группа<select name="group"><option value="">без группы</option>${groupOpts}</select></label>
+          </div>
+          <fieldset class="t-inline-set"><legend>Предметы</legend>
+            <label class="t-inline"><input type="checkbox" name="subj" value="rus" checked /> Русский язык</label>
+            <label class="t-inline"><input type="checkbox" name="subj" value="lit" /> Литература</label>
+          </fieldset>
+          <p class="actions"><button class="btn" type="submit">Создать ученика</button></p>
+          <p class="lit-result" id="t-new-student-status" aria-live="polite"></p>
+        </form>
+        <div id="t-new-student-done"></div>
+      </details>
+    </section>`;
+}
+function bindNewStudent(host) {
+  const form = host.querySelector("#t-new-student-form");
+  if (!form) return;
+  bindRegen(form);
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const st = host.querySelector("#t-new-student-status");
+    const btn = form.querySelector('button[type="submit"]');
+    const grade = Number(form.grade.value);
+    const courses = [...form.querySelectorAll('input[name="subj"]:checked')].map((x) => `${x.value}:${grade}`);
+    btn.disabled = true;
+    st.className = "lit-result";
+    st.textContent = "Создаём…";
+    try {
+      const r = await createStudent({
+        name: form.elements.namedItem("name").value.trim(),
+        login: form.login.value.trim().toLowerCase(),
+        password: form.password.value.trim(),
+        grade,
+        courses,
+        group: form.group.value || null,
+      });
+      st.textContent = "";
+      const done = host.querySelector("#t-new-student-done");
+      done.innerHTML = credsHtml(r.login, form.password.value.trim(), form.elements.namedItem("name").value.trim()) + `<p class="actions"><a class="btn secondary" href="#/cabinet/students" data-reload>К списку учеников</a></p>`;
+      form.hidden = true;
+      bindCopy(done);
+      done.querySelector("[data-reload]").addEventListener("click", (ev) => {
+        ev.preventDefault();
+        mountTeacher(document, ["students"]);
+      });
+    } catch (err) {
+      st.className = "lit-result is-bad";
+      st.textContent = err.message;
+      btn.disabled = false;
+    }
+  });
+}
+function accountBlockHtml(p) {
+  if (isPseudoEmail(p.email))
+    return `<section class="me-section" id="t-account">
+      <h2>Вход ученика</h2>
+      <p class="muted">Ученик забыл пароль — задайте новый и передайте ему.</p>
+      <p class="actions"><button class="btn secondary" type="button" id="t-newpass">Задать новый пароль</button></p>
+      <div id="t-account-out"></div>
+    </section>`;
+  return `<section class="me-section" id="t-account">
+      <h2>Перевести на псевдоним</h2>
+      <p class="muted">Сейчас у ученика на сайте настоящее имя и почта. После перевода останутся только псевдоним и логин: имя, почта, контакт и Telegram удалятся. Ответы, работы и очки сохранятся. Ученик будет входить по новому логину.</p>
+      <form class="stack card" id="t-convert" style="padding:16px">
+        ${pseudoFieldsHtml(newPseudonym(), newPassword())}
+        <p class="actions"><button class="btn" type="submit">Перевести</button></p>
+        <p class="lit-result" id="t-convert-status" aria-live="polite"></p>
+      </form>
+      <div id="t-account-out"></div>
+    </section>`;
+}
+function bindAccountBlock(host, p) {
+  const out = host.querySelector("#t-account-out");
+  host.querySelector("#t-newpass")?.addEventListener("click", async (e) => {
+    const pw = newPassword();
+    if (!confirm(`Задать ученику новый пароль? Старый перестанет работать.`)) return;
+    e.target.disabled = true;
+    try {
+      await resetStudentPassword(p.id, pw);
+      out.innerHTML = credsHtml(loginOf(p.email), pw, p.full_name);
+      bindCopy(out);
+    } catch (err) {
+      out.innerHTML = `<p class="lit-result is-bad">${escapeHtml(err.message)}</p>`;
+      e.target.disabled = false;
+    }
+  });
+  const form = host.querySelector("#t-convert");
+  if (!form) return;
+  bindRegen(form);
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const st = host.querySelector("#t-convert-status");
+    const name = form.elements.namedItem("name").value.trim();
+    const login = form.login.value.trim().toLowerCase();
+    const password = form.password.value.trim();
+    if (!confirm(`Перевести ученика на псевдоним «${name}»? Имя, почта и контакт удалятся с сайта, входить он будет по логину ${login}.`)) return;
+    form.querySelector('button[type="submit"]').disabled = true;
+    st.textContent = "Переводим…";
+    try {
+      await convertStudent({ student: p.id, name, login, password });
+      form.hidden = true;
+      out.innerHTML = credsHtml(login, password, name);
+      bindCopy(out);
+      st.textContent = "";
+    } catch (err) {
+      st.className = "lit-result is-bad";
+      st.textContent = err.message;
+      form.querySelector('button[type="submit"]').disabled = false;
+    }
+  });
+}
+
 async function studentsView(host, render) {
   const [{ data: people, error }, { data: groups }, { data: members }, { data: xp }, { data: creq }] = await Promise.all([
     supa.from("profiles").select("*").neq("role", "teacher").order("created_at", { ascending: false }),
@@ -586,12 +743,17 @@ async function studentsView(host, render) {
     : "";
   render(`
     <h1>Ученики</h1>
+    ${newStudentHtml(groupOpts)}
     ${creqHtml}
-    <section class="me-section">
-      <h2>Заявки на доступ ${pending.length ? `<span class="badge">${pending.length}</span>` : ""}</h2>
-      <p class="muted">Ученик регистрируется сам на странице «Войти». Пока вы не подтвердите, он видит только демо-задания.</p>
+    ${
+      pending.length
+        ? `<section class="me-section">
+      <h2>Заявки на доступ <span class="badge">${pending.length}</span></h2>
+      <p class="muted">Старые самостоятельные регистрации. Новых учеников теперь создаёте вы — кнопкой выше.</p>
       ${pendingHtml}
-    </section>
+    </section>`
+        : ""
+    }
     <section class="me-section">
       <h2>Все ученики · ${rest.length}</h2>
       <input class="search" id="t-q" type="search" placeholder="Поиск по имени, почте, цели" />
@@ -601,6 +763,7 @@ async function studentsView(host, render) {
       </table></div>
     </section>`);
 
+  bindNewStudent(host);
   host.querySelectorAll("[data-req-ok]").forEach((b) =>
     b.addEventListener("click", async () => {
       const row = b.closest("[data-req]");
@@ -753,8 +916,8 @@ async function studentView(host, render, id) {
     <p class="crumbs"><a href="#/cabinet/students">← Ученики</a></p>
     <h1>${escapeHtml(p.full_name || p.email)}</h1>
     <p class="t-xp">Очки: <b>${xpTotal}</b> · за неделю: <b>+${xpWeek}</b> · дней с занятиями: <b>${activeDays}</b> · закреплено глав правил: <b>${(mastered || []).length}</b></p>
-    <p class="lede">${escapeHtml(p.email || "")} · ${STATUS_TEXT[p.status]}${p.grade ? ` · ${p.grade} класс` : ""}${p.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""}${p.contact ? ` · ${escapeHtml(p.contact)}` : ""}</p>
-    ${p.email ? `<p class="actions"><button class="btn secondary" id="t-reset">Отправить ученику ссылку для смены пароля</button> <span class="muted" id="t-reset-status"></span></p>` : ""}
+    <p class="lede">${isPseudoEmail(p.email) ? `логин <b>${escapeHtml(loginOf(p.email))}</b>` : escapeHtml(p.email || "")} · ${STATUS_TEXT[p.status]}${p.grade ? ` · ${p.grade} класс` : ""}${p.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""}</p>
+    ${accountBlockHtml(p)}
     ${activityHtml(actRows || [], att30 || [])}
     <section class="me-section">
       <h2>Курсы</h2>
@@ -816,18 +979,7 @@ async function studentView(host, render, id) {
       e.target.disabled = false;
     }
   });
-  host.querySelector("#t-reset")?.addEventListener("click", async (e) => {
-    const st = host.querySelector("#t-reset-status");
-    if (!confirm(`Отправить письмо со ссылкой для смены пароля на ${p.email}?`)) return;
-    e.target.disabled = true;
-    try {
-      await resetPassword(p.email);
-      st.textContent = `Письмо отправлено на ${p.email}. Ссылка действует около часа.`;
-    } catch (err) {
-      st.textContent = err.message;
-      e.target.disabled = false;
-    }
-  });
+  bindAccountBlock(host, p);
   host.querySelector("#t-note-save")?.addEventListener("click", async () => {
     const { error } = await supa
       .from("student_notes")

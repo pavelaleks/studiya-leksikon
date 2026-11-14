@@ -207,7 +207,7 @@ function accessNoteHtml() {
   }
   return `<div class="learn-access">
     <p>Правила и тренажёры открыты всем. <strong>Банк заданий с разборами</strong> — для учеников студии; гостям доступны демо-задания.</p>
-    <p class="actions"><a class="btn" href="#/login">Войти</a><a class="btn secondary" href="#/login?mode=signup">Зарегистрироваться</a></p>
+    <p class="actions"><a class="btn" href="#/login">Войти</a><a class="btn secondary" href="#apply">Записаться</a></p>
   </div>`;
 }
 
@@ -215,7 +215,8 @@ function accessNoteHtml() {
 function homeStartHtml() {
   const state = accessState();
   const p = currentProfile();
-  const first = String(p?.full_name || "").trim().split(/\s+/)[0];
+  const full = String(p?.full_name || "").trim();
+  const first = String(p?.email || "").endsWith("@students.lexicon.local") ? full : full.split(/\s+/)[0];
   if (state === "teacher")
     return `<div class="home-back card"><p><strong>Вы вошли как преподаватель.</strong></p><p class="actions"><a class="btn btn-lg" href="#/cabinet/today">В кабинет преподавателя →</a></p></div>`;
   if (state === "student" || state === "expired" || state === "paused")
@@ -241,7 +242,7 @@ function homeStartHtml() {
       </a>`;
   const login = `<a class="home-path${been ? " is-main" : ""}" href="#/login">
         <span class="home-path-ico" aria-hidden="true">🔑</span>
-        <span><strong>${been ? "Войти в кабинет" : "Я уже занимаюсь в студии"}</strong><span>${been ? "Вы уже заходили с этого устройства" : "Вход в кабинет ученика. Первый раз — зарегистрируйтесь"}</span></span>
+        <span><strong>${been ? "Войти в кабинет" : "Я уже занимаюсь в студии"}</strong><span>${been ? "Вы уже заходили с этого устройства" : "Вход по логину и паролю от преподавателя"}</span></span>
         <span class="home-path-go" aria-hidden="true">›</span>
       </a>`;
   const tryit = `<a class="home-path" href="#/rules">
@@ -253,7 +254,6 @@ function homeStartHtml() {
       <p class="home-start-q">Что вы хотите сделать?</p>
       ${been ? login + join : join + login}
       ${tryit}
-      ${been ? "" : `<p class="home-start-note muted">Ученик студии? Зарегистрируйтесь <a href="#/login?mode=signup">здесь</a> — преподаватель подтвердит доступ, и откроется кабинет с занятиями.</p>`}
     </div>`;
 }
 

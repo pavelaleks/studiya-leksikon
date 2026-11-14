@@ -5,7 +5,7 @@
  *  - письменная работа: черновик, фото, сдача на проверку, оценка.
  */
 import { escapeHtml } from "./ui.js";
-import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land121";
+import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land123";
 import {
   accessState,
   currentUser,
@@ -33,8 +33,7 @@ function loginLinks() {
   return `
     <div class="actions">
       <a class="btn" href="#/login?next=${back}">Войти</a>
-      <a class="btn secondary" href="#/login?mode=signup&next=${back}">Зарегистрироваться</a>
-      <a class="btn secondary" href="#/apply">Записаться на занятия</a>
+      <a class="btn secondary" href="#apply">Записаться на занятия</a>
     </div>`;
 }
 

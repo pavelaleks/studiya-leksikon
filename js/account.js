@@ -1,10 +1,10 @@
 /** Вход, регистрация и личный кабинет ученика (#/login, #/me). */
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land121";
-import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, tracksOf } from "./track.js?v=land121";
+import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land123";
+import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, tracksOf } from "./track.js?v=land123";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, recommendations, recsHtml, selfExamHtml,
-} from "./dashboard.js?v=land121";
+} from "./dashboard.js?v=land123";
 import {
   accessState,
   currentProfile,
@@ -110,61 +110,23 @@ function nextHref() {
 /* ------------------------------------------------------------------ */
 
 export function loginPage() {
-  const q = new URLSearchParams((location.hash.split("?")[1] || ""));
-  const mode = q.get("mode") === "signup" ? "signup" : q.get("mode") === "reset" ? "reset" : "login";
-  const tab = (id, title) =>
-    `<a class="pill ${mode === id ? "active" : ""}" href="#/login?mode=${id}&next=${encodeURIComponent(nextHref())}">${title}</a>`;
-  const forms = {
-    login: `
-      <form id="auth-form" class="stack" data-mode="login">
-        <label>E-mail<input type="email" name="email" required autocomplete="email" /></label>
-        <label>Пароль<input type="password" name="password" required autocomplete="current-password" /></label>
-        <button class="btn" type="submit">Войти</button>
-        <p class="muted"><a href="#/login?mode=reset">Забыли пароль?</a></p>
-      </form>`,
-    signup: `
-      <form id="auth-form" class="stack" data-mode="signup">
-        <label>Имя и фамилия<input name="full_name" required maxlength="120" autocomplete="name" /></label>
-        <label>E-mail<input type="email" name="email" required autocomplete="email" /></label>
-        <label>Пароль (не меньше 8 символов)<input type="password" name="password" required minlength="8" autocomplete="new-password" /></label>
-        <div class="grid-2">
-          <label>Класс
-            <select name="grade">
-              <option value="">не указан</option>
-              ${[5, 6, 7, 8, 9, 10, 11].map((g) => `<option value="${g}">${g}</option>`).join("")}
-            </select>
-          </label>
-          <label>Формат
-            <select name="study_format">
-              <option value="offline">Очно, в студии</option>
-              <option value="online">Онлайн</option>
-              <option value="mixed">Очно и онлайн</option>
-            </select>
-          </label>
-        </div>
-        <label>Цель
-          <select name="exam_target">${EXAMS.map((e) => `<option>${e}</option>`).join("")}</select>
-        </label>
-        <label>Telegram или телефон для связи (по желанию)<input name="contact" maxlength="120" /></label>
-        <label>Комментарий для преподавателя (по желанию)<textarea name="note" maxlength="1000" placeholder="Например: занимаюсь в группе по вторникам"></textarea></label>
-        <label class="check"><input type="checkbox" name="consent" required />
-          <span>Согласен(на) на обработку персональных данных для занятий в студии. Если мне нет 18 лет — регистрирую с согласия родителя.</span>
-        </label>
-        <button class="btn" type="submit">Зарегистрироваться</button>
-        <p class="muted">После регистрации преподаватель подтвердит доступ — тогда откроется весь банк заданий.</p>
-      </form>`,
-    reset: `
-      <form id="auth-form" class="stack" data-mode="reset">
-        <label>E-mail<input type="email" name="email" required autocomplete="email" /></label>
-        <button class="btn" type="submit">Прислать ссылку для нового пароля</button>
-      </form>`,
-  };
   return `
     <div class="auth-page">
       <p class="eyebrow">Студия Лексикон</p>
-      <h1>${mode === "signup" ? "Регистрация ученика" : mode === "reset" ? "Восстановление пароля" : "Вход для учеников"}</h1>
-      <div class="filter-bar">${tab("login", "Вход")}${tab("signup", "Регистрация")}</div>
-      <div class="card auth-card">${forms[mode]}<p class="lit-result" id="auth-status" aria-live="polite"></p></div>
+      <h1>Вход для учеников</h1>
+      <div class="card auth-card">
+        <form id="auth-form" class="stack" data-mode="login">
+          <label>Логин<input name="login" required autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="например, ryzhiy-lis-47" /></label>
+          <label>Пароль<input type="password" name="password" required autocomplete="current-password" /></label>
+          <button class="btn" type="submit">Войти</button>
+        </form>
+        <p class="lit-result" id="auth-status" aria-live="polite"></p>
+      </div>
+      <div class="auth-help">
+        <p><strong>Где взять логин?</strong> Логин и пароль выдаёт преподаватель, когда вы начинаете заниматься в студии. Регистрироваться самим не нужно.</p>
+        <p><strong>Забыли пароль?</strong> Напишите преподавателю — он задаст новый.</p>
+        <p class="muted">Ещё не занимаетесь? <a href="#apply">Оставьте заявку</a> — договоримся о занятиях.</p>
+      </div>
     </div>`;
 }
 
@@ -183,7 +145,7 @@ export function bindLogin(root) {
     btn.disabled = true;
     try {
       const mode = form.dataset.mode;
-      const email = String(f.get("email") || "").trim();
+      const email = loginToEmail(f.get("login") || f.get("email"));
       if (mode === "login") {
         say("Входим…");
         await signIn(email, String(f.get("password")));
@@ -308,7 +270,7 @@ export async function mountMe(root) {
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land121").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
+    import("./lessons.js?v=land123").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
     isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },
     isProfile ? supa.from("my_mistakes").select("*").order("last_try", { ascending: false }) : { data: [] },
     isProfile
@@ -333,7 +295,8 @@ export async function mountMe(root) {
         ? `<div class="gate card"><p><strong>Доступ к банку приостановлен.</strong> Напишите преподавателю, чтобы продлить.</p></div>`
         : "";
   const code = examCodeOf(p);
-  const firstName = String(p?.full_name || "").trim().split(/\s+/)[0] || "";
+  // псевдоним целиком («Снежная Выдра 92»); у старых учеников с именем — только имя
+  const firstName = isPseudoEmail(p?.email) ? String(p?.full_name || "").trim() : String(p?.full_name || "").trim().split(/\s+/)[0] || "";
   // Код группы нужен редко: преподаватель обычно добавляет в группу сам. Поэтому поле спрятано.
   const joinHtml = `
     <section class="me-section">
@@ -456,7 +419,6 @@ export async function mountMe(root) {
           <p class="lit-result" id="me-course-status"></p>
         </form>
       </section>
-      ${tgSlotHtml()}
       ${joinHtml}
       <section class="me-section">
         <h2>Оформление</h2>
@@ -467,17 +429,16 @@ export async function mountMe(root) {
       <section class="me-section">
         <h2>Профиль</h2>
         <form id="me-form" class="stack card" style="padding:20px;max-width:560px">
-          <label>Имя и фамилия<input name="full_name" value="${escapeHtml(p?.full_name || "")}" maxlength="120" autocomplete="name" /></label>
-          <label>Telegram или телефон<input name="contact" value="${escapeHtml(p?.contact || "")}" maxlength="120" /></label>
+          <p>Псевдоним: <strong>${escapeHtml(p?.full_name || "")}</strong>${isPseudoEmail(p?.email) ? ` · логин: <strong>${escapeHtml(loginOf(p.email))}</strong>` : ""}</p>
+          <p class="muted">Псевдоним задаёт преподаватель — так на сайте нет настоящих имён.</p>
           <label>Новый пароль (если хотите сменить)<input type="password" name="password" minlength="8" autocomplete="new-password" /></label>
-          <div class="actions"><button class="btn" type="submit">Сохранить</button><button class="btn secondary" type="button" id="me-logout">Выйти</button></div>
+          <div class="actions"><button class="btn" type="submit">Сменить пароль</button><button class="btn secondary" type="button" id="me-logout">Выйти</button></div>
           <p class="lit-result" id="me-status" aria-live="polite"></p>
         </form>
       </section>`;
     const anchor = location.hash.split("#")[2];
     if (anchor) requestAnimationFrame(() => host.querySelector(`#${CSS.escape(anchor)}`)?.scrollIntoView({ block: "start" }));
   }
-  if (host.querySelector("#tg-block")) mountTg(host, "student");
   host.querySelector("#me-join")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const st = host.querySelector("#me-join-status");
@@ -536,13 +497,10 @@ export async function mountMe(root) {
     const f = new FormData(e.target);
     const status = host.querySelector("#me-status");
     try {
-      const { error } = await supa
-        .from("profiles")
-        .update({ full_name: String(f.get("full_name") || "").trim(), contact: String(f.get("contact") || "").trim() })
-        .eq("id", user.id);
-      if (error) throw humanError(error);
       const pw = String(f.get("password") || "");
-      if (pw) await updatePassword(pw);
+      if (!pw) throw new Error("Введите новый пароль.");
+      await updatePassword(pw);
+      e.target.reset();
       await refreshProfile();
       status.className = "lit-result is-ok";
       status.textContent = "Сохранено.";
