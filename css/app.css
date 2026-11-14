@@ -1834,3 +1834,8 @@ details.is-mastered {
   margin: 0;
   font-weight: 400;
 }
+
+/* Уведомления в Telegram */
+.tg-card { padding: 16px 18px; }
+.tg-card p { margin: 0 0 8px; }
+.tg-card .actions { margin: 4px 0 0; }

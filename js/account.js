@@ -1,9 +1,10 @@
 /** Вход, регистрация и личный кабинет ученика (#/login, #/me). */
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, tracksOf } from "./track.js?v=land117";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land118";
+import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, tracksOf } from "./track.js?v=land118";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, recommendations, recsHtml, selfExamHtml,
-} from "./dashboard.js?v=land117";
+} from "./dashboard.js?v=land118";
 import {
   accessState,
   currentProfile,
@@ -305,7 +306,7 @@ export async function mountMe(root) {
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land117").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
+    import("./lessons.js?v=land118").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
     isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },
     isProfile ? supa.from("my_mistakes").select("*").order("last_try", { ascending: false }) : { data: [] },
     isProfile
@@ -453,6 +454,7 @@ export async function mountMe(root) {
           <p class="lit-result" id="me-course-status"></p>
         </form>
       </section>
+      ${tgSlotHtml()}
       ${joinHtml}
       <section class="me-section">
         <h2>Оформление</h2>
@@ -473,6 +475,7 @@ export async function mountMe(root) {
     const anchor = location.hash.split("#")[2];
     if (anchor) requestAnimationFrame(() => host.querySelector(`#${CSS.escape(anchor)}`)?.scrollIntoView({ block: "start" }));
   }
+  if (host.querySelector("#tg-block")) mountTg(host, "student");
   host.querySelector("#me-join")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const st = host.querySelector("#me-join-status");

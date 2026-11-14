@@ -1,16 +1,17 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land117";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land118";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land117";
+import { taskHref } from "./account.js?v=land118";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land117";
-import { readingView } from "./teacher-reading.js?v=land117";
-import { optionsOf } from "./practice.js?v=land117";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land117";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land118";
+import { readingView } from "./teacher-reading.js?v=land118";
+import { optionsOf } from "./practice.js?v=land118";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land118";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land118";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land117";
+} from "./review.js?v=land118";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -426,7 +427,9 @@ async function todayView(host, render) {
           .join("")}</div>
       </section>`
         : ""
-    }`);
+    }
+    ${tgSlotHtml()}`);
+  mountTg(host, "teacher");
 }
 
 /** Отдельная страница входа для преподавателя (ссылка внизу сайта). Регистрации здесь нет. */
