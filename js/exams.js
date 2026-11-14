@@ -17,6 +17,9 @@ export const EXAMS = {
     numbers: range(1, 27),
     // задания по общему тексту: 1–3; 23–26 и сочинение 27
     groups: [[1, 2, 3], [23, 24, 25, 26, 27]],
+    written: [27],
+    writtenDefault: false,
+    minutesNoWriting: 90,
     bank: (n) => `ege-${String(n).padStart(2, "0")}`,
   },
   "oge-rus": {
@@ -25,6 +28,9 @@ export const EXAMS = {
     note: "по расписанию 3 ч 55 мин, без изложения — на час меньше",
     numbers: range(2, 13),
     groups: [[2, 3], [10, 11, 12, 13]],
+    written: [13],
+    writtenDefault: false,
+    minutesNoWriting: 90,
     bank: (n) => `oge-${String(n).padStart(2, "0")}`,
   },
   "ege-lit": {
@@ -33,9 +39,18 @@ export const EXAMS = {
     note: "как на экзамене",
     numbers: range(1, 11),
     groups: [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]],
+    written: [4, 5, 9, 10, 11],
+    writtenDefault: true,
+    minutesNoWriting: 60,
     bank: (n) => `ege-${String(n).padStart(2, "0")}`,
   },
 };
+
+/** Номера с автопроверкой — по ним строится самостоятельный трек (письменные — отдельно, по желанию). */
+export function autoNumbers(code) {
+  const ex = EXAMS[code];
+  return ex ? ex.numbers.filter((n) => !(ex.written || []).includes(n)) : [];
+}
 
 function range(a, b) {
   return Array.from({ length: b - a + 1 }, (_, i) => a + i);

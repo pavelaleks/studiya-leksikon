@@ -4,7 +4,7 @@
  * Очки начисляет сервер (таблица xp_events), здесь — только показ и подсказки.
  */
 import { escapeHtml } from "./ui.js";
-import { EXAMS, composeVariant, durationText } from "./exams.js?v=land100";
+import { EXAMS, autoNumbers, composeVariant, durationText } from "./exams.js?v=land102";
 import { currentUser, humanError, supa } from "./supa.js";
 
 const LEVELS = [
@@ -134,13 +134,14 @@ export function recommendations(d, code) {
       extra: rule || trainer ? { href: `#/${sec}/${n}`, cta: `Задание ${n}` } : null,
     });
   });
-  const untried = ex.numbers.filter((n) => !tried.has(n));
+  const auto = autoNumbers(code);
+  const untried = auto.filter((n) => !tried.has(n));
   if (untried.length) {
     const n = untried[Math.floor(Math.random() * Math.min(untried.length, 5))];
     out.push({
       icon: "✦",
       title: `Попробуй задание ${n}`,
-      text: `Ты его ещё не решал. Из ${ex.numbers.length} номеров экзамена освоено ${ex.numbers.length - untried.length}.`,
+      text: `Ты его ещё не решал. Из ${auto.length} номеров с автопроверкой освоено ${auto.length - untried.length}.`,
       href: `#/${sec}/${n}`,
       cta: "Начать",
     });
@@ -210,7 +211,9 @@ export function badges(d, code) {
     ["⏱", "Как на экзамене", "Завершить пробный экзамен", d.events.some((e) => e.kind === "exam")],
     ["📖", "Читатель", "Пройти 3 теста по статьям «Полки»", d.events.filter((e) => e.kind === "reading").length >= 3],
     ["🎭", "Наизусть", "Выучить 3 стихотворения", d.events.filter((e) => e.kind === "poem").length >= 3],
-    ["🧭", "Все номера", `Решать все ${ex.numbers.length} номеров`, ex.numbers.every((n) => mine.some((s) => s.task_no === n))],
+    ["🖋", "Писатель", "5 проверенных письменных работ", d.events.filter((e) => e.kind === "graded").length >= 5],
+    ["🏅", "Мастер слова", "Письменная работа на 80% баллов и выше", d.events.some((e) => e.kind === "graded" && e.points >= 32)],
+    ["🧭", "Все номера", `Решать все ${autoNumbers(code).length} номеров с автопроверкой`, autoNumbers(code).every((n) => mine.some((s) => s.task_no === n))],
   ];
   return list.map(([icon, name, hint, got]) => ({ icon, name, hint, got }));
 }
@@ -265,19 +268,23 @@ export function recsHtml(recs) {
 
 export function selfExamHtml(code) {
   const opts = Object.entries(EXAMS)
-    .map(([k, v]) => `<option value="${k}" ${k === code ? "selected" : ""}>${escapeHtml(v.title)} — ${durationText(v.minutes)}</option>`)
+    .map(([k, v]) => `<option value="${k}" ${k === code ? "selected" : ""}>${escapeHtml(v.title)}</option>`)
     .join("");
   return `
     <section class="me-section" id="self-exam">
       <h2>Пробный экзамен самостоятельно</h2>
       <form class="card t-filter" id="dash-self">
         <label>Экзамен<select name="code">${opts}</select></label>
+        <label class="t-inline"><input type="checkbox" name="written" ${EXAMS[code]?.writtenDefault ? "checked" : ""} /> с письменной частью — её проверит преподаватель</label>
+        <p class="muted" id="dash-self-time"></p>
         <button class="btn" type="submit">Собрать вариант и начать</button>
-        <p class="muted">Вариант собирается из заданий, которые ты ещё не решал, тексты — как на экзамене. Таймер — официальное время. Результат увидишь сразу после сдачи, а преподаватель — в своём кабинете. Очки: 30 за завершение и по 3 за каждый верный ответ.</p>
+        <p class="muted">Вариант собирается из заданий, которые ты ещё не решал, тексты — как на экзамене. Результат заданий с автопроверкой увидишь сразу после сдачи. Очки: 30 за завершение и по 3 за каждый верный ответ; за письменную часть — отдельно, после проверки.</p>
         <p class="lit-result" id="dash-self-status"></p>
       </form>
     </section>`;
 }
+
+const selfMinutes = (code, written) => (written ? EXAMS[code].minutes : EXAMS[code].minutesNoWriting || EXAMS[code].minutes);
 
 export function badgesHtml(list) {
   const got = list.filter((b) => b.got).length;
@@ -299,7 +306,7 @@ export function howPointsHtml() {
       <summary>Как начисляются очки</summary>
       <ul>
         <li>Верно с первой попытки — <b>10</b>, после ошибки — <b>5</b>, после разбора — <b>2</b> (за каждое задание один раз).</li>
-        <li>Сдал сочинение или развёрнутый ответ — <b>15</b>, после проверки — ещё до <b>10</b>.</li>
+        <li>Письменные работы — по желанию, отдельная награда: за сдачу <b>15</b>, после проверки преподавателем — ещё до <b>40</b> по итогу баллов. На цель дня и серию не влияют.</li>
         <li>Завершил пробный экзамен — <b>30</b> и по <b>3</b> за каждый верный ответ; контрольная — <b>15</b>.</li>
         <li>Прочитал статью на «Полке» и ответил на вопросы — <b>20</b>; выучил стихотворение наизусть — от <b>10</b> до <b>40</b> (чем длиннее, тем больше).</li>
         <li>Цель дня — ${DAILY_GOAL} верных заданий. Каждый день с занятиями продлевает серию 🔥.</li>
@@ -309,18 +316,36 @@ export function howPointsHtml() {
 
 export function bindSelfExam(root) {
   const form = root.querySelector("#dash-self");
-  form?.addEventListener("submit", async (e) => {
+  if (!form) return;
+  const codeSel = form.querySelector('[name="code"]');
+  const wr = form.querySelector('[name="written"]');
+  const timeText = () => {
+    const code = codeSel.value;
+    const ex = EXAMS[code];
+    form.querySelector("#dash-self-time").textContent = wr.checked
+      ? `Время: ${durationText(ex.minutes)} (${ex.note}), задания ${ex.numbers[0]}–${ex.numbers.at(-1)}.`
+      : `Время: ${durationText(selfMinutes(code, false))} — только задания с автопроверкой, без ${ex.written.length > 1 ? `заданий ${ex.written.join(", ")}` : `задания ${ex.written[0]}`}.`;
+  };
+  codeSel.addEventListener("change", () => {
+    wr.checked = Boolean(EXAMS[codeSel.value].writtenDefault);
+    timeText();
+  });
+  wr.addEventListener("change", timeText);
+  timeText();
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const code = new FormData(form).get("code");
+    const code = codeSel.value;
+    const written = wr.checked;
     const st = form.querySelector("#dash-self-status");
-    const btn = form.querySelector("button");
-    if (!confirm(`Начать «${EXAMS[code].title}»? После старта пойдёт таймер на ${durationText(EXAMS[code].minutes)}.`)) return;
+    const btn = form.querySelector('button[type="submit"]');
+    if (!confirm(`Начать «${EXAMS[code].title}»${written ? "" : " без письменной части"}? После старта пойдёт таймер на ${durationText(selfMinutes(code, written))}.`)) return;
     btn.disabled = true;
     st.className = "lit-result";
     st.textContent = "Собираем вариант…";
     try {
-      const tasks = await composeVariant(code, [currentUser().id]);
-      const { data: id, error } = await supa.rpc("create_self_exam", { p_code: code, p_tasks: tasks.map((t) => t.id) });
+      let tasks = await composeVariant(code, [currentUser().id]);
+      if (!written) tasks = tasks.filter((t) => !EXAMS[code].written.includes(t.task_no));
+      const { data: id, error } = await supa.rpc("create_self_exam", { p_code: code, p_tasks: tasks.map((t) => t.id), p_written: written });
       if (error) {
         if (/too many/.test(error.message)) throw new Error("Сегодня уже три пробных экзамена — хватит на сегодня 🙂");
         throw humanError(error);
@@ -342,6 +367,7 @@ const dailyKey = () => `daily-${currentUser()?.id}-${barnaulDate()}`;
 
 async function buildDaily(code, d) {
   const ex = EXAMS[code];
+  const autoNos = autoNumbers(code);
   const picked = [];
   const take = (t) => {
     if (t && !picked.some((p) => p.id === t.id)) picked.push(t);
@@ -353,9 +379,9 @@ async function buildDaily(code, d) {
   // 2) слабые и 3) новые номера
   const mine = d.stats.filter((s) => s.source === code);
   const weak = mine.filter((s) => Number(s.pct_correct) < 70).sort((a, b) => Number(a.pct_correct) - Number(b.pct_correct)).map((s) => s.task_no);
-  const untried = ex.numbers.filter((n) => !mine.some((s) => s.task_no === n));
+  const untried = autoNos.filter((n) => !mine.some((s) => s.task_no === n));
   const plan = [...weak.slice(0, 3).map((n) => [n, "слабое место"]), ...untried.slice(0, 3).map((n) => [n, "новый номер"])];
-  const rest = ex.numbers.filter((n) => !plan.some(([p]) => p === n));
+  const rest = autoNos.filter((n) => !plan.some(([p]) => p === n));
   // берём с запасом: у части номеров (сочинения) нет заданий с автопроверкой
   while (plan.length + picked.length < 15 && rest.length) {
     const i = Math.floor(Math.random() * rest.length);

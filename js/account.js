@@ -2,7 +2,7 @@
 import { escapeHtml } from "./ui.js";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, recommendations, recsHtml, selfExamHtml,
-} from "./dashboard.js?v=land100";
+} from "./dashboard.js?v=land102";
 import {
   accessState,
   currentProfile,
@@ -27,6 +27,38 @@ const STATUS_TEXT = {
 };
 const DAILY_GOAL_HOME = 10;
 const WORK_STATUS = { draft: "черновик", submitted: "на проверке", returned: "вернули на доработку", graded: "проверена" };
+
+/** Письменные работы — отдельный трек по желанию: проверяет преподаватель, награда — после проверки. */
+const ESSAY_LINK = {
+  "ege-rus": ["#/ege/27", "Сочинение ЕГЭ (задание 27)"],
+  "oge-rus": ["#/oge/13", "Сочинение ОГЭ (задание 13)"],
+  "ege-lit": ["#/literature/11", "Сочинение ЕГЭ по литературе (задание 11)"],
+};
+function writtenTrackHtml(d, code) {
+  const [href, title] = ESSAY_LINK[code] || ESSAY_LINK["ege-rus"];
+  const works = d.works || [];
+  const waiting = works.filter((w) => w.status === "submitted").length;
+  const returned = works.filter((w) => w.status === "returned").length;
+  const graded = works.filter((w) => w.status === "graded").length;
+  const earned = d.events.filter((e) => e.kind === "work" || e.kind === "graded").reduce((a, e) => a + e.points, 0);
+  const status = [
+    waiting ? `на проверке: ${waiting}` : "",
+    returned ? `вернули на доработку: ${returned}` : "",
+    graded ? `проверено: ${graded}` : "",
+  ].filter(Boolean);
+  return `
+    <section class="me-section">
+      <h2>Письменная работа <span class="muted">· по желанию</span></h2>
+      <a class="me-write card" href="${returned ? "#/me/profile#works" : href}">
+        <span class="me-rec-icon" aria-hidden="true">✍️</span>
+        <span>
+          <strong>${returned ? "Доработай вернувшуюся работу" : escapeHtml(title)}</strong>
+          <span class="muted">${status.length ? escapeHtml(status.join(" · ")) : "Напиши — преподаватель проверит по критериям ФИПИ."} До +55 очков: 15 за сдачу и до 40 после проверки${earned ? ` · уже ${earned}` : ""}.</span>
+        </span>
+        <span class="me-rec-go" aria-hidden="true">›</span>
+      </a>
+    </section>`;
+}
 
 /** Ссылка на задание по его месту в банке. */
 export function taskHref(t) {
@@ -249,7 +281,7 @@ export async function mountMe(root) {
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land100").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
+    import("./lessons.js?v=land102").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
     isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },
     isProfile ? supa.from("my_mistakes").select("*").order("last_try", { ascending: false }) : { data: [] },
     isProfile
@@ -337,6 +369,7 @@ export async function mountMe(root) {
               .join("")}</div></section>`
           : ""
       }
+      ${state === "student" && dash ? writtenTrackHtml(dash, code) : ""}
       ${
         state === "student"
           ? `<section class="me-section"><div class="me-quick">
@@ -366,7 +399,7 @@ export async function mountMe(root) {
       ${lessonsHtml}
       <section class="me-section"><h2>Прогресс по номерам</h2>${statsHtml(stats.data || [])}</section>
       <section class="me-section" id="mistakes"><h2>Тетрадь ошибок</h2>${mistakesHtml(mistakes.data || [])}</section>
-      <section class="me-section"><h2>Письменные работы</h2>${worksHtml(works.data || [])}</section>
+      <section class="me-section" id="works"><h2>Письменные работы</h2>${worksHtml(works.data || [])}</section>
       ${joinHtml}
       ${dash ? howPointsHtml() : ""}
       <section class="me-section">
