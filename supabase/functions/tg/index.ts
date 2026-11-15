@@ -8,7 +8,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "";
-const SITE = "https://pavelaleks.github.io/studiya-leksikon/#/";
+const SITE = "https://lexicon-school.ru/#/";
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
   auth: { persistSession: false },
 });

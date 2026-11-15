@@ -1,18 +1,18 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land124";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land125";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land124";
+import { taskHref } from "./account.js?v=land125";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land124";
-import { readingView } from "./teacher-reading.js?v=land124";
-import { optionsOf } from "./practice.js?v=land124";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land124";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land124";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land124";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land125";
+import { readingView } from "./teacher-reading.js?v=land125";
+import { optionsOf } from "./practice.js?v=land125";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land125";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land125";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land125";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land124";
+} from "./review.js?v=land125";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -492,7 +492,7 @@ const fmtDateTime = (d) => (d ? new Date(d).toLocaleString("ru-RU", { dateStyle:
 /* ------------------------------------------------------------------ */
 
 /* ---------- Ученики под псевдонимами ---------- */
-const SITE_URL = "https://pavelaleks.github.io/studiya-leksikon/";
+const SITE_URL = "https://lexicon-school.ru/";
 /** Готовое сообщение ученику: сайт, логин, пароль и короткая инструкция. */
 function studentMessage(login, password, fresh = true) {
   return [

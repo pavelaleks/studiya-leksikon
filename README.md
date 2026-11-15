@@ -2,7 +2,7 @@
 
 Открытый учебный сайт по орфографии, пунктуации и стилистике русского языка для 8–11 классов.
 
-Сайт: https://pavelaleks.github.io/studiya-leksikon/
+Сайт: https://lexicon-school.ru/ (раньше https://pavelaleks.github.io/studiya-leksikon/)
 
 ## Как устроено
 
@@ -29,4 +29,4 @@ npx --yes serve .
 
 Ссылки для учеников — с хешем:
 
-`https://pavelaleks.github.io/studiya-leksikon/#/rule/chereduyushchiesya-glasnye`
+`https://lexicon-school.ru/#/rule/chereduyushchiesya-glasnye`

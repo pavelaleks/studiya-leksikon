@@ -7,8 +7,9 @@
     <script>
       (function () {
         var path = location.pathname;
-        var repo = "/studiya-leksikon";
-        var rest = path.indexOf(repo) === 0 ? path.slice(repo.length) : path;
+        // на github.io сайт живёт в папке /studiya-leksikon, на lexicon-school.ru — в корне
+        var repo = path.indexOf("/studiya-leksikon") === 0 ? "/studiya-leksikon" : "";
+        var rest = repo ? path.slice(repo.length) : path;
         location.replace(repo + "/#" + (rest || "/"));
       })();
     </script>
