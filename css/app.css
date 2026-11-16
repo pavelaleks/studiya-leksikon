@@ -2023,3 +2023,9 @@ body.is-reading .lh-btn { display: none; }
 @media (min-width: 761px) {
   .landing-programs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+/* «ВПР / ОГЭ / ЕГЭ» вверху ведут к своей карточке программы — подсвечиваем её на пару секунд */
+.landing-program { scroll-margin-top: 80px; }
+.landing-program.is-target { animation: lx-target 2.2s ease; }
+@keyframes lx-target { 0%, 60% { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); } 100% { box-shadow: none; } }
+.landing-program-check { margin: 12px 0 0; }
+.landing-program-check a { font-weight: 700; }

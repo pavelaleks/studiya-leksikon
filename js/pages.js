@@ -279,7 +279,7 @@ export function homePage(content) {
     <section class="landing-hero" aria-label="Студия Лексикон">
       <div class="landing-hero-copy">
         <p class="landing-exams landing-exams-hero" aria-label="К чему готовим">
-          <a href="#/check?g=8" title="Проверить себя: ВПР, 8 класс"><span class="exam-vpr">ВПР</span></a><a href="#/check?g=9" title="Проверить себя: ОГЭ, 9 класс"><span class="exam-oge">ОГЭ</span></a><a href="#/check?g=11" title="Проверить себя: ЕГЭ, 10–11 класс"><span class="exam-ege">ЕГЭ</span></a>
+          <a href="#program-vpr" title="Подготовка к ВПР, 8 класс"><span class="exam-vpr">ВПР</span></a><a href="#program-oge" title="Подготовка к ОГЭ, 9 класс"><span class="exam-oge">ОГЭ</span></a><a href="#program-ege" title="Подготовка к ЕГЭ, 10–11 класс"><span class="exam-ege">ЕГЭ</span></a>
         </p>
         <p class="eyebrow landing-kicker">
           <span>Студия Лексикон</span>
@@ -347,7 +347,7 @@ export function homePage(content) {
       <p class="lede">Знаем все типы заданий ВПР, ОГЭ и ЕГЭ по русскому языку, критерии проверки и ошибки, на которых чаще всего теряют баллы. Больше всего времени уделяем письменной части: изложению и сочинению.</p>
 
       <div class="landing-programs">
-        <article class="landing-program">
+        <article class="landing-program" id="program-vpr">
           <p class="landing-program-tag">8 класс</p>
           <h3>ВПР по русскому языку</h3>
           <p class="landing-program-format">Группа до 4 человек или индивидуально</p>
@@ -356,9 +356,10 @@ export function homePage(content) {
             <li>Основа для ОГЭ: грамматическая основа, причастные и деепричастные обороты, типы предложений</li>
           </ul>
           <p class="landing-program-focus"><strong>Упор на синтаксис и пунктуацию.</strong> Пробелы отсюда потом стоят баллов на ОГЭ — закрываем их заранее.</p>
+          <p class="landing-program-check"><a href="#/check?g=8">Проверить свои знания перед ВПР — 10 вопросов, 5–7 минут →</a></p>
         </article>
 
-        <article class="landing-program">
+        <article class="landing-program" id="program-oge">
           <p class="landing-program-tag">9 класс</p>
           <h3>ОГЭ по русскому языку</h3>
           <p class="landing-program-format">Группа до 4 человек или индивидуально</p>
@@ -367,9 +368,10 @@ export function homePage(content) {
             <li>Итоговое собеседование в феврале (допуск к ОГЭ)</li>
           </ul>
           <p class="landing-program-focus"><strong>Упор на изложение и сочинение.</strong> Учимся выделять микротемы и сжимать текст, строить рассуждение и подбирать примеры из текста.</p>
+          <p class="landing-program-check"><a href="#/check?g=9">Проверить свои знания перед ОГЭ — 10 вопросов, 5–7 минут →</a></p>
         </article>
 
-        <article class="landing-program">
+        <article class="landing-program" id="program-ege">
           <p class="landing-program-tag">10–11 класс</p>
           <h3>ЕГЭ по русскому языку</h3>
           <p class="landing-program-format">Группа до 4 человек или индивидуально</p>
@@ -378,6 +380,7 @@ export function homePage(content) {
             <li>Итоговое сочинение в декабре (допуск к ЕГЭ)</li>
           </ul>
           <p class="landing-program-focus"><strong>Упор на сочинение (задание 27).</strong> Формулируем проблему и позицию автора, пишем комментарий с примерами, обосновываем своё мнение. Каждую работу разбираем по критериям.</p>
+          <p class="landing-program-check"><a href="#/check?g=11">Проверить свои знания перед ЕГЭ — 10 вопросов, 5–7 минут →</a></p>
         </article>
 
         <article class="landing-program">

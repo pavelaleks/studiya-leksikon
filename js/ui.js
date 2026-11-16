@@ -1,5 +1,5 @@
 import { accessState, currentProfile } from "./supa.js";
-import { TRACK_HREF, currentTrack } from "./track.js?v=land128";
+import { TRACK_HREF, currentTrack } from "./track.js?v=land130";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -42,8 +42,8 @@ function tabbar(active) {
   } else if (state === "guest") {
     // гость — чаще родитель: программы, цены, тест и запись; материалы — в разделе «Материалы» на главной
     items = [
-      ["#/", "home", "Студия", active === "home" && !/^#(about|prices|apply|learn)/.test(hash) && !hash.startsWith("#/check")],
-      ["#about", "books", "Программы", hash.startsWith("#about")],
+      ["#/", "home", "Студия", active === "home" && !/^#(about|prices|apply|learn|program-)/.test(hash) && !hash.startsWith("#/check")],
+      ["#about", "books", "Программы", /^#(about|program-)/.test(hash)],
       ["#/check", "check", "Тест", hash.startsWith("#/check")],
       ["#apply", "pencil", "Записаться", hash.startsWith("#apply")],
       ["#/login", "login", "Войти", active === "login"],

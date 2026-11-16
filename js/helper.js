@@ -141,7 +141,7 @@ export function mountHelper() {
     return;
   }
   const hashNow = location.hash || "#/";
-  const onHome = hashNow === "#/" || hashNow === "#" || hashNow === "" || /^#(about|prices|apply|learn|faq|teacher|reviews|contact)/.test(hashNow);
+  const onHome = hashNow === "#/" || hashNow === "#" || hashNow === "" || /^#(about|prices|apply|learn|faq|teacher|reviews|contact|program-)/.test(hashNow);
   // на главной всё и так разведено блоком «Что вы хотите сделать?» — кнопка там не нужна и мешала бы тексту
   if (onHome) {
     btn?.remove();
