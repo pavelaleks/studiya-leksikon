@@ -27,6 +27,18 @@ function contactsBlock(extraClass = "", { mail = true } = {}) {
     </div>`;
 }
 
+/** Одна строка ссылок вместо второго ряда кнопок над формой записи. */
+function contactsLine() {
+  const tg = studioTelegram();
+  const wa = studioWhatsApp();
+  const links = [
+    tg.url ? `<a href="${escapeHtml(tg.url)}" target="_blank" rel="noopener noreferrer">Telegram</a>` : "",
+    wa.url ? `<a href="${escapeHtml(wa.url)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>` : "",
+    `<button type="button" class="link-btn" data-reveal-phone>Позвонить</button>`,
+  ].filter(Boolean);
+  return `<p class="landing-contacts-line muted">Удобнее сразу написать или позвонить? ${links.join(" · ")}</p>`;
+}
+
 function plainText(value) {
   return String(value ?? "").replace(/\{([^{}|]+)(?:\|[prseoxzmf])?\}/g, "$1");
 }
@@ -247,7 +259,7 @@ function homeStartHtml() {
       </a>`;
   const tryit = `<a class="home-path" href="#/check">
         <span class="home-path-ico" aria-hidden="true">✏️</span>
-        <span><strong>Проверь себя перед экзаменом</strong><span>10 вопросов за 5–7 минут: ВПР, ОГЭ или ЕГЭ — и что подтянуть</span></span>
+        <span><strong>Проверьте себя перед экзаменом</strong><span>10 вопросов за 5–7 минут: ВПР, ОГЭ или ЕГЭ — и что подтянуть</span></span>
         <span class="home-path-go" aria-hidden="true">›</span>
       </a>`;
   return `<div class="home-start">
@@ -267,7 +279,7 @@ export function homePage(content) {
     <section class="landing-hero" aria-label="Студия Лексикон">
       <div class="landing-hero-copy">
         <p class="landing-exams landing-exams-hero" aria-label="К чему готовим">
-          <span class="exam-vpr">ВПР</span><span class="exam-oge">ОГЭ</span><span class="exam-ege">ЕГЭ</span>
+          <a href="#/check?g=8" title="Проверить себя: ВПР, 8 класс"><span class="exam-vpr">ВПР</span></a><a href="#/check?g=9" title="Проверить себя: ОГЭ, 9 класс"><span class="exam-oge">ОГЭ</span></a><a href="#/check?g=11" title="Проверить себя: ЕГЭ, 10–11 класс"><span class="exam-ege">ЕГЭ</span></a>
         </p>
         <p class="eyebrow landing-kicker">
           <span>Студия Лексикон</span>
@@ -278,12 +290,13 @@ export function homePage(content) {
           <span class="landing-subject">Русский язык</span>
           <span class="landing-subject landing-subject-second">и литература</span>
         </h1>
-        <p class="landing-title">Подготовка к экзаменам и развитие интеллекта учеников 8–11 классов</p>
+        <p class="landing-title">Готовим учеников 8–11 классов к ВПР, ОГЭ и ЕГЭ: разбираемся в правилах и учимся писать изложение и сочинение на высокий балл</p>
         <ul class="landing-facts" aria-label="Формат занятий">
           <li>Очно и онлайн</li>
           <li>Индивидуально или в группе до четырёх</li>
+          <li><a href="#prices">Идёт набор в группы</a></li>
         </ul>
-        <p class="landing-teacher-line">Ведёт <a href="#teacher">Павел Викторович Алексеев</a>, доктор филологических наук</p>
+        <p class="landing-teacher-line">Ведёт <a href="#teacher">Павел Викторович Алексеев</a> — доктор филологических наук, преподаёт с 2002 года</p>
         ${homeStartHtml()}
       </div>
       <figure class="landing-hero-art">
@@ -318,6 +331,10 @@ export function homePage(content) {
         />
         <div>
           <p>Доктор филологических наук, профессор. Основатель, руководитель и ведущий преподаватель студии.</p>
+          <ul class="landing-teacher-facts">
+            <li>Преподаёт с 2002 года</li>
+            <li>Был членом региональной государственной экзаменационной комиссии по проведению ЕГЭ в Республике Алтай — знает экзамен изнутри</li>
+          </ul>
           <p>Открыл студию в 2024 году и ведёт большую часть занятий. Вместе с ним работает команда опытных филологов.</p>
           <p><a href="${escapeHtml(STUDIO.teacherSite)}" target="_blank" rel="noopener noreferrer">Личный сайт</a></p>
         </div>
@@ -327,9 +344,20 @@ export function homePage(content) {
     <section class="landing-offer" id="about" aria-labelledby="offer-title">
       <p class="eyebrow">Программы</p>
       <h2 id="offer-title">Чему учим</h2>
-      <p class="lede">Знаем все типы заданий ОГЭ и ЕГЭ по русскому языку, критерии проверки и ошибки, на которых чаще всего теряют баллы. Больше всего времени уделяем письменной части: изложению и сочинению.</p>
+      <p class="lede">Знаем все типы заданий ВПР, ОГЭ и ЕГЭ по русскому языку, критерии проверки и ошибки, на которых чаще всего теряют баллы. Больше всего времени уделяем письменной части: изложению и сочинению.</p>
 
       <div class="landing-programs">
+        <article class="landing-program">
+          <p class="landing-program-tag">8 класс</p>
+          <h3>ВПР по русскому языку</h3>
+          <p class="landing-program-format">Группа до 4 человек или индивидуально</p>
+          <ul>
+            <li>Все задания проверочной работы: списывание, синтаксический анализ, обособленные члены, работа с текстом</li>
+            <li>Основа для ОГЭ: грамматическая основа, причастные и деепричастные обороты, типы предложений</li>
+          </ul>
+          <p class="landing-program-focus"><strong>Упор на синтаксис и пунктуацию.</strong> Пробелы отсюда потом стоят баллов на ОГЭ — закрываем их заранее.</p>
+        </article>
+
         <article class="landing-program">
           <p class="landing-program-tag">9 класс</p>
           <h3>ОГЭ по русскому языку</h3>
@@ -364,8 +392,67 @@ export function homePage(content) {
         </article>
       </div>
 
-      <p class="landing-base"><strong>8 класс, ВПР.</strong> Основа для ОГЭ: грамматическая основа, причастные и деепричастные обороты, обособленные члены, списывание без ошибок. Пробелы отсюда потом стоят баллов на экзамене.</p>
       <p class="landing-source">Задания берём из открытого банка ФИПИ. Для трудных тем делаем свои тренажёры. Занятия очно в Горно-Алтайске или онлайн.</p>
+    </section>
+
+    <section class="landing-prices" id="prices" aria-labelledby="prices-title">
+      <p class="eyebrow">Стоимость</p>
+      <h2 id="prices-title">Сколько стоят занятия</h2>
+      <div class="landing-price-grid">
+        <article class="landing-price card">
+          <p class="landing-program-tag">Индивидуально</p>
+          <p class="landing-price-sum">от 1000 ₽ <span>в час</span></p>
+          <p class="muted">Программа под ученика: свой темп и упор на слабые места.</p>
+        </article>
+        <article class="landing-price card">
+          <p class="landing-program-tag">В группе до четырёх</p>
+          <p class="landing-price-sum">от 6000 ₽ <span>за 8 часов в месяц</span></p>
+          <p class="muted"><strong>Идёт набор в группы.</strong> Подберём группу по классу и экзамену.</p>
+        </article>
+      </div>
+      <p class="actions"><a class="btn btn-lg" href="#apply">Записаться</a> <a class="btn btn-lg secondary" href="#/check">Проверить себя перед экзаменом</a></p>
+    </section>
+
+    <section class="landing-reviews" id="reviews" aria-labelledby="reviews-title">
+      <p class="eyebrow">Отзывы</p>
+      <h2 id="reviews-title">Что говорят родители</h2>
+      <a class="landing-rating card" href="https://2gis.ru/gornoaltaysk/firm/70000001093540016/tab/reviews" target="_blank" rel="noopener noreferrer">
+        <span class="landing-rating-score">5,0 <span aria-hidden="true">★★★★★</span></span>
+        <span><strong>Оценка студии на 2ГИС</strong><span class="muted">7 оценок · 5 отзывов родителей</span></span>
+        <span class="landing-rating-go">Читать отзывы →</span>
+      </a>
+    </section>
+
+    <section class="landing-learn" id="learn" aria-labelledby="learn-title">
+      <p class="eyebrow">На сайте</p>
+      <h2 id="learn-title">Материалы для занятий</h2>
+      <p class="lede">Правила, тренажёры и задания ВПР, ОГЭ и ЕГЭ — работаем с ними на уроках, заниматься можно и дома.</p>
+      ${continueHtml(true)}
+
+      <div class="landing-learn-subjects">
+        <article class="landing-learn-subject">
+          <header class="landing-learn-subject-head">
+            <p class="landing-learn-label">Русский язык</p>
+            <p class="landing-learn-subject-note">ВПР, ОГЭ и ЕГЭ</p>
+          </header>
+          <div class="landing-learn-links landing-learn-links-ru">
+            <a href="#/ege"><strong>ЕГЭ</strong><span>Задания 1–27</span></a>
+            <a href="#/oge"><strong>ОГЭ</strong><span>Задания 1–13 · ${ogeTrainers} тренажёра</span></a>
+            <a href="#/vpr"><strong>ВПР, 8 класс</strong><span>Задания 1–12</span></a>
+            <a href="#/rules"><strong>Правила</strong><span>${ruleCount} ${ruleWord(ruleCount)}</span></a>
+          </div>
+        </article>
+        <article class="landing-learn-subject">
+          <header class="landing-learn-subject-head">
+            <p class="landing-learn-label">Литература</p>
+            <p class="landing-learn-subject-note">ЕГЭ</p>
+          </header>
+          <div class="landing-learn-links landing-learn-links-lit">
+            <a href="#/literature"><strong>Задания 1–11</strong><span>Фрагменты, ответы, пояснения</span></a>
+            <a href="#/literature/terms"><strong>Словарь терминов</strong><span>Поиск и тренажёр</span></a>
+          </div>
+        </article>
+      </div>
     </section>
 
     <section class="landing-faq" id="faq" aria-labelledby="faq-title">
@@ -373,24 +460,24 @@ export function homePage(content) {
       <h2 id="faq-title">Частые вопросы</h2>
       <div class="landing-faq-list">
         <details class="landing-faq-item" open>
-          <summary>Кто ведёт занятия?</summary>
-          <p>Большую часть занятий ведёт Павел Викторович Алексеев, основатель студии. Остальные ведут филологи из нашей команды с большим опытом преподавания.</p>
+          <summary>Сколько стоят занятия?</summary>
+          <p>Индивидуально — от 1000 ₽ в час. В группе до четырёх человек — от 6000 ₽ за 8 часов в месяц. Точная стоимость зависит от формата и программы.</p>
         </details>
         <details class="landing-faq-item">
-          <summary>Как проходит онлайн?</summary>
-          <p>По видеосвязи в согласованное время. Ссылку присылаем после записи.</p>
+          <summary>Как проходят занятия онлайн?</summary>
+          <p>По видеосвязи в согласованное время, с теми же заданиями и проверкой работ, что и очно. Ссылку присылаем после записи.</p>
         </details>
         <details class="landing-faq-item">
-          <summary>Сколько человек в группе?</summary>
-          <p>До четырёх. Группы собираем для подготовки к ОГЭ и ЕГЭ по русскому языку. Можно заниматься и один на один.</p>
+          <summary>Когда лучше начинать готовиться?</summary>
+          <p>Спокойнее всего — с начала учебного года: хватит времени и на правила, и на письменную часть. Если до экзамена осталось меньше, составим план под оставшееся время.</p>
         </details>
         <details class="landing-faq-item">
-          <summary>Есть ли занятия по литературе?</summary>
-          <p>Да, только индивидуально. На сайте уже есть сводный список тем сочинений ЕГЭ (задание 11).</p>
+          <summary>Как узнать о прогрессе ребёнка?</summary>
+          <p>У каждого ученика есть личный кабинет на сайте: задания от преподавателя, тренировки и проверенные работы с пометками. О результатах всегда можно спросить преподавателя.</p>
         </details>
         <details class="landing-faq-item">
           <summary>С чего начать?</summary>
-          <p>Оставьте заявку, напишите в Telegram или WhatsApp либо позвоните. Договоримся о времени и формате.</p>
+          <p>Пройдите короткий тест <a href="#/check">«Проверь себя перед экзаменом»</a> и оставьте заявку — перезвоним в течение дня и договоримся о времени и формате.</p>
         </details>
       </div>
     </section>
@@ -399,8 +486,8 @@ export function homePage(content) {
       <div class="landing-apply-intro">
         <p class="eyebrow">Запись</p>
         <h2 id="apply-title">Записаться</h2>
-        <p class="lede">Заполните форму или свяжитесь с нами напрямую.</p>
-        ${contactsBlock("landing-contacts-compact", { mail: false })}
+        <p class="lede">Оставьте заявку — перезвоним в течение дня и договоримся о времени и формате.</p>
+        ${contactsLine()}
       </div>
       <form class="apply-form" id="apply-form" novalidate>
         <div class="apply-row">
@@ -468,46 +555,13 @@ export function homePage(content) {
         <div class="apply-send" role="group" aria-label="Отправить заявку">
           <p class="apply-send-label">Отправить заявку</p>
           <div class="landing-cta home-actions apply-actions apply-channel-grid">
-            <button type="submit" class="btn btn-lg msg-btn" name="channel" value="telegram">${iconTelegram()} Telegram</button>
-            <button type="submit" class="btn btn-lg secondary msg-btn" name="channel" value="whatsapp">${iconWhatsApp()} WhatsApp</button>
+            <button type="submit" class="btn btn-lg msg-btn" name="channel" value="telegram">${iconTelegram()} Отправить в Telegram</button>
+            <button type="submit" class="btn btn-lg secondary msg-btn" name="channel" value="whatsapp">${iconWhatsApp()} Отправить в WhatsApp</button>
           </div>
           <p class="muted apply-hint">Откроется чат с уже заполненной заявкой — останется нажать «Отправить» в мессенджере.</p>
         </div>
         <p class="apply-status" id="apply-status" role="status" hidden></p>
       </form>
-    </section>
-
-    <section class="landing-learn" id="learn" aria-labelledby="learn-title">
-      <p class="eyebrow">На сайте</p>
-      <h2 id="learn-title">Материалы для занятий</h2>
-      <p class="lede">Русский язык и литература: правила, тренажёры, задания ВПР, ОГЭ и ЕГЭ. Работаем с ними на уроках, заниматься можно и дома.</p>
-      ${continueHtml(true)}
-      ${accessNoteHtml()}
-
-      <div class="landing-learn-subjects">
-        <article class="landing-learn-subject">
-          <header class="landing-learn-subject-head">
-            <p class="landing-learn-label">Русский язык</p>
-            <p class="landing-learn-subject-note">ВПР, ОГЭ и ЕГЭ</p>
-          </header>
-          <div class="landing-learn-links landing-learn-links-ru">
-            <a href="#/ege"><strong>ЕГЭ</strong><span>Задания 1–27</span></a>
-            <a href="#/oge"><strong>ОГЭ</strong><span>Задания 1–13 · ${ogeTrainers} тренажёра</span></a>
-            <a href="#/vpr"><strong>ВПР, 8 класс</strong><span>Задания 1–12</span></a>
-            <a href="#/rules"><strong>Правила</strong><span>${ruleCount} ${ruleWord(ruleCount)}</span></a>
-          </div>
-        </article>
-        <article class="landing-learn-subject">
-          <header class="landing-learn-subject-head">
-            <p class="landing-learn-label">Литература</p>
-            <p class="landing-learn-subject-note">ЕГЭ</p>
-          </header>
-          <div class="landing-learn-links landing-learn-links-lit">
-            <a href="#/literature"><strong>Задания 1–11</strong><span>Фрагменты, ответы, пояснения</span></a>
-            <a href="#/literature/terms"><strong>Словарь терминов</strong><span>Поиск и тренажёр</span></a>
-          </div>
-        </article>
-      </div>
     </section>
 
     <section class="landing-contact" id="contact" aria-labelledby="contact-title">

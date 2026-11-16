@@ -79,7 +79,7 @@ function sheetHtml(state) {
           )
           .join("")}
       </div>
-      <p class="muted lh-foot">Не нашли ответ? Напишите преподавателю в Telegram или WhatsApp — контакты внизу главной страницы.</p>
+      <p class="muted lh-foot">Не нашли ответ? <a href="#contact" data-lh-close>Напишите преподавателю в Telegram или WhatsApp</a>.</p>
     </div>`;
 }
 
@@ -138,6 +138,14 @@ export function mountHelper() {
   if (state !== "guest") closeBubble();
   if (state === "teacher") {
     btn?.remove();
+    return;
+  }
+  const hashNow = location.hash || "#/";
+  const onHome = hashNow === "#/" || hashNow === "#" || hashNow === "" || /^#(about|prices|apply|learn|faq|teacher|reviews|contact)/.test(hashNow);
+  // на главной всё и так разведено блоком «Что вы хотите сделать?» — кнопка там не нужна и мешала бы тексту
+  if (onHome) {
+    btn?.remove();
+    closeBubble();
     return;
   }
   if (!btn) {

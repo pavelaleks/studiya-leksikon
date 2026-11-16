@@ -1,5 +1,5 @@
 import { accessState, currentProfile } from "./supa.js";
-import { TRACK_HREF, currentTrack } from "./track.js?v=land127";
+import { TRACK_HREF, currentTrack } from "./track.js?v=land128";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -40,11 +40,12 @@ function tabbar(active) {
       ["more", "dots", "Ещё", (active === "teacher" && ["bank", "groups", "reading"].includes(sub)) || active === "literature" || active === "rules"],
     ];
   } else if (state === "guest") {
+    // гость — чаще родитель: программы, цены, тест и запись; материалы — в разделе «Материалы» на главной
     items = [
-      ["#/", "home", "Студия", active === "home"],
-      ["#/rules", "rules", "Правила", active === "rules" || active === "practice"],
-      ["#/ege", "pencil", "Задания", ["ege", "oge", "vpr"].includes(active)],
-      ["#/library", "books", "Читать", active === "literature"],
+      ["#/", "home", "Студия", active === "home" && !/^#(about|prices|apply|learn)/.test(hash) && !hash.startsWith("#/check")],
+      ["#about", "books", "Программы", hash.startsWith("#about")],
+      ["#/check", "check", "Тест", hash.startsWith("#/check")],
+      ["#apply", "pencil", "Записаться", hash.startsWith("#apply")],
       ["#/login", "login", "Войти", active === "login"],
     ];
   } else {
@@ -183,8 +184,7 @@ export function layout(content, active = "", { hideFooter = false } = {}) {
           <p><a href="https://go.2gis.com/lknNX" target="_blank" rel="noopener noreferrer">г. Горно-Алтайск, пр. Коммунистический, 47</a><br><span class="muted">вход со стороны ул. Головина</span></p>
         </div>
         <div>
-          <p class="footer-h">Оформление</p>
-          ${themeSwitchHtml()}
+          ${accessState() === "guest" ? "" : `<p class="footer-h">Оформление</p>${themeSwitchHtml()}`}
           <p class="footer-admin"><a href="#/cabinet">Вход для преподавателя</a></p>
         </div>
       </div>

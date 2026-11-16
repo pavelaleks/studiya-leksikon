@@ -3,8 +3,8 @@
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
 import { humanError, supa } from "./supa.js";
-import { sanitizeFor } from "./lessons.js?v=land127";
-import { RULE_QUESTIONS, TOPIC_TITLE } from "./quiz-rules.js?v=land127";
+import { sanitizeFor } from "./lessons.js?v=land128";
+import { RULE_QUESTIONS, TOPIC_TITLE } from "./quiz-rules.js?v=land128";
 
 const EXAM_OF = { 8: "vpr-rus", 9: "oge-rus", 10: "ege-rus", 11: "ege-rus" };
 const EXAM_TITLE = { "vpr-rus": "ВПР", "oge-rus": "ОГЭ", "ege-rus": "ЕГЭ" };
@@ -55,6 +55,12 @@ function startHtml() {
 }
 
 export async function mountQuiz(host) {
+  // ссылки «ВПР / ОГЭ / ЕГЭ» с главной сразу открывают тест нужного класса: #/check?g=9
+  const g = Number(new URLSearchParams(location.hash.split("?")[1] || "").get("g"));
+  if (EXAM_OF[g]) {
+    history.replaceState(null, "", `${location.pathname}${location.search}#/check`);
+    return run(host, g);
+  }
   host.innerHTML = startHtml();
   host.querySelectorAll("[data-grade]").forEach((b) => b.addEventListener("click", () => run(host, Number(b.dataset.grade))));
 }

@@ -1991,3 +1991,35 @@ body.is-reading .lh-btn { display: none; }
 .qz-list li.is-ok > span:first-child { color: #2e7d4f; }
 .qz-list li.is-bad > span:first-child { color: #b3261e; }
 .qz-list small { display: block; color: var(--ink-soft); margin-top: 4px; }
+
+/* ---------- Главная: цены, отзывы, преподаватель, контакты ---------- */
+.landing-exams-hero a { text-decoration: none; }
+.landing-exams-hero a:hover span { filter: brightness(0.95); outline: 2px solid currentColor; outline-offset: 1px; }
+.landing-facts a { color: inherit; font-weight: 700; }
+.landing-teacher-facts { margin: 6px 0 10px; padding-left: 18px; }
+.landing-teacher-facts li { margin: 4px 0; }
+.landing-prices, .landing-reviews { margin-top: 48px; }
+.landing-price-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 14px 0; }
+.landing-price { padding: 18px 20px; }
+.landing-price p { margin: 0 0 6px; }
+.landing-price-sum { font-size: 28px; font-weight: 800; color: var(--ink); }
+.landing-price-sum span { font-size: 16px; font-weight: 500; color: var(--ink-soft); }
+.landing-rating { display: flex; align-items: center; gap: 18px; padding: 18px 20px; margin-top: 12px; color: var(--ink); text-decoration: none; max-width: 640px; }
+.landing-rating > span:nth-child(2) { display: grid; flex: 1; }
+.landing-rating-score { font-size: 30px; font-weight: 800; white-space: nowrap; }
+.landing-rating-score span { font-size: 18px; color: #e3a008; letter-spacing: 1px; }
+.landing-rating-go { color: var(--accent); font-weight: 700; white-space: nowrap; }
+.landing-rating:hover { border-color: var(--accent); }
+.landing-contacts-line { margin: 6px 0 0; }
+.landing-contacts-line a { font-weight: 700; }
+.link-btn { border: 0; background: none; padding: 0; font: inherit; color: var(--accent); font-weight: 700; text-decoration: underline; cursor: pointer; }
+@media (max-width: 720px) {
+  .landing-hero-art { display: none; }
+  .landing-price-grid { grid-template-columns: 1fr; }
+  .landing-rating { flex-wrap: wrap; gap: 10px; }
+  .site-footer a, .landing-contact a, .landing-contacts-line a, .landing-contacts-line .link-btn { display: inline-block; padding: 10px 0; }
+}
+
+@media (min-width: 761px) {
+  .landing-programs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
