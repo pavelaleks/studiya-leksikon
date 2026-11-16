@@ -1,23 +1,24 @@
-import { mountHelper } from "./helper.js?v=land125";
-import { applyTheme, layout } from "./ui.js?v=land125";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land125";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land125";
-import { mountLiterature } from "./literature.js?v=land125";
-import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land125";
-import { mountRussian } from "./russian.js?v=land125";
-import { mountOge } from "./oge.js?v=land125";
-import { markVprDone, mountVpr } from "./vpr.js?v=land125";
-import { bindApplyForm } from "./apply.js?v=land125";
-import { EGE_TITLES } from "./ege.js?v=land125";
-import { renderExercise } from "./exercises.js?v=land125";
-import { mountTrainer } from "./trainers.js?v=land125";
-import { parseRoute } from "./route.js?v=land125";
+import { mountHelper } from "./helper.js?v=land127";
+import { applyTheme, layout } from "./ui.js?v=land127";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land127";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land127";
+import { mountLiterature } from "./literature.js?v=land127";
+import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land127";
+import { mountRussian } from "./russian.js?v=land127";
+import { mountOge } from "./oge.js?v=land127";
+import { markVprDone, mountVpr } from "./vpr.js?v=land127";
+import { mountQuiz } from "./quiz.js?v=land127";
+import { bindApplyForm } from "./apply.js?v=land127";
+import { EGE_TITLES } from "./ege.js?v=land127";
+import { renderExercise } from "./exercises.js?v=land127";
+import { mountTrainer } from "./trainers.js?v=land127";
+import { parseRoute } from "./route.js?v=land127";
 import { accessState, hasAccess, initAuth, mySolved, onAuthChange, supa } from "./supa.js";
 import { markEgeDone, markOgeDone } from "./progress.js";
-import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land125";
-import { mountTeacher, teacherPage } from "./teacher.js?v=land125";
-import "./session.js?v=land125";
-import { lessonPage, mountLesson } from "./lessons.js?v=land125";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land127";
+import { mountTeacher, teacherPage } from "./teacher.js?v=land127";
+import "./session.js?v=land127";
+import { lessonPage, mountLesson } from "./lessons.js?v=land127";
 
 const app = document.getElementById("app");
 let content = null;
@@ -76,7 +77,7 @@ function bindSearch(sectionId, q) {
   if (!search) return;
   search.addEventListener("input", () => {
     mountHtml(rulesIndex(content, sectionId, search.value), "rules", { scroll: false });
-    import("./rulequiz.js?v=land125").then((m) => m.markRulesIndex(app)).catch(() => {});
+    import("./rulequiz.js?v=land127").then((m) => m.markRulesIndex(app)).catch(() => {});
     bindSearch(sectionId, search.value);
     const again = app.querySelector("#rule-search");
     if (again) {
@@ -183,7 +184,7 @@ async function render() {
 
   if (a === "rules") {
     mountHtml(rulesIndex(content, b || "", q), "rules");
-    import("./rulequiz.js?v=land125").then((m) => m.markRulesIndex(app)).catch(() => {});
+    import("./rulequiz.js?v=land127").then((m) => m.markRulesIndex(app)).catch(() => {});
     bindSearch(b || "", q);
     setTitle(b ? "Правила" : "Правила");
     return;
@@ -202,7 +203,7 @@ async function render() {
       : {};
     mountHtml(rulePage(rule, neighbors), "rules");
     bindRulePrint();
-    import("./rulequiz.js?v=land125").then((m) => m.mountRuleQuiz(app)).catch((e) => console.warn(e));
+    import("./rulequiz.js?v=land127").then((m) => m.mountRuleQuiz(app)).catch((e) => console.warn(e));
     setTitle(rule?.title || "Правило");
     return;
   }
@@ -230,6 +231,14 @@ async function render() {
     setTitle("ОГЭ по русскому");
     const root = app.querySelector("#oge-root");
     if (root) await mountOge(root, parts.slice(1));
+    return;
+  }
+
+  if (a === "check") {
+    mountHtml(`<div class="lit-page" id="quiz-root"></div>`, "home");
+    setTitle("Проверь себя перед экзаменом");
+    const root = app.querySelector("#quiz-root");
+    if (root) await mountQuiz(root);
     return;
   }
 

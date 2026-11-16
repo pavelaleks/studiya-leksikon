@@ -71,6 +71,21 @@ export function bindApplyForm(root = document) {
   const status = root.querySelector("#apply-status");
   form.removeAttribute("action");
 
+  // Заявка после «Проверь себя»: класс, предмет, цель и результат теста подставляются сами.
+  try {
+    const pre = JSON.parse(sessionStorage.getItem("applyPrefill") || "null");
+    if (pre) {
+      sessionStorage.removeItem("applyPrefill");
+      for (const [k, v] of Object.entries(pre)) {
+        const el = form.elements.namedItem(k);
+        if (el && "value" in el) el.value = v;
+      }
+      requestAnimationFrame(() => form.elements.namedItem("name")?.focus({ preventScroll: true }));
+    }
+  } catch {
+    /* ignore */
+  }
+
   const setStatus = (text, ok) => {
     if (!status) return;
     status.hidden = false;

@@ -245,9 +245,9 @@ function homeStartHtml() {
         <span><strong>${been ? "Войти в кабинет" : "Я уже занимаюсь в студии"}</strong><span>${been ? "Вы уже заходили с этого устройства" : "Вход по логину и паролю от преподавателя"}</span></span>
         <span class="home-path-go" aria-hidden="true">›</span>
       </a>`;
-  const tryit = `<a class="home-path" href="#/rules">
+  const tryit = `<a class="home-path" href="#/check">
         <span class="home-path-ico" aria-hidden="true">✏️</span>
-        <span><strong>Посмотреть, как всё устроено</strong><span>Правила и демо-задания ОГЭ и ЕГЭ — без регистрации</span></span>
+        <span><strong>Проверь себя перед экзаменом</strong><span>10 вопросов за 5–7 минут: ВПР, ОГЭ или ЕГЭ — и что подтянуть</span></span>
         <span class="home-path-go" aria-hidden="true">›</span>
       </a>`;
   return `<div class="home-start">
