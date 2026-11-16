@@ -8,9 +8,10 @@
       (function () {
         var path = location.pathname;
         // на github.io сайт живёт в папке /studiya-leksikon, на lexicon-school.ru — в корне
-        var repo = path.indexOf("/studiya-leksikon") === 0 ? "/studiya-leksikon" : "";
-        var rest = repo ? path.slice(repo.length) : path;
-        location.replace(repo + "/#" + (rest || "/"));
+        var repo = /github\.io$/.test(location.hostname) ? "/studiya-leksikon" : "";
+        var rest = path.replace(/^\/studiya-leksikon/, "").replace(/\/index\.html$/, "/");
+        if (rest === "/" || rest === "") rest = "/";
+        location.replace(repo + "/#" + rest);
       })();
     </script>
   </head>
