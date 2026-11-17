@@ -279,10 +279,10 @@ export async function finishExam(lesson, items) {
 /** Полоса с таймером; по нулю — автосдача. */
 export function timerHtml(lesson) {
   return `
-    <div class="exam-bar" id="exam-bar">
-      <span>${lesson.kind === "exam" ? "Пробный экзамен" : "Контрольная"}</span>
+    <div class="exam-bar" id="exam-bar" role="timer">
+      <span class="exam-bar-kind">${lesson.kind === "exam" ? "Пробный экзамен" : "Контрольная"}</span>
       <strong id="exam-left">—</strong>
-      <button class="btn secondary" id="exam-finish" type="button">Завершить работу</button>
+      <button class="btn secondary" id="exam-finish" type="button">Сдать<span class="exam-bar-long"> работу</span></button>
     </div>`;
 }
 

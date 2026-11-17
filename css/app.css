@@ -2029,3 +2029,28 @@ body.is-reading .lh-btn { display: none; }
 @keyframes lx-target { 0%, 60% { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); } 100% { box-shadow: none; } }
 .landing-program-check { margin: 12px 0 0; }
 .landing-program-check a { font-weight: 700; }
+
+/* ---------- Контрольная: таймер не закрывает задание, ответ не закрывает условие ---------- */
+.exam-bar { flex-wrap: nowrap; padding: 8px 10px 8px 16px; }
+.exam-bar strong { white-space: nowrap; }
+.exam-bar .btn { white-space: nowrap; }
+@media (max-width: 760px) {
+  /* таймер — тонкая строка внизу, над нижним меню; сверху условие ничем не закрыто */
+  .exam-bar {
+    position: fixed;
+    top: auto;
+    left: 8px;
+    right: 8px;
+    bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+    z-index: 30;
+    margin: 0;
+    padding: 6px 6px 6px 14px;
+    border-radius: 14px;
+  }
+  .exam-bar-kind, .exam-bar-long { display: none; }
+  .exam-bar strong { font-size: 16px; }
+  .exam-bar .btn { min-height: 0; padding: 7px 14px; font-size: 14px; }
+  body:has(#exam-bar) main { padding-bottom: 64px; }
+  /* блок ответа стоит сразу под условием и не прилипает к низу — иначе он закрывал последние строки задания */
+  .lit-check { position: static; box-shadow: none; margin: 14px 0; }
+}
