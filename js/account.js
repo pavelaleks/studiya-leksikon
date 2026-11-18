@@ -1,10 +1,11 @@
 /** Вход, регистрация и личный кабинет ученика (#/login, #/me). */
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land134";
-import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land134";
+import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land135";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land135";
+import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land135";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, recommendations, recsHtml, selfExamHtml,
-} from "./dashboard.js?v=land134";
+} from "./dashboard.js?v=land135";
 import {
   accessState,
   currentProfile,
@@ -270,7 +271,7 @@ export async function mountMe(root) {
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land134").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
+    import("./lessons.js?v=land135").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
     isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },
     isProfile ? supa.from("my_mistakes").select("*").order("last_try", { ascending: false }) : { data: [] },
     isProfile
@@ -420,6 +421,7 @@ export async function mountMe(root) {
         </form>
       </section>
       ${joinHtml}
+      ${tgSlotHtml()}
       <section class="me-section">
         <h2>Оформление</h2>
         <p class="muted">«Авто» — как в настройках телефона: днём светлая, ночью тёмная.</p>
@@ -449,6 +451,7 @@ export async function mountMe(root) {
     st.textContent = error ? (/invalid code/.test(error.message) ? "Такого кода нет — проверьте у преподавателя." : humanError(error).message) : "Готово, вы в группе.";
   });
   bindSelfExam(host);
+  if (state === "student") mountTg(host, "student");
   host.querySelectorAll("[data-seen-work]").forEach((a) =>
     a.addEventListener("click", () => {
       try {

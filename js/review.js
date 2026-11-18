@@ -8,7 +8,7 @@
  * Координаты на фото — доли ширины/высоты (0…1), чтобы не зависеть от размера экрана.
  */
 import { escapeHtml } from "./ui.js";
-import { MARKS, RUBRICS, applyRules, countWords, rubricFor } from "./rubrics.js?v=land134";
+import { MARKS, RUBRICS, applyRules, countWords, rubricFor } from "./rubrics.js?v=land135";
 
 /* ------------------------------------------------------------------ */
 /* Текст с пометками                                                    */
@@ -75,6 +75,20 @@ function drawOverlay(ctx, w, h, layer = {}) {
     ctx.lineJoin = "round";
     ctx.strokeStyle = s.tool === "marker" ? "rgba(255, 214, 0, 0.38)" : "#d0021b";
     ctx.lineWidth = (s.tool === "marker" ? 18 : 3.2) * base;
+    // перо с нажимом: у точки третье число — сила нажатия (0…1), толщина меняется по ходу линии
+    if (s.tool !== "marker" && s.pts.length > 1 && s.pts[0].length === 3) {
+      for (let i = 1; i < s.pts.length; i += 1) {
+        const [x0, y0, p0] = s.pts[i - 1];
+        const [x1, y1, p1] = s.pts[i];
+        ctx.lineWidth = 3.2 * base * (0.45 + 1.1 * ((p0 + p1) / 2));
+        ctx.beginPath();
+        ctx.moveTo(x0 * w, y0 * h);
+        ctx.lineTo(x1 * w, y1 * h);
+        ctx.stroke();
+      }
+      ctx.restore();
+      return;
+    }
     ctx.beginPath();
     s.pts.forEach(([x, y], i) => (i ? ctx.lineTo(x * w, y * h) : ctx.moveTo(x * w, y * h)));
     if (s.pts.length === 1) ctx.lineTo(s.pts[0][0] * w + 0.5, s.pts[0][1] * h + 0.5);
@@ -114,6 +128,65 @@ export async function renderPhoto(canvas, url, layer) {
   return canvas;
 }
 
+/**
+ * Напечатанный текст ученика — страницей «как в тетради» (JPEG), чтобы проверять его пером так же, как фото.
+ * Страницу рисуем один раз и сохраняем файлом: пометки привязаны к картинке и не съедут на другом экране.
+ */
+export async function textPageBlob(body, heading = "") {
+  const W = 1240;
+  const pad = 110;
+  const font = 'Georgia, "PT Serif", "Times New Roman", serif';
+  const size = 32;
+  const lh = 54;
+  const probe = document.createElement("canvas").getContext("2d");
+  probe.font = `${size}px ${font}`;
+  const lines = [];
+  String(body || "")
+    .replace(/\r/g, "")
+    .split("\n")
+    .forEach((para) => {
+      if (!para.trim()) return lines.push("");
+      let line = "";
+      para.split(/\s+/).forEach((word) => {
+        const next = line ? `${line} ${word}` : word;
+        if (probe.measureText(next).width > W - pad - 70 && line) {
+          lines.push(line);
+          line = word;
+        } else line = next;
+      });
+      lines.push(line);
+    });
+  const top = heading ? 150 : 90;
+  const H = Math.max(1754, top + lines.length * lh + 120);
+  const c = document.createElement("canvas");
+  c.width = W;
+  c.height = H;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#fffdf7";
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "rgba(90, 140, 200, 0.28)";
+  ctx.lineWidth = 1.5;
+  for (let y = top + lh - 12; y < H - 40; y += lh) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = "rgba(208, 2, 27, 0.35)";
+  ctx.beginPath();
+  ctx.moveTo(pad - 24, 0);
+  ctx.lineTo(pad - 24, H);
+  ctx.stroke();
+  ctx.fillStyle = "#1d1a17";
+  if (heading) {
+    ctx.font = `bold 30px ${font}`;
+    ctx.fillText(heading, pad, 90);
+  }
+  ctx.font = `${size}px ${font}`;
+  lines.forEach((line, i) => ctx.fillText(line, pad, top + (i + 1) * lh - 24));
+  return new Promise((resolve) => c.toBlob(resolve, "image/jpeg", 0.88));
+}
+
 export function downloadCanvas(canvas, name) {
   canvas.toBlob((blob) => {
     if (!blob) return;
@@ -141,6 +214,7 @@ export function openPhotoEditor(url, layer = {}) {
         <button type="button" data-tool="pen" class="is-on" title="Красная ручка">✎ Ручка</button>
         <button type="button" data-tool="marker" title="Выделить маркером">▍Маркер</button>
         <button type="button" data-tool="text" title="Нажмите на фото, чтобы написать">T Текст</button>
+        <button type="button" data-tool="eraser" title="Стереть линию или надпись (или переверните перо)">⌫ Ластик</button>
         <button type="button" data-act="undo" title="Отменить последнее">↶ Отменить</button>
         <button type="button" data-act="clear">Очистить</button>
         <span class="rv-spacer"></span>
@@ -172,8 +246,30 @@ export function openPhotoEditor(url, layer = {}) {
       return [Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))];
     };
     let current = null;
+    let erasing = false;
+    let penSeen = false;
+    // ластик: убрать линии и надписи рядом с точкой (отмена вернёт их)
+    const eraseAt = ([x, y]) => {
+      const r = 0.012;
+      const goneS = state.strokes.filter((s) => s.pts.some(([px, py]) => Math.hypot(px - x, (py - y) * (canvas.height / canvas.width)) < r));
+      const goneL = state.labels.filter((l) => Math.hypot(l.x - x, (l.y - y) * (canvas.height / canvas.width)) < r * 3);
+      if (!goneS.length && !goneL.length) return;
+      state.strokes = state.strokes.filter((s) => !goneS.includes(s));
+      state.labels = state.labels.filter((l) => !goneL.includes(l));
+      history.push({ erased: goneS, labels: goneL });
+      redraw();
+    };
     canvas.addEventListener("pointerdown", (e) => {
       e.preventDefault();
+      if (e.pointerType === "pen") penSeen = true;
+      // работаете пером — касания ладони и пальцев не рисуют
+      if (penSeen && e.pointerType === "touch") return;
+      if (tool === "eraser" || (e.pointerType === "pen" && (e.buttons & 32 || e.button === 5))) {
+        erasing = true;
+        try { canvas.setPointerCapture(e.pointerId); } catch {}
+        eraseAt(point(e));
+        return;
+      }
       if (tool === "text") {
         const text = prompt("Текст пометки на фото:");
         if (text && text.trim()) {
@@ -184,19 +280,25 @@ export function openPhotoEditor(url, layer = {}) {
         }
         return;
       }
-      canvas.setPointerCapture(e.pointerId);
-      current = { tool, pts: [point(e)] };
+      try { canvas.setPointerCapture(e.pointerId); } catch {}
+      const withPressure = tool === "pen" && e.pointerType === "pen" && e.pressure > 0;
+      const pt = (ev) => (withPressure ? [...point(ev), Math.round(Math.min(1, ev.pressure || 0.5) * 100) / 100] : point(ev));
+      current = { tool, pts: [pt(e)], pt };
     });
     canvas.addEventListener("pointermove", (e) => {
+      if (erasing) return eraseAt(point(e));
       if (!current) return;
-      current.pts.push(point(e));
+      const many = e.getCoalescedEvents?.();
+      (many && many.length ? many : [e]).forEach((ev) => current.pts.push(current.pt(ev)));
       redraw(current);
     });
     const end = () => {
+      erasing = false;
       if (!current) return;
+      delete current.pt;
       // прореживаем точки, чтобы данные были лёгкими
       current.pts = current.pts.filter((p, i, a) => i === 0 || i === a.length - 1 || Math.hypot(p[0] - a[i - 1][0], p[1] - a[i - 1][1]) > 0.002);
-      current.pts = current.pts.map(([x, y]) => [Math.round(x * 10000) / 10000, Math.round(y * 10000) / 10000]);
+      current.pts = current.pts.map(([x, y, pr]) => (pr == null ? [Math.round(x * 10000) / 10000, Math.round(y * 10000) / 10000] : [Math.round(x * 10000) / 10000, Math.round(y * 10000) / 10000, pr]));
       state.strokes.push(current);
       history.push("stroke");
       current = null;
@@ -213,13 +315,17 @@ export function openPhotoEditor(url, layer = {}) {
       b.addEventListener("click", () => {
         tool = b.dataset.tool;
         wrap.querySelectorAll("[data-tool]").forEach((x) => x.classList.toggle("is-on", x === b));
-        canvas.style.cursor = tool === "text" ? "text" : "crosshair";
+        canvas.style.cursor = tool === "text" ? "text" : tool === "eraser" ? "cell" : "crosshair";
       })
     );
     wrap.querySelector('[data-act="undo"]').addEventListener("click", () => {
       const last = history.pop();
       if (last === "stroke") state.strokes.pop();
       if (last === "label") state.labels.pop();
+      if (last && typeof last === "object") {
+        state.strokes.push(...last.erased);
+        state.labels.push(...last.labels);
+      }
       if (!last) {
         // отменяем то, что было до открытия редактора
         if (state.labels.length) state.labels.pop();

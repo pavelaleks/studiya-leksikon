@@ -5,7 +5,7 @@
  *  - письменная работа: черновик, фото, сдача на проверку, оценка.
  */
 import { escapeHtml } from "./ui.js";
-import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land134";
+import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land135";
 import {
   accessState,
   currentUser,
@@ -340,6 +340,8 @@ export function bindWritten(
       /* ignore */
     }
     const text = work?.body || saved || "";
+    const typedPath = work?.annotations?.typed?.path;
+    const typedHtml = typedPath && (status === "graded" || status === "returned") ? `<h4>Ваш текст с пометками ручкой</h4>${await filesHtml([typedPath])}` : "";
     const review =
       work && (status === "graded" || status === "returned")
         ? `
@@ -353,7 +355,8 @@ export function bindWritten(
           (work.annotations?.text || []).length
             ? `<h4>Ваш текст с пометками</h4><div class="card rv-body">${markedTextHtml(work.body, work.annotations.text)}</div>${marksListHtml(work.annotations.text)}`
             : ""
-        }`
+        }
+        ${typedHtml}`
         : "";
     box.innerHTML = `
       ${review}

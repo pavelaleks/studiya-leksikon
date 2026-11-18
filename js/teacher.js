@@ -1,18 +1,18 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land134";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land135";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land134";
+import { taskHref } from "./account.js?v=land135";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land134";
-import { readingView } from "./teacher-reading.js?v=land134";
-import { optionsOf } from "./practice.js?v=land134";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land134";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land134";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land134";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land135";
+import { readingView } from "./teacher-reading.js?v=land135";
+import { optionsOf } from "./practice.js?v=land135";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land135";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land135";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land135";
 import {
-  countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land134";
+  countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
+} from "./review.js?v=land135";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -506,6 +506,7 @@ function studentMessage(login, password, fresh = true) {
     "1. Открой ссылку выше (или сайт → «Войти», на телефоне кнопка внизу экрана).",
     "2. Введи логин и пароль — так, как они написаны здесь.",
     "3. На «Главной» — задания от меня и «Тренировка дня». Заходи каждый день: растёт серия и очки.",
+    "4. Чтобы задания и напоминания о сроках приходили в Telegram — в разделе «Я» нажми «Подключить Telegram».",
     "",
     "Совет: добавь сайт на экран телефона — в браузере «Поделиться» → «На экран „Домой“».",
     "Пароль можно сменить в разделе «Я». Забудешь пароль — напиши мне, я задам новый.",
@@ -949,7 +950,7 @@ async function studentView(host, render, id) {
     <p class="crumbs"><a href="#/cabinet/students">← Ученики</a></p>
     <h1>${escapeHtml(p.full_name || p.email)}</h1>
     <p class="t-xp">Очки: <b>${xpTotal}</b> · за неделю: <b>+${xpWeek}</b> · дней с занятиями: <b>${activeDays}</b> · закреплено глав правил: <b>${(mastered || []).length}</b></p>
-    <p class="lede">${isPseudoEmail(p.email) ? `логин <b>${escapeHtml(loginOf(p.email))}</b>` : escapeHtml(p.email || "")} · ${STATUS_TEXT[p.status]}${p.grade ? ` · ${p.grade} класс` : ""}${p.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""}</p>
+    <p class="lede">${isPseudoEmail(p.email) ? `логин <b>${escapeHtml(loginOf(p.email))}</b>` : escapeHtml(p.email || "")} · ${STATUS_TEXT[p.status]}${p.grade ? ` · ${p.grade} класс` : ""}${p.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""} · ${p.tg_chat_id ? "Telegram подключён" : "Telegram не подключён"}</p>
     ${accountBlockHtml(p)}
     ${activityHtml(actRows || [], att30 || [])}
     <section class="me-section">
@@ -1151,7 +1152,10 @@ async function workReview(host, render, id) {
           ${Object.entries(MARKS).map(([k, m]) => `<button type="button" data-mark="${k}" class="rv-chip rv-${k}" title="${escapeHtml(m.title)}">${escapeHtml(m.label)}</button>`).join("")}
           <input id="rv-note" placeholder="комментарий (необязательно)" />
         </div>
-        <div id="rv-list">${marksListHtml(ann.text, { editable: true })}</div>`
+        <div id="rv-list">${marksListHtml(ann.text, { editable: true })}</div>
+        <p class="actions"><button type="button" class="btn secondary" id="rv-pen">✎ Проверить ручкой (стилусом)</button>
+          <span class="muted">Текст превратится в страницу «как в тетради» — на ней можно писать пером, как на фото.</span></p>
+        <figure class="rv-photo rv-typed" ${ann.typed?.path ? "" : "hidden"}><canvas></canvas><figcaption>Текст ученика · пометки ручкой</figcaption></figure>`
           : '<p class="muted">Текста нет — смотрите фото.</p>'
       }
       ${
@@ -1258,9 +1262,57 @@ async function workReview(host, render, id) {
   );
   bindDeletes();
 
+  // ----- напечатанный текст — страницей для пера
+  const typedFig = host.querySelector(".rv-typed");
+  const bodyKey = (() => {
+    let h = 0;
+    for (const ch of body) h = (h * 31 + ch.codePointAt(0)) | 0;
+    return `${body.length}:${h}`;
+  })();
+  let typedUrl = null;
+  const showTyped = async () => {
+    if (!typedFig || !ann.typed?.path) return;
+    typedUrl = typedUrl || (await signedFileUrl(ann.typed.path));
+    typedFig.hidden = false;
+    await renderPhoto(typedFig.querySelector("canvas"), typedUrl, ann.photos[ann.typed.path]);
+  };
+  const ensureTyped = async () => {
+    if (ann.typed?.path && ann.typed.key === bodyKey) return true;
+    const old = ann.typed?.path && ann.photos[ann.typed.path];
+    if (old && ((old.strokes || []).length || (old.labels || []).length) &&
+      !confirm("Ученик изменил текст после ваших пометок ручкой. Сделать новую страницу? Старые пометки ручкой останутся только на старой странице.")) return false;
+    const blob = await textPageBlob(body, studentName);
+    const path = `${w.student_id}/review-${id}-${Date.now()}.jpg`;
+    const { error: upErr } = await supa.storage.from("works").upload(path, blob, { contentType: "image/jpeg" });
+    if (upErr) throw humanError(upErr);
+    ann.typed = { path, key: bodyKey };
+    ann.photos[path] = { strokes: [], labels: [] };
+    typedUrl = null;
+    return true;
+  };
+  showTyped().catch(() => {});
+  const openTyped = async () => {
+    const btn = host.querySelector("#rv-pen");
+    btn.disabled = true;
+    try {
+      if (!(await ensureTyped())) return;
+      typedUrl = typedUrl || (await signedFileUrl(ann.typed.path));
+      const layer = await openPhotoEditor(typedUrl, ann.photos[ann.typed.path]);
+      if (layer) ann.photos[ann.typed.path] = layer;
+      await showTyped();
+      if (layer) typedFig.querySelector("figcaption").textContent = "Текст ученика · пометки ручкой (не забудьте сохранить оценку или «Сохранить без отправки»)";
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  };
+  host.querySelector("#rv-pen")?.addEventListener("click", openTyped);
+  typedFig?.querySelector("canvas").addEventListener("click", openTyped);
+
   // ----- фото
   const drawPhotos = () =>
-    host.querySelectorAll(".rv-photo").forEach(async (fig) => {
+    host.querySelectorAll(".rv-photo[data-path]").forEach(async (fig) => {
       const p = fig.dataset.path;
       const canvas = fig.querySelector("canvas");
       if (!canvas || !photoUrls[p]) return;
@@ -1271,7 +1323,7 @@ async function workReview(host, render, id) {
       }
     });
   drawPhotos();
-  host.querySelectorAll(".rv-photo canvas").forEach((canvas) =>
+  host.querySelectorAll(".rv-photo[data-path] canvas").forEach((canvas) =>
     canvas.addEventListener("click", async () => {
       const fig = canvas.closest(".rv-photo");
       const p = fig.dataset.path;
