@@ -3,6 +3,7 @@
 // События НЕ сохраняются в базе: функция читает календарь в момент запроса и отдаёт их только преподавателю.
 //   POST {from, to}        — события в промежутке (повторяющиеся развёрнуты, переносы и отмены учтены)
 //   POST {action:"test", url} — проверить ссылку, не сохраняя её
+//   POST {action:"my"}      — УЧЕНИКУ: его ближайшие занятия (только время и название группы — без названий событий)
 // Проверка JWT у функции ВКЛЮЧЕНА (по умолчанию); роль преподавателя проверяется здесь же.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import ICAL from "npm:ical.js@2.1.0";
@@ -19,13 +20,43 @@ const CORS = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 
-async function teacherId(req: Request) {
+async function whoAmI(req: Request) {
   const jwt = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
   if (!jwt) return null;
   const { data } = await admin.auth.getUser(jwt);
   if (!data?.user) return null;
-  const { data: p } = await admin.from("profiles").select("role").eq("id", data.user.id).maybeSingle();
-  return p?.role === "teacher" ? data.user.id : null;
+  const { data: p } = await admin.from("profiles").select("role, status").eq("id", data.user.id).maybeSingle();
+  return p ? { id: data.user.id, role: p.role as string, status: p.status as string } : null;
+}
+
+/** Ученику: занятия его групп и индивидуальные в ближайшие 2 недели — только время и подпись. */
+async function myLessons(uid: string) {
+  const { data: gm } = await admin.from("group_members").select("group_id, groups(title, archived)").eq("student_id", uid);
+  // deno-lint-ignore no-explicit-any
+  const label = new Map<string, string>([[`s:${uid}`, "Индивидуальное занятие"]]);
+  // deno-lint-ignore no-explicit-any
+  (gm || []).forEach((g: any) => !g.groups?.archived && label.set(`g:${g.group_id}`, g.groups?.title || "Занятие группы"));
+  const { data: cals } = await admin.from("teacher_calendar").select("ics_url, map").not("ics_url", "is", null);
+  const from = Date.now() - 3 * 3600000;
+  const to = Date.now() + 15 * 86400000;
+  // deno-lint-ignore no-explicit-any
+  const out: any[] = [];
+  for (const c of cals || []) {
+    const mine = Object.entries(c.map || {}).filter(([, v]) => label.has(String(v)));
+    if (!mine.length) continue;
+    try {
+      const evs = expandIcs(ICAL, await fetchIcs(c.ics_url), from, to);
+      for (const e of evs) {
+        const key = String((c.map || {})[e.uid] || "");
+        if (!label.has(key) || e.allDay) continue;
+        out.push({ start: e.start, end: e.end, label: label.get(key) });
+      }
+    } catch (_) {
+      /* календарь недоступен — просто без расписания */
+    }
+  }
+  out.sort((a, b) => a.start.localeCompare(b.start));
+  return out;
 }
 
 // ---- разбор календаря (чистая функция, без Deno — проверяется отдельно) ----
@@ -112,9 +143,15 @@ async function fetchIcs(url: string) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
-  const tid = await teacherId(req);
-  if (!tid) return json({ error: "Только для преподавателя" }, 403);
+  const me = await whoAmI(req);
+  if (!me) return json({ error: "Нужно войти" }, 401);
   const b = await req.json().catch(() => ({}));
+  if (b.action === "my") {
+    if (me.status !== "active") return json({ lessons: [] });
+    return json({ lessons: await myLessons(me.id) });
+  }
+  if (me.role !== "teacher") return json({ error: "Только для преподавателя" }, 403);
+  const tid = me.id;
   try {
     let url = "";
     if (b.action === "test") url = String(b.url || "").trim();

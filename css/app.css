@@ -2170,3 +2170,12 @@ body.is-reading .lh-btn { display: none; }
 .t-add-list { display: grid; gap: 4px; max-height: 320px; overflow: auto; padding: 4px 0; }
 .t-add-list label { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
 .t-add-list small { flex-basis: 100%; padding-left: 26px; }
+
+/* Ученик: мои занятия по расписанию */
+.me-schedule { display: grid; gap: 8px; }
+.me-schedule h2 { margin-bottom: 0; }
+.me-lesson { padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card, transparent); }
+.me-lesson.is-today { border-color: var(--accent); }
+.me-lesson p { margin: 0; }
+.me-lesson-when strong { text-transform: none; }
+.me-lesson-todo { margin-top: 4px !important; font-size: 0.92rem; }

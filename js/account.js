@@ -1,11 +1,12 @@
 /** Вход, регистрация и личный кабинет ученика (#/login, #/me). */
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land143";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land143";
-import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land143";
+import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land144";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land144";
+import { studentScheduleMount } from "./calendar.js?v=land144";
+import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land144";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, recommendations, recsHtml, selfExamHtml,
-} from "./dashboard.js?v=land143";
+} from "./dashboard.js?v=land144";
 import {
   accessState,
   currentProfile,
@@ -271,7 +272,7 @@ export async function mountMe(root) {
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land143").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
+    import("./lessons.js?v=land144").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
     isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },
     isProfile ? supa.from("my_mistakes").select("*").order("last_try", { ascending: false }) : { data: [] },
     isProfile
@@ -349,6 +350,7 @@ export async function mountMe(root) {
           : ""
       }
       ${checkedWorksHtml(dash)}
+      ${state === "student" ? '<section class="me-section me-schedule" id="me-schedule" hidden></section>' : ""}
       <section class="me-section me-today">
         <h2>Сегодня</h2>
         ${lessonsHtml || `<p class="muted me-empty">Новых заданий от преподавателя нет. Самое время для тренировки дня.</p>`}
@@ -452,6 +454,7 @@ export async function mountMe(root) {
   });
   bindSelfExam(host);
   if (state === "student") mountTg(host, "student");
+  if (state === "student" && !isProfile) studentScheduleMount(host, groupNames);
   host.querySelectorAll("[data-seen-work]").forEach((a) =>
     a.addEventListener("click", () => {
       try {

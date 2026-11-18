@@ -458,3 +458,89 @@ export async function scheduleTodayMount(host) {
     box.innerHTML = `<p class="muted">Расписание не загрузилось: ${escapeHtml(err.message)}</p>`;
   }
 }
+
+/* ---------------- ученик: группа и ближайшие занятия ---------------- */
+
+const SCHED_KEY = "leksikon-my-schedule";
+async function myLessonsCached() {
+  try {
+    const c = JSON.parse(sessionStorage.getItem(SCHED_KEY) || "null");
+    if (c && Date.now() - c.at < 20 * 60000) return c.lessons;
+  } catch {}
+  const { data, error } = await supa.functions.invoke("calendar", { body: { action: "my" } });
+  if (error) throw error;
+  const lessons = data?.lessons || [];
+  try {
+    sessionStorage.setItem(SCHED_KEY, JSON.stringify({ at: Date.now(), lessons }));
+  } catch {}
+  return lessons;
+}
+
+/** Главная ученика: «Твоя группа», ближайшие занятия и что к каждому сделать. */
+export async function studentScheduleMount(host, groupNames = []) {
+  const box = host.querySelector("#me-schedule");
+  if (!box) return;
+  const uid = currentUser()?.id;
+  let lessons = [];
+  try {
+    lessons = (await myLessonsCached()).filter((l) => Date.parse(l.end) > Date.now()).slice(0, 4);
+  } catch {
+    /* расписание недоступно — покажем только группу */
+  }
+  // несделанные работы со сроком — чтобы показать их под ближайшим занятием
+  let open = [];
+  if (lessons.length && uid) {
+    const { data: ls } = await supa
+      .from("lessons")
+      .select("id, title, status, self_made, lesson_items(id, due_at, hidden)")
+      .eq("status", "live")
+      .eq("self_made", false)
+      .limit(60);
+    const items = (ls || []).flatMap((l) => (l.lesson_items || []).filter((i) => i.due_at && !i.hidden).map((i) => ({ ...i, l })));
+    const ids = items.map((i) => i.id);
+    if (ids.length) {
+      const [{ data: at }, { data: wk }] = await Promise.all([
+        supa.from("attempts").select("item_id").eq("student_id", uid).in("item_id", ids),
+        supa.from("written_works").select("item_id").eq("student_id", uid).in("item_id", ids).neq("status", "draft"),
+      ]);
+      const done = new Set([...(at || []), ...(wk || [])].map((r) => r.item_id));
+      const byLesson = new Map();
+      items
+        .filter((i) => !done.has(i.id) && Date.parse(i.due_at) > Date.now() - 7 * DAY)
+        .forEach((i) => {
+          const cur = byLesson.get(i.l.id);
+          if (!cur || i.due_at < cur.due) byLesson.set(i.l.id, { id: i.l.id, title: i.l.title, due: i.due_at });
+        });
+      open = [...byLesson.values()].sort((a, b) => a.due.localeCompare(b.due));
+    }
+  }
+  if (!lessons.length && !groupNames.length) {
+    box.hidden = true;
+    return;
+  }
+  const used = new Set();
+  const rows = lessons
+    .map((l) => {
+      const s = new Date(l.start);
+      const todo = open.filter((w) => !used.has(w.id) && Date.parse(w.due) <= Date.parse(l.start) + 3600000);
+      todo.forEach((w) => used.add(w.id));
+      const isToday = ymd(s) === ymd(new Date());
+      const isTomorrow = ymd(s) === ymd(new Date(Date.now() + DAY));
+      return `<div class="me-lesson${isToday ? " is-today" : ""}">
+        <p class="me-lesson-when"><strong>${isToday ? "Сегодня" : isTomorrow ? "Завтра" : dayTitle(s)}, ${hm(s)}–${hm(new Date(l.end))}</strong> <span class="muted">${escapeHtml(l.label)}</span></p>
+        ${
+          todo.length
+            ? `<p class="me-lesson-todo">К занятию: ${todo
+                .map((w) => `<a href="#/lesson/${w.id}">«${escapeHtml(w.title)}»</a>${Date.parse(w.due) < Date.now() ? ' <span class="badge">срок прошёл</span>' : ""}`)
+                .join(", ")}</p>`
+            : ""
+        }
+      </div>`;
+    })
+    .join("");
+  box.innerHTML = `
+    <h2>Мои занятия</h2>
+    ${groupNames.length ? `<p class="muted">Ты в группе: <strong>${escapeHtml(groupNames.join(", "))}</strong></p>` : ""}
+    ${rows || '<p class="muted">Расписание появится здесь, когда преподаватель его подключит.</p>'}`;
+  box.hidden = false;
+}
