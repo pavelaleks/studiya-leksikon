@@ -1,10 +1,10 @@
 /** Вход, регистрация и личный кабинет ученика (#/login, #/me). */
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land132";
-import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, tracksOf } from "./track.js?v=land132";
+import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land133";
+import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land133";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, recommendations, recsHtml, selfExamHtml,
-} from "./dashboard.js?v=land132";
+} from "./dashboard.js?v=land133";
 import {
   accessState,
   currentProfile,
@@ -270,7 +270,7 @@ export async function mountMe(root) {
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land132").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
+    import("./lessons.js?v=land133").then((m) => m.myLessonsHtml({ today: !isProfile })).catch(() => ""),
     isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },
     isProfile ? supa.from("my_mistakes").select("*").order("last_try", { ascending: false }) : { data: [] },
     isProfile
@@ -379,8 +379,8 @@ export async function mountMe(root) {
           ? `<section class="me-section"><div class="me-quick">
               <a href="#/me/profile#mistakes"><span aria-hidden="true">↺</span>Тетрадь ошибок${dash?.mistakes?.length ? ` <b>${dash.mistakes.length}</b>` : ""}</a>
               <a href="#/me/profile#self-exam"><span aria-hidden="true">⏱</span>Пробный экзамен</a>
-              <a href="#/library/poems"><span aria-hidden="true">🎭</span>Стихи наизусть</a>
-              <a href="#/library/read"><span aria-hidden="true">📖</span>Читать и отвечать</a>
+              ${subjectsOf(p).lit ? `<a href="#/library/poems"><span aria-hidden="true">🎭</span>Стихи наизусть</a>
+              <a href="#/library/read"><span aria-hidden="true">📖</span>Читать и отвечать</a>` : ""}
             </div></section>`
           : ""
       }
@@ -399,7 +399,7 @@ export async function mountMe(root) {
       ${pendingNote}
       ${dash ? heroHtml(dash, p) : ""}
       ${dash ? badgesHtml(badges(dash, code)) : ""}
-      ${dash ? `<section class="me-section"><h2>Правила</h2><a class="me-write card" href="#/rules"><span class="me-rec-icon" aria-hidden="true">📘</span><span><strong>Закреплено глав: ${dash.events.filter((e) => e.kind === "rule").length}</strong><span class="muted">Открой правило и пройди «Проверь себя» внизу страницы: 4 из 5 — глава закреплена, +15 очков.</span></span><span class="me-rec-go" aria-hidden="true">›</span></a></section>` : ""}
+      ${dash && subjectsOf(p).rus ? `<section class="me-section"><h2>Правила</h2><a class="me-write card" href="#/rules"><span class="me-rec-icon" aria-hidden="true">📘</span><span><strong>Закреплено глав: ${dash.events.filter((e) => e.kind === "rule").length}</strong><span class="muted">Открой правило и пройди «Проверь себя» внизу страницы: 4 из 5 — глава закреплена, +15 очков.</span></span><span class="me-rec-go" aria-hidden="true">›</span></a></section>` : ""}
       ${dash ? selfExamHtml(code) : ""}
       ${lessonsHtml}
       <section class="me-section"><h2>Прогресс по номерам</h2>${statsHtml(stats.data || [])}</section>

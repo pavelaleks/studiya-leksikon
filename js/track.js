@@ -50,3 +50,22 @@ export function setTrack(code) {
     localStorage.setItem("leksikon-track", code);
   } catch {}
 }
+
+/** Какие предметы открыты: у ученика — по его курсам; гостю, преподавателю и ученику без курсов — всё. */
+export function subjectsOf(profile) {
+  const c = profile?.courses || [];
+  if (!profile || profile.role === "teacher" || !c.length) return { rus: true, lit: true };
+  return { rus: c.some((x) => x.startsWith("rus:")), lit: c.some((x) => x.startsWith("lit:")) };
+}
+
+/** Предмет раздела сайта, если раздел относится к одному предмету. Ссылка на конкретное задание
+ *  (#/ege/5/123) пропускается — его видимость решает база (например, задание из занятия). */
+export function routeSubject(parts) {
+  const [a, b, c] = parts;
+  const oneTask = /^\d+$/.test(b || "") && !!c;
+  if (["rules", "rule", "practice", "exercise", "trainer"].includes(a)) return "rus";
+  if (["ege", "oge", "vpr"].includes(a)) return oneTask ? null : "rus";
+  if (a === "library") return "lit";
+  if (a === "literature") return oneTask || b === "archive" ? null : "lit";
+  return null;
+}

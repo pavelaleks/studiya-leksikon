@@ -1,24 +1,25 @@
-import { mountHelper } from "./helper.js?v=land132";
-import { applyTheme, layout } from "./ui.js?v=land132";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land132";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land132";
-import { mountLiterature } from "./literature.js?v=land132";
-import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land132";
-import { mountRussian } from "./russian.js?v=land132";
-import { mountOge } from "./oge.js?v=land132";
-import { markVprDone, mountVpr } from "./vpr.js?v=land132";
-import { mountQuiz } from "./quiz.js?v=land132";
-import { bindApplyForm } from "./apply.js?v=land132";
-import { EGE_TITLES } from "./ege.js?v=land132";
-import { renderExercise } from "./exercises.js?v=land132";
-import { mountTrainer } from "./trainers.js?v=land132";
-import { parseRoute } from "./route.js?v=land132";
-import { accessState, hasAccess, initAuth, mySolved, onAuthChange, supa } from "./supa.js";
+import { mountHelper } from "./helper.js?v=land133";
+import { applyTheme, layout } from "./ui.js?v=land133";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land133";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land133";
+import { mountLiterature } from "./literature.js?v=land133";
+import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land133";
+import { mountRussian } from "./russian.js?v=land133";
+import { mountOge } from "./oge.js?v=land133";
+import { markVprDone, mountVpr } from "./vpr.js?v=land133";
+import { mountQuiz } from "./quiz.js?v=land133";
+import { bindApplyForm } from "./apply.js?v=land133";
+import { EGE_TITLES } from "./ege.js?v=land133";
+import { renderExercise } from "./exercises.js?v=land133";
+import { mountTrainer } from "./trainers.js?v=land133";
+import { parseRoute } from "./route.js?v=land133";
+import { accessState, currentProfile, hasAccess, initAuth, mySolved, onAuthChange, supa } from "./supa.js";
+import { routeSubject, subjectsOf } from "./track.js?v=land133";
 import { markEgeDone, markOgeDone } from "./progress.js";
-import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land132";
-import { mountTeacher, teacherPage } from "./teacher.js?v=land132";
-import "./session.js?v=land132";
-import { lessonPage, mountLesson } from "./lessons.js?v=land132";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land133";
+import { mountTeacher, teacherPage } from "./teacher.js?v=land133";
+import "./session.js?v=land133";
+import { lessonPage, mountLesson } from "./lessons.js?v=land133";
 
 const app = document.getElementById("app");
 let content = null;
@@ -77,7 +78,7 @@ function bindSearch(sectionId, q) {
   if (!search) return;
   search.addEventListener("input", () => {
     mountHtml(rulesIndex(content, sectionId, search.value), "rules", { scroll: false });
-    import("./rulequiz.js?v=land132").then((m) => m.markRulesIndex(app)).catch(() => {});
+    import("./rulequiz.js?v=land133").then((m) => m.markRulesIndex(app)).catch(() => {});
     bindSearch(sectionId, search.value);
     const again = app.querySelector("#rule-search");
     if (again) {
@@ -187,6 +188,20 @@ async function render() {
   document.body.classList.remove("is-landing");
   document.body.classList.remove("is-reading");
 
+  // Ученик видит только разделы своих предметов: русского — правила и задания, литературы — библиотеку и литературу.
+  const need = routeSubject(parts);
+  if (need && !subjectsOf(currentProfile())[need]) {
+    const name = need === "lit" ? "литературы" : "русского языка";
+    mountHtml(
+      `<div class="empty"><p><strong>Этот раздел — для учеников курса ${name}.</strong></p>
+        <p class="muted">Если хотите заниматься и этим предметом, попросите преподавателя добавить курс.</p>
+        <p class="actions" style="justify-content:center"><a class="btn" href="#/me/profile#courses">Попросить доступ к курсу</a> <a class="btn secondary" href="#/me">На главную</a></p></div>`,
+      "me"
+    );
+    setTitle("Раздел другого курса");
+    return;
+  }
+
   if (a === "thanks") {
     mountHtml(thanksPage(), "home");
     setTitle("Заявка отправлена");
@@ -195,7 +210,7 @@ async function render() {
 
   if (a === "rules") {
     mountHtml(rulesIndex(content, b || "", q), "rules");
-    import("./rulequiz.js?v=land132").then((m) => m.markRulesIndex(app)).catch(() => {});
+    import("./rulequiz.js?v=land133").then((m) => m.markRulesIndex(app)).catch(() => {});
     bindSearch(b || "", q);
     setTitle(b ? "Правила" : "Правила");
     return;
@@ -214,7 +229,7 @@ async function render() {
       : {};
     mountHtml(rulePage(rule, neighbors), "rules");
     bindRulePrint();
-    import("./rulequiz.js?v=land132").then((m) => m.mountRuleQuiz(app)).catch((e) => console.warn(e));
+    import("./rulequiz.js?v=land133").then((m) => m.mountRuleQuiz(app)).catch((e) => console.warn(e));
     setTitle(rule?.title || "Правило");
     return;
   }
