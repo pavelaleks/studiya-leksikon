@@ -5,13 +5,13 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land137";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land137";
-import { SOURCES, bankFiles } from "./teacher.js?v=land137";
+import { taskHref } from "./account.js?v=land138";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land138";
+import { SOURCES, bankFiles } from "./teacher.js?v=land138";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land137";
+} from "./exams.js?v=land138";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -137,22 +137,16 @@ function writtenTypeOptions() {
     .join("");
 }
 
-/** Задание для письменной работы: из банка, по возможности такое, которое никто из этих учеников ещё не писал. */
-async function pickWrittenTask(source, no, roster = [], exclude = []) {
+/** Задание для письменной работы: из банка, только такое, которое эти ученики (группа) ещё не отрабатывали. */
+async function pickWrittenTask(source, no, roster = [], exclude = [], groupId = null) {
   const ex = EXAMS[source];
-  let q = supa.from("tasks").select("id, answer_mode").eq("source", source).eq("task_no", no).eq("is_published", true).limit(1000);
+  let q = supa.from("tasks").select("id, answer_mode, passage_id").eq("source", source).eq("task_no", no).eq("is_published", true).limit(1000);
   if (ex) q = q.eq("bank_file", ex.bank(no));
   const { data, error } = await q;
   if (error) throw humanError(error);
-  let pool = (data || []).filter((t) => !exclude.includes(t.id));
-  if (!pool.length) return null;
-  if (roster.length) {
-    const { data: done } = await supa.from("written_works").select("task_id").in("student_id", roster).in("task_id", pool.map((t) => t.id).slice(0, 900));
-    const seen = new Set((done || []).map((w) => w.task_id));
-    const fresh = pool.filter((t) => !seen.has(t.id));
-    if (fresh.length) pool = fresh;
-  }
-  return pool[Math.floor(Math.random() * pool.length)];
+  const used = await writtenUsed(roster, groupId, source, no);
+  const pool = (data || []).filter((t) => !exclude.includes(t.id) && !used.has(t));
+  return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
 }
 
 /** Все задания этого типа в банке (кратко) — для выбора текста вручную. */
@@ -176,11 +170,50 @@ async function writtenPool(source, no) {
   return data || [];
 }
 
-/** Какие из заданий уже писал кто-то из этих учеников. */
-async function writtenSeen(roster, ids) {
-  if (!roster.length || !ids.length) return new Set();
-  const { data } = await supa.from("written_works").select("task_id").in("student_id", roster).in("task_id", ids.slice(0, 900));
-  return new Set((data || []).map((w) => w.task_id));
+const chunks = (arr, n = 200) => Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, i * n + n));
+
+/**
+ * Тексты, которые эти ученики (или группа) уже отработали: писали по ним работу (по тому же тексту
+ * и тому же номеру задания) или получали это задание в каком-либо занятии. Такие тексты больше не предлагаются.
+ * Возвращает { has(task) }.
+ */
+async function writtenUsed(roster, groupId, source, no) {
+  const ids = new Set();
+  const passages = new Set();
+  const lessonIds = new Set();
+  if (roster.length) {
+    const [{ data: works }, { data: gm }, { data: own }, { data: la }] = await Promise.all([
+      supa.from("written_works").select("task_id, tasks(source, task_no, passage_id)").in("student_id", roster).limit(5000),
+      supa.from("group_members").select("group_id").in("student_id", roster),
+      supa.from("lessons").select("id").in("student_id", roster),
+      supa.from("lesson_assignees").select("lesson_id").in("student_id", roster),
+    ]);
+    (works || []).forEach((w) => {
+      if (!w.task_id) return;
+      ids.add(w.task_id);
+      if (w.tasks?.source === source && w.tasks?.task_no === no && w.tasks?.passage_id) passages.add(w.tasks.passage_id);
+    });
+    (own || []).forEach((l) => lessonIds.add(l.id));
+    (la || []).forEach((l) => lessonIds.add(l.lesson_id));
+    const groups = new Set((gm || []).map((g) => g.group_id));
+    if (groupId) groups.add(groupId);
+    if (groups.size) {
+      const { data: gl } = await supa.from("lessons").select("id").in("group_id", [...groups]);
+      (gl || []).forEach((l) => lessonIds.add(l.id));
+    }
+  } else if (groupId) {
+    const { data: gl } = await supa.from("lessons").select("id").eq("group_id", groupId);
+    (gl || []).forEach((l) => lessonIds.add(l.id));
+  }
+  for (const part of chunks([...lessonIds])) {
+    const { data: its } = await supa.from("lesson_items").select("task_id, tasks(source, task_no, passage_id)").in("lesson_id", part);
+    (its || []).forEach((i) => {
+      if (i.tasks?.source !== source || i.tasks?.task_no !== no) return;
+      ids.add(i.task_id);
+      if (i.tasks.passage_id) passages.add(i.tasks.passage_id);
+    });
+  }
+  return { has: (t) => ids.has(t.id) || Boolean(t.passage_id && passages.has(t.passage_id)) };
 }
 
 const plain = (html) => {
@@ -217,7 +250,7 @@ async function writtenPreviewHtml(t, seen, typeKey = "") {
   const qGist = gist(full?.data?.questionText || plain(q) || t.q || "", typeKey);
   return `
     <p class="l-wpick-head"><strong>№ ${escapeHtml(String(t.source_ref))}</strong>${t.work ? ` · «${escapeHtml(t.work)}»${t.author ? `, ${escapeHtml(t.author)}` : ""}` : ""}
-      ${seen ? '<span class="badge">кто-то из них уже писал</span>' : '<span class="chip">ещё не писали</span>'}</p>
+      ${seen ? '<span class="badge">уже отрабатывали — выбрано вручную</span>' : '<span class="chip">ещё не отрабатывали</span>'}</p>
     ${passage ? `<p class="muted l-wpick-text">${escapeHtml(cut(plain(passage), 360))}</p>` : ""}
     <p class="l-wpick-q">${escapeHtml(cut(qGist, 700))}</p>
     <details><summary>Показать ${passage ? "текст и задание" : "задание"} полностью</summary>
@@ -386,6 +419,7 @@ export async function lessonsListView(host, render) {
             <button type="button" class="btn secondary" id="l-wbrowse">Выбрать из базы</button></p>
           <div id="l-wlist" class="l-wlist" hidden>
             <input type="search" id="l-wsearch" placeholder="Слова из задания, автор, произведение или №" />
+            <label class="t-inline"><input type="checkbox" id="l-wshowused" /> показать и уже отработанные этими учениками</label>
             <div id="l-wrows"></div>
           </div>
         </div>
@@ -487,10 +521,15 @@ export async function lessonsListView(host, render) {
 
   // Текст письменной работы: выбирается заранее, преподаватель видит его до отправки.
   let chosen = null;
+  let pickedByHand = false;
   let tried = [];
   let pickSeq = 0;
   const pickBox = form.querySelector("#l-wpick");
   const listBox = form.querySelector("#l-wlist");
+  const usedNow = async () => {
+    const wt = WRITTEN_TYPES[wtypeSel.value];
+    return writtenUsed(await rosterNow(), form.querySelector('[name="group_id"]')?.value || null, wt.source, wt.no);
+  };
   const rosterNow = async () => [...new Set([...(await groupMemberIds(form.querySelector('[name="group_id"]')?.value || "")), ...pickedStudents(form)])];
   const showChosen = async (t, seenSet) => {
     const my = ++pickSeq;
@@ -500,7 +539,7 @@ export async function lessonsListView(host, render) {
       return;
     }
     pickBox.innerHTML = '<p class="muted">Загружаем текст…</p>';
-    const seen = seenSet ? seenSet.has(t.id) : (await writtenSeen(await rosterNow(), [t.id])).has(t.id);
+    const seen = (seenSet || (await usedNow())).has(t);
     const html = await writtenPreviewHtml(t, seen, wtypeSel.value);
     if (my === pickSeq) pickBox.innerHTML = html;
   };
@@ -510,15 +549,22 @@ export async function lessonsListView(host, render) {
     pickBox.innerHTML = '<p class="muted">Подбираем…</p>';
     try {
       const pool = await writtenPool(wt.source, wt.no);
-      const seen = await writtenSeen(await rosterNow(), pool.map((t) => t.id));
-      let options = pool.filter((t) => !seen.has(t.id) && !tried.includes(t.id));
-      if (!options.length) options = pool.filter((t) => !tried.includes(t.id));
-      if (!options.length) {
-        tried = [];
-        options = pool;
+      const seen = await usedNow();
+      const fresh = pool.filter((t) => !seen.has(t));
+      if (!fresh.length) {
+        chosen = null;
+        pickBox.innerHTML = '<p class="lit-result is-bad">Все тексты этого типа эти ученики уже отрабатывали. Выберите другой тип работы или возьмите текст из базы вручную («показать и отработанные»).</p>';
+        return;
       }
-      const t = options[Math.floor(Math.random() * options.length)] || null;
-      if (t) tried.push(t.id);
+      let options = fresh.filter((t) => !tried.includes(t.id));
+      if (!options.length) {
+        tried = chosen ? [chosen.id] : [];
+        options = fresh.filter((t) => !tried.includes(t.id));
+        if (!options.length) options = fresh;
+      }
+      const t = options[Math.floor(Math.random() * options.length)];
+      tried.push(t.id);
+      pickedByHand = false;
       await showChosen(t, seen);
     } catch (err) {
       pickBox.innerHTML = `<p class="lit-result is-bad">${escapeHtml(err.message)}</p>`;
@@ -529,23 +575,28 @@ export async function lessonsListView(host, render) {
     const rows = form.querySelector("#l-wrows");
     rows.innerHTML = '<p class="muted">Загружаем…</p>';
     const pool = await writtenPool(wt.source, wt.no);
-    const seen = await writtenSeen(await rosterNow(), pool.map((t) => t.id));
+    const seen = await usedNow();
+    const showUsed = form.querySelector("#l-wshowused").checked;
     const needle = String(form.querySelector("#l-wsearch").value || "").trim().toLowerCase();
-    const hits = pool
-      .filter((t) => !needle || `${t.source_ref} ${t.q || ""} ${t.work || ""} ${t.author || ""}`.toLowerCase().includes(needle))
-      .sort((a, b) => seen.has(a.id) - seen.has(b.id));
+    const matching = pool.filter((t) => !needle || `${t.source_ref} ${t.q || ""} ${t.work || ""} ${t.author || ""}`.toLowerCase().includes(needle));
+    const usedCount = matching.filter((t) => seen.has(t)).length;
+    const hits = matching.filter((t) => showUsed || !seen.has(t)).sort((a, b) => seen.has(a) - seen.has(b));
     rows.innerHTML =
       hits
         .slice(0, 40)
         .map(
           (t) => `<button type="button" class="l-wrow${chosen?.id === t.id ? " is-on" : ""}" data-pick="${t.id}">
-            <strong>№ ${escapeHtml(String(t.source_ref))}${t.work ? ` · «${escapeHtml(t.work)}»` : ""}</strong>${seen.has(t.id) ? ' <span class="badge">уже писали</span>' : ""}
+            <strong>№ ${escapeHtml(String(t.source_ref))}${t.work ? ` · «${escapeHtml(t.work)}»` : ""}</strong>${seen.has(t) ? ' <span class="badge">уже отрабатывали</span>' : ""}
             <span class="muted">${escapeHtml(cut(gist(t.q, wtypeSel.value), 260))}</span></button>`
         )
-        .join("") + `<p class="muted">Найдено: ${hits.length}${hits.length > 40 ? " — показаны первые 40, уточните поиск" : ""}.</p>`;
+        .join("") +
+      `<p class="muted">Найдено: ${hits.length}${hits.length > 40 ? " — показаны первые 40, уточните поиск" : ""}.${
+        usedCount && !showUsed ? ` Скрыто уже отработанных этими учениками: ${usedCount}.` : ""
+      }</p>`;
     rows.querySelectorAll("[data-pick]").forEach((b) =>
       b.addEventListener("click", async () => {
         const t = pool.find((x) => String(x.id) === b.dataset.pick);
+        pickedByHand = true;
         listBox.hidden = true;
         await showChosen(t, seen);
         pickBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -558,6 +609,7 @@ export async function lessonsListView(host, render) {
     if (!listBox.hidden) renderList();
   });
   let searchTimer = null;
+  form.querySelector("#l-wshowused").addEventListener("change", renderList);
   form.querySelector("#l-wsearch").addEventListener("input", () => {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(renderList, 250);
@@ -571,8 +623,15 @@ export async function lessonsListView(host, render) {
   wtypeSel.addEventListener("change", restart);
   kindSel.addEventListener("change", () => kindSel.value === "written" && !chosen && reroll());
   // сменились ученики — пометка «уже писали» могла измениться
-  form.querySelector('[name="group_id"]')?.addEventListener("change", () => chosen && showChosen(chosen));
-  form.querySelectorAll('input[name="student"]').forEach((cb) => cb.addEventListener("change", () => chosen && kindSel.value === "written" && showChosen(chosen)));
+  const recheck = async () => {
+    if (kindSel.value !== "written") return;
+    if (!chosen) return reroll();
+    // выбранный случайно текст оказался уже отработанным с новыми учениками — подобрать другой
+    if (!pickedByHand && (await usedNow()).has(chosen)) return reroll();
+    showChosen(chosen);
+  };
+  form.querySelector('[name="group_id"]')?.addEventListener("change", recheck);
+  form.querySelectorAll('input[name="student"]').forEach((cb) => cb.addEventListener("change", recheck));
   sync();
   const wantNew = (location.hash.match(/[?&]new=([a-z0-9]+)/) || [])[1];
   if (wantNew) {
@@ -599,6 +658,11 @@ export async function lessonsListView(host, render) {
     const code = kind === "exam" ? f.get("exam_code") : null;
     const wtype = kind === "written" ? WRITTEN_TYPES[f.get("wtype")] : null;
     const due = kind === "written" ? fromLocalInput(f.get("due_at")) : null;
+    if (wtype && !(chosen && chosen.source === wtype.source && chosen.task_no === wtype.no)) {
+      st.className = "lit-result is-bad";
+      st.textContent = "Сначала выберите текст работы (раздел «Текст работы»).";
+      return;
+    }
     if (wtype && !due) {
       st.className = "lit-result is-bad";
       st.textContent = "Укажите, до какого времени сдать работу.";
@@ -645,9 +709,7 @@ export async function lessonsListView(host, render) {
         await insertItems(lesson.id, tasks, { kind: "test" });
       }
       if (wtype) {
-        st.textContent = "Подбираем текст…";
-        const roster = [...new Set([...(await groupMemberIds(groupId)), ...picked])];
-        const task = chosen && chosen.source === wtype.source && chosen.task_no === wtype.no ? chosen : await pickWrittenTask(wtype.source, wtype.no, roster);
+        const task = chosen;
         if (task) {
           await insertItems(lesson.id, [task], { kind: "homework", reveal: "after_review", attempts: null, due });
           if (f.get("open_now")) {
@@ -1085,7 +1147,7 @@ export async function lessonEditView(host, render, id) {
             if (w.count && !confirm("Кто-то уже начал писать по этому тексту. Заменить всё равно? Их черновики и работы останутся, но без привязки к этой работе.")) return;
           }
           const alt = isWritten
-            ? (await pickWrittenTask(it.tasks.source, it.tasks.task_no, rosterIds, items.map((x) => x.task_id)))?.id
+            ? (await pickWrittenTask(it.tasks.source, it.tasks.task_no, rosterIds, items.map((x) => x.task_id), lesson.group_id))?.id
             : await alternativeTask(lesson.exam_code, it.tasks.task_no, it.tasks.passage_id, items.map((x) => x.task_id));
           if (!alt) return alert("Другого подходящего задания в банке нет.");
           const { error } = await supa.from("lesson_items").update({ task_id: alt }).eq("id", itemId);
