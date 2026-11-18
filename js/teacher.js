@@ -1,19 +1,19 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land142";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land143";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land142";
+import { taskHref } from "./account.js?v=land143";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land142";
-import { readingView } from "./teacher-reading.js?v=land142";
-import { optionsOf } from "./practice.js?v=land142";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land142";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land142";
-import { scheduleTodayMount, weekView } from "./calendar.js?v=land142";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land142";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land143";
+import { readingView } from "./teacher-reading.js?v=land143";
+import { optionsOf } from "./practice.js?v=land143";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land143";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land143";
+import { scheduleTodayMount, weekView } from "./calendar.js?v=land143";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land143";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land142";
+} from "./review.js?v=land143";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -1551,18 +1551,53 @@ async function workReview(host, render, id) {
 /* ------------------------------------------------------------------ */
 
 async function groupsView(host, render) {
-  const [{ data: groups }, { data: members }] = await Promise.all([
+  const [{ data: groups }, { data: members }, { data: students }] = await Promise.all([
     supa.from("groups").select("*").order("archived").order("title"),
     supa.from("group_members").select("group_id, student_id, profiles(full_name, email)"),
+    supa.from("profiles").select("id, full_name, email, courses, grade").neq("role", "teacher").eq("status", "active").order("full_name"),
   ]);
+  const titleOf = (id) => (groups || []).find((g) => g.id === id)?.title || "";
+  const groupsOfStudent = (sid) => (members || []).filter((m) => m.student_id === sid).map((m) => titleOf(m.group_id)).filter(Boolean);
   const cards = (groups || [])
     .map((g) => {
-      const list = (members || []).filter((m) => m.group_id === g.id);
+      const list = (members || [])
+        .filter((m) => m.group_id === g.id)
+        .sort((a, b) => String(a.profiles?.full_name || "").localeCompare(String(b.profiles?.full_name || ""), "ru"));
+      const inGroup = new Set(list.map((m) => m.student_id));
+      const candidates = (students || []).filter((st) => !inGroup.has(st.id));
       return `
       <div class="card t-group" data-id="${g.id}">
-        <h3>${escapeHtml(g.title)} ${g.archived ? '<small class="muted">архив</small>' : ""}</h3>
+        <h3>${escapeHtml(g.title)} ${g.archived ? '<small class="muted">архив</small>' : ""} <span class="tt-count">${list.length}</span></h3>
         <p class="muted">${{ online: "онлайн", offline: "очно", mixed: "очно и онлайн" }[g.format]} · код для вступления: <code>${escapeHtml(g.invite_code || "")}</code></p>
-        <p>${list.map((m) => `<a href="#/cabinet/student/${m.student_id}">${escapeHtml(m.profiles?.full_name || m.profiles?.email || "—")}</a>`).join(", ") || '<span class="muted">пусто</span>'}</p>
+        <ul class="t-members">${
+          list
+            .map(
+              (m) => `<li><a href="#/cabinet/student/${m.student_id}">${escapeHtml(m.profiles?.full_name || m.profiles?.email || "—")}</a>
+                <button type="button" class="linklike muted" data-remove="${m.student_id}" title="Убрать из группы">убрать</button></li>`
+            )
+            .join("") || '<li class="muted">пусто</li>'
+        }</ul>
+        ${
+          g.archived
+            ? ""
+            : `<details class="t-add-members">
+          <summary class="btn secondary">+ Добавить учеников</summary>
+          ${
+            candidates.length
+              ? `${candidates.length > 8 ? '<input type="search" class="t-add-q" placeholder="Поиск по псевдониму или логину" />' : ""}
+                 <div class="t-add-list">${candidates
+                   .map((st) => {
+                     const other = groupsOfStudent(st.id);
+                     return `<label class="t-inline" data-blob="${escapeHtml(`${st.full_name || ""} ${loginOf(st.email) || st.email || ""}`.toLowerCase())}">
+                       <input type="checkbox" value="${st.id}" /> ${escapeHtml(st.full_name || st.email || "ученик")}
+                       <small class="muted">${escapeHtml([(st.courses || []).map(courseLabel).join(", "), other.length ? `в группе: ${other.join(", ")}` : ""].filter(Boolean).join(" · "))}</small></label>`;
+                   })
+                   .join("")}</div>
+                 <p class="actions"><button type="button" class="btn" data-add>Добавить выбранных</button> <span class="muted" data-add-status></span></p>`
+              : '<p class="muted">Все активные ученики уже в этой группе.</p>'
+          }
+        </details>`
+        }
         <button class="btn secondary" data-act="archive">${g.archived ? "Вернуть из архива" : "В архив"}</button>
       </div>`;
     })
@@ -1574,7 +1609,7 @@ async function groupsView(host, render) {
       <label>Формат<select name="format"><option value="offline">очно</option><option value="online">онлайн</option><option value="mixed">очно и онлайн</option></select></label>
       <button class="btn" type="submit">Создать группу</button>
     </form>
-    <p class="muted">Ученика можно добавить в группу при подтверждении заявки или дать ему код — он введёт его в личном кабинете.</p>
+    <p class="muted">Добавляйте учеников кнопкой «+ Добавить учеников» в карточке группы. Ученик может состоять в нескольких группах. Ещё можно дать ему код группы — он введёт его в разделе «Я».</p>
     <div class="t-groups">${cards || ""}</div>`);
   host.querySelector("#t-group-form").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -1582,6 +1617,41 @@ async function groupsView(host, render) {
     const { error } = await supa.from("groups").insert({ title: f.get("title"), format: f.get("format") });
     if (error) return alert(humanError(error).message);
     mountTeacher(document, ["groups"]);
+  });
+  host.querySelectorAll(".t-group").forEach((card) => {
+    const gid = card.dataset.id;
+    card.querySelector(".t-add-q")?.addEventListener("input", (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      card.querySelectorAll(".t-add-list label").forEach((l) => (l.hidden = q && !l.dataset.blob.includes(q)));
+    });
+    card.querySelector("[data-add]")?.addEventListener("click", async (e) => {
+      const ids = [...card.querySelectorAll(".t-add-list input:checked")].map((x) => x.value);
+      const st = card.querySelector("[data-add-status]");
+      if (!ids.length) {
+        st.textContent = "Отметьте учеников.";
+        return;
+      }
+      e.target.disabled = true;
+      const { error } = await supa.from("group_members").upsert(
+        ids.map((sid) => ({ group_id: gid, student_id: sid })),
+        { onConflict: "group_id,student_id", ignoreDuplicates: true }
+      );
+      if (error) {
+        st.textContent = humanError(error).message;
+        e.target.disabled = false;
+        return;
+      }
+      mountTeacher(document, ["groups"]);
+    });
+    card.querySelectorAll("[data-remove]").forEach((b) =>
+      b.addEventListener("click", async () => {
+        const name = b.previousElementSibling?.textContent || "ученика";
+        if (!confirm(`Убрать «${name}» из группы «${titleOf(gid)}»? Его ответы и работы сохранятся; работы, выданные группе, он больше не увидит.`)) return;
+        const { error } = await supa.from("group_members").delete().eq("group_id", gid).eq("student_id", b.dataset.remove);
+        if (error) return alert(humanError(error).message);
+        mountTeacher(document, ["groups"]);
+      })
+    );
   });
   host.querySelectorAll('[data-act="archive"]').forEach((btn) =>
     btn.addEventListener("click", async () => {

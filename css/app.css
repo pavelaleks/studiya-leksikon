@@ -2158,3 +2158,15 @@ body.is-reading .lh-btn { display: none; }
 .wk-setup { padding: 18px; }
 .wk-help { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 .wk-settings { margin-top: 20px; }
+
+/* Группы: состав и добавление учеников */
+.t-members { list-style: none; padding: 0; margin: 6px 0 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.t-members li { display: inline-flex; gap: 6px; align-items: baseline; }
+.t-add-members { margin: 0 0 10px; }
+.t-add-members > summary { list-style: none; display: inline-block; cursor: pointer; }
+.t-add-members > summary::-webkit-details-marker { display: none; }
+.t-add-members[open] > summary { margin-bottom: 8px; }
+.t-add-q { width: 100%; margin-bottom: 6px; }
+.t-add-list { display: grid; gap: 4px; max-height: 320px; overflow: auto; padding: 4px 0; }
+.t-add-list label { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.t-add-list small { flex-basis: 100%; padding-left: 26px; }
