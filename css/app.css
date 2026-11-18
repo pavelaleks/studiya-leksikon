@@ -2054,3 +2054,19 @@ body.is-reading .lh-btn { display: none; }
   /* блок ответа стоит сразу под условием и не прилипает к низу — иначе он закрывал последние строки задания */
   .lit-check { position: static; box-shadow: none; margin: 14px 0; }
 }
+
+/* Письменная работа: быстрые сроки, пояснение ученику, отметка «после срока» */
+.l-due-presets { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip-btn {
+  font: inherit; font-size: 0.86rem; padding: 5px 12px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.15)); background: transparent; color: inherit;
+}
+.chip-btn:hover { border-color: var(--accent); }
+.chip-btn.is-on { background: var(--accent); border-color: var(--accent); color: var(--paper, #fff); }
+.l-note {
+  margin: 10px 0 16px; padding: 12px 14px; border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 0 10px 10px 0;
+}
+.b-late { display: block; font-size: 0.7rem; color: #b3261e; }
+.t-late { color: #b3261e; font-weight: 600; }
+.tt-head .actions { display: flex; flex-wrap: wrap; gap: 8px; }

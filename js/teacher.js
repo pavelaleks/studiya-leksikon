@@ -1,18 +1,18 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land133";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land134";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land133";
+import { taskHref } from "./account.js?v=land134";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land133";
-import { readingView } from "./teacher-reading.js?v=land133";
-import { optionsOf } from "./practice.js?v=land133";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land133";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land133";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land133";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land134";
+import { readingView } from "./teacher-reading.js?v=land134";
+import { optionsOf } from "./practice.js?v=land134";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land134";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land134";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land134";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor,
-} from "./review.js?v=land133";
+} from "./review.js?v=land134";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -423,7 +423,7 @@ async function todayView(host, render) {
         <p class="eyebrow">${escapeHtml(new Date().toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" }))}</p>
         <h1>Сегодня</h1>
       </div>
-      <a class="btn" href="#/cabinet/lessons?new=1">+ Новое занятие</a>
+      <span class="actions"><a class="btn secondary" href="#/cabinet/lessons?new=written">+ Письменная работа</a><a class="btn" href="#/cabinet/lessons?new=1">+ Новое занятие</a></span>
     </header>
     <div class="tt-list">${blocks.join("")}</div>
     <section class="me-section">
@@ -1032,7 +1032,7 @@ async function worksView(host, render, workId) {
   await Promise.all((timed || []).map((l) => supa.rpc("finalize_exam_works", { p_lesson: l.id })));
   const { data, error } = await supa
     .from("written_works")
-    .select("id, status, submitted_at, score, max_score, body, item_id, choice, profiles(full_name, email), tasks(source, task_no, source_ref, work:data->>work), lesson_items(lessons(title))")
+    .select("id, status, submitted_at, score, max_score, body, item_id, choice, profiles(full_name, email), tasks(source, task_no, source_ref, work:data->>work), lesson_items(due_at, lessons(title))")
     .in("status", ["submitted", "returned", "graded"])
     .order("submitted_at", { ascending: false })
     .limit(200);
@@ -1042,7 +1042,7 @@ async function worksView(host, render, workId) {
       <span class="lit-item-n">${w.tasks?.task_no ?? "·"}</span>
       <span class="lit-item-body">
         <strong>${escapeHtml(w.profiles?.full_name || w.profiles?.email || "ученик")} · ${escapeHtml(SOURCES[w.tasks?.source]?.title || "")} № ${w.tasks?.task_no ?? ""}${w.tasks?.work ? ` · «${escapeHtml(w.tasks.work)}»` : ""}${w.choice ? ` · вариант ${w.choice}` : ""}</strong>
-        <span>${w.item_id ? `из занятия «${escapeHtml(w.lesson_items?.lessons?.title || "…")}»` : "сам, по желанию"} · ${WORK_STATUS[w.status]} · ${fmtDateTime(w.submitted_at)}${w.score != null ? ` · ${w.score}${w.max_score ? `/${w.max_score}` : ""}` : ""}</span>
+        <span>${w.item_id ? `из занятия «${escapeHtml(w.lesson_items?.lessons?.title || "…")}»` : "сам, по желанию"} · ${WORK_STATUS[w.status]} · ${fmtDateTime(w.submitted_at)}${w.lesson_items?.due_at && w.submitted_at && new Date(w.submitted_at) > new Date(w.lesson_items.due_at) ? " · <b class=\"t-late\">после срока</b>" : ""}${w.score != null ? ` · ${w.score}${w.max_score ? `/${w.max_score}` : ""}` : ""}</span>
         <span class="muted">${escapeHtml((w.body || "фото").slice(0, 120))}</span>
       </span>
     </a>`;

@@ -5,13 +5,13 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land133";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land133";
-import { SOURCES, bankFiles } from "./teacher.js?v=land133";
+import { taskHref } from "./account.js?v=land134";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land134";
+import { SOURCES, bankFiles } from "./teacher.js?v=land134";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land133";
+} from "./exams.js?v=land134";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -107,7 +107,79 @@ export function sanitizeFor(source) {
 /* ПРЕПОДАВАТЕЛЬ                                                        */
 /* ================================================================== */
 
-export const WORK_KIND = { lesson: "Занятие", test: "Контрольная работа", exam: "Пробный экзамен" };
+export const WORK_KIND = { lesson: "Занятие", written: "Письменная работа", test: "Контрольная работа", exam: "Пробный экзамен" };
+
+/** Типы письменных работ: какой номер экзамена и как назвать работу, чтобы ученик сразу понял, что пишет. */
+export const WRITTEN_TYPES = {
+  "ege-rus-27": { source: "ege-rus", no: 27, title: "Сочинение ЕГЭ (задание 27)", group: "Русский язык · ЕГЭ" },
+  "oge-rus-13.1": { source: "oge-rus", no: 13, title: "Сочинение ОГЭ 13.1", group: "Русский язык · ОГЭ", note: "Пиши сочинение 13.1 — из трёх вариантов в условии выбери первый." },
+  "oge-rus-13.2": { source: "oge-rus", no: 13, title: "Сочинение ОГЭ 13.2", group: "Русский язык · ОГЭ", note: "Пиши сочинение 13.2 — из трёх вариантов в условии выбери второй." },
+  "oge-rus-13.3": { source: "oge-rus", no: 13, title: "Сочинение ОГЭ 13.3", group: "Русский язык · ОГЭ", note: "Пиши сочинение 13.3 — из трёх вариантов в условии выбери третий." },
+  "oge-rus-13": { source: "oge-rus", no: 13, title: "Сочинение ОГЭ (13.1, 13.2 или 13.3 на выбор)", group: "Русский язык · ОГЭ", note: "Выбери одно из трёх заданий (13.1, 13.2 или 13.3) и напиши номер в начале сочинения." },
+  "oge-rus-1": { source: "oge-rus", no: 1, title: "Изложение ОГЭ (задание 1)", group: "Русский язык · ОГЭ" },
+  "ege-lit-4": { source: "ege-lit", no: 4, title: "Литература, задание 4: развёрнутый ответ по прозе или драме", group: "Литература · ЕГЭ" },
+  "ege-lit-5": { source: "ege-lit", no: 5, title: "Литература, задание 5: сопоставление (проза, драма)", group: "Литература · ЕГЭ" },
+  "ege-lit-9": { source: "ege-lit", no: 9, title: "Литература, задание 9: развёрнутый ответ по лирике", group: "Литература · ЕГЭ" },
+  "ege-lit-10": { source: "ege-lit", no: 10, title: "Литература, задание 10: сопоставление стихотворений", group: "Литература · ЕГЭ" },
+  "ege-lit-11": { source: "ege-lit", no: 11, title: "Сочинение по литературе (задание 11)", group: "Литература · ЕГЭ" },
+};
+
+function writtenTypeOptions() {
+  const groups = [...new Set(Object.values(WRITTEN_TYPES).map((t) => t.group))];
+  return groups
+    .map(
+      (g) =>
+        `<optgroup label="${escapeHtml(g)}">${Object.entries(WRITTEN_TYPES)
+          .filter(([, t]) => t.group === g)
+          .map(([k, t]) => `<option value="${k}">${escapeHtml(t.title)}</option>`)
+          .join("")}</optgroup>`
+    )
+    .join("");
+}
+
+/** Задание для письменной работы: из банка, по возможности такое, которое никто из этих учеников ещё не писал. */
+async function pickWrittenTask(source, no, roster = [], exclude = []) {
+  const ex = EXAMS[source];
+  let q = supa.from("tasks").select("id, answer_mode").eq("source", source).eq("task_no", no).eq("is_published", true).limit(1000);
+  if (ex) q = q.eq("bank_file", ex.bank(no));
+  const { data, error } = await q;
+  if (error) throw humanError(error);
+  let pool = (data || []).filter((t) => !exclude.includes(t.id));
+  if (!pool.length) return null;
+  if (roster.length) {
+    const { data: done } = await supa.from("written_works").select("task_id").in("student_id", roster).in("task_id", pool.map((t) => t.id).slice(0, 900));
+    const seen = new Set((done || []).map((w) => w.task_id));
+    const fresh = pool.filter((t) => !seen.has(t.id));
+    if (fresh.length) pool = fresh;
+  }
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/** Быстрые сроки: «к концу занятия», «завтра», «через 3 дня», «через неделю» (вечер — 20:00). */
+const DUE_PRESETS = [
+  ["end", "к концу занятия"],
+  ["1", "завтра"],
+  ["3", "через 3 дня"],
+  ["7", "через неделю"],
+];
+function dueFromPreset(key) {
+  const d = new Date();
+  if (key === "end") return new Date(d.getTime() + 90 * 60000);
+  d.setDate(d.getDate() + Number(key));
+  d.setHours(20, 0, 0, 0);
+  return d;
+}
+function duePresetsHtml() {
+  return `<span class="l-due-presets">${DUE_PRESETS.map(([k, v]) => `<button type="button" class="chip-btn" data-due="${k}">${v}</button>`).join("")}</span>`;
+}
+function bindDuePresets(form, input) {
+  form.querySelectorAll("[data-due]").forEach((b) =>
+    b.addEventListener("click", () => {
+      input.value = toLocalInput(dueFromPreset(b.dataset.due));
+      form.querySelectorAll("[data-due]").forEach((x) => x.classList.toggle("is-on", x === b));
+    })
+  );
+}
 const SHOW_RESULTS = { after_finish: "сразу после сдачи", manual: "когда я открою" };
 
 function targetPickerHtml(groups, students, { groupId = "", picked = new Set() } = {}) {
@@ -196,7 +268,7 @@ export async function lessonsListView(host, render) {
   render(`
     <header class="tt-head">
       <h1>Занятия и работы</h1>
-      <button type="button" class="btn l-open-desk" data-open-new>+ Новое занятие</button>
+      <span class="actions"><button type="button" class="btn secondary l-open-desk" data-open-new="written">+ Письменная работа</button><button type="button" class="btn l-open-desk" data-open-new>+ Новое занятие</button></span>
     </header>
     <button type="button" class="fab" data-open-new aria-label="Новое занятие">+</button>
     <form id="l-new" class="card stack l-new" data-step="1" hidden>
@@ -216,6 +288,11 @@ export async function lessonsListView(host, render) {
         <label class="t-inline"><input type="checkbox" name="compose" checked /> сразу собрать полный вариант (задания по одному тексту — вместе)</label>
       </div>
       <p class="muted" data-for="exam" hidden id="l-exam-note"></p>
+      <div class="stack" data-for="written" hidden>
+        <label>Что пишут<select name="wtype">${writtenTypeOptions()}</select></label>
+        <label>Пояснение ученикам <span class="muted">(необязательно)</span><textarea name="wnote" rows="2" placeholder="Например: объём не меньше 150 слов; можно написать от руки и прикрепить фото"></textarea></label>
+        <p class="muted">Текст и задание подберутся из банка — такие, которые эти ученики ещё не писали. Заменить можно будет на странице работы.</p>
+      </div>
       <div class="grid-2" data-for="timed" hidden>
         <label>Время на работу, мин<input type="number" name="duration" min="5" max="600" placeholder="без ограничения" /></label>
         <label>Результат ученику<select name="show_results">${Object.entries(SHOW_RESULTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label>
@@ -226,10 +303,15 @@ export async function lessonsListView(host, render) {
         ${targetPickerHtml(groups, students)}
       </fieldset>
       <fieldset class="l-step" data-n="3">
-        <legend class="l-step-title">Когда открыть</legend>
+        <legend class="l-step-title"><span data-for="notwritten">Когда открыть</span><span data-for="written" hidden>Срок сдачи</span></legend>
         <div class="grid-2">
-          <label>Когда (открыть с)<input type="datetime-local" name="starts_at" /></label>
+          <label data-for="notwritten">Когда (открыть с)<input type="datetime-local" name="starts_at" /></label>
           <label data-for="timed" hidden>Начать можно до<input type="datetime-local" name="closes_at" /></label>
+        </div>
+        <div class="stack" data-for="written" hidden>
+          <label>Сдать до<input type="datetime-local" name="due_at" /></label>
+          ${duePresetsHtml()}
+          <label class="t-inline"><input type="checkbox" name="open_now" checked /> открыть ученикам сразу (появится у них на главной)</label>
         </div>
       </fieldset>
       <p class="lit-result" id="l-new-status"></p>
@@ -264,7 +346,13 @@ export async function lessonsListView(host, render) {
     document.body.classList.remove("is-sheet");
     setTimeout(() => (form.hidden = true), 200);
   };
-  host.querySelectorAll("[data-open-new]").forEach((b) => b.addEventListener("click", openNew));
+  host.querySelectorAll("[data-open-new]").forEach((b) =>
+    b.addEventListener("click", () => {
+      kindSel.value = b.dataset.openNew === "written" ? "written" : kindSel.value === "written" ? "lesson" : kindSel.value;
+      sync();
+      openNew();
+    })
+  );
   form.querySelector("[data-close-new]").addEventListener("click", closeNew);
   form.querySelector("[data-step-prev]").addEventListener("click", () => setStep(Math.max(1, Number(form.dataset.step) - 1)));
   form.querySelector("[data-step-next]").addEventListener("click", () => {
@@ -279,15 +367,23 @@ export async function lessonsListView(host, render) {
     setStep(Math.min(3, n + 1));
   });
   window.addEventListener("hashchange", () => document.body.classList.remove("is-sheet"), { once: true });
-  if (/[?&]new=1/.test(location.hash)) openNew();
   const kindSel = form.querySelector('[name="kind"]');
   const examSel = form.querySelector('[name="exam_code"]');
   const dur = form.querySelector('[name="duration"]');
   const sync = () => {
     const kind = kindSel.value;
     form.querySelectorAll('[data-for="exam"]').forEach((el) => (el.hidden = kind !== "exam"));
-    form.querySelectorAll('[data-for="timed"]').forEach((el) => (el.hidden = kind === "lesson"));
-    if (kind === "exam") {
+    form.querySelectorAll('[data-for="timed"]').forEach((el) => (el.hidden = kind === "lesson" || kind === "written"));
+    form.querySelectorAll('[data-for="written"]').forEach((el) => (el.hidden = kind !== "written"));
+    form.querySelectorAll('[data-for="notwritten"]').forEach((el) => (el.hidden = kind === "written"));
+    if (kind === "written") {
+      form.querySelector('[name="title"]').placeholder = WRITTEN_TYPES[wtypeSel.value].title;
+      if (!dueIn.value) {
+        dueIn.value = toLocalInput(dueFromPreset("7"));
+        form.querySelector('[data-due="7"]')?.classList.add("is-on");
+      }
+      dur.value = "";
+    } else if (kind === "exam") {
       const ex = EXAMS[examSel.value];
       dur.value = ex.minutes;
       form.querySelector("#l-exam-note").textContent = `Время по умолчанию: ${durationText(ex.minutes)} (${ex.note}). Задания: ${ex.numbers[0]}–${ex.numbers.at(-1)}.`;
@@ -299,9 +395,22 @@ export async function lessonsListView(host, render) {
       dur.value = "";
     }
   };
+  const wtypeSel = form.querySelector('[name="wtype"]');
+  const dueIn = form.querySelector('[name="due_at"]');
+  bindDuePresets(form, dueIn);
+  dueIn.addEventListener("input", () => form.querySelectorAll("[data-due]").forEach((x) => x.classList.remove("is-on")));
   kindSel.addEventListener("change", sync);
   examSel.addEventListener("change", sync);
+  wtypeSel.addEventListener("change", sync);
   sync();
+  const wantNew = (location.hash.match(/[?&]new=([a-z0-9]+)/) || [])[1];
+  if (wantNew) {
+    if (wantNew === "written") {
+      kindSel.value = "written";
+      sync();
+    }
+    openNew();
+  }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -316,7 +425,22 @@ export async function lessonsListView(host, render) {
       return;
     }
     const code = kind === "exam" ? f.get("exam_code") : null;
-    const title = String(f.get("title") || "").trim() || (code ? `Пробный ${EXAMS[code].title}` : kind === "test" ? "Контрольная работа" : "Занятие");
+    const wtype = kind === "written" ? WRITTEN_TYPES[f.get("wtype")] : null;
+    const due = kind === "written" ? fromLocalInput(f.get("due_at")) : null;
+    if (wtype && !due) {
+      st.className = "lit-result is-bad";
+      st.textContent = "Укажите, до какого времени сдать работу.";
+      return;
+    }
+    if (due && new Date(due) < new Date()) {
+      st.className = "lit-result is-bad";
+      st.textContent = "Срок сдачи уже прошёл — выберите время позже.";
+      return;
+    }
+    const title =
+      String(f.get("title") || "").trim() ||
+      (wtype ? wtype.title : code ? `Пробный ${EXAMS[code].title}` : kind === "test" ? "Контрольная работа" : "Занятие");
+    const notes = wtype ? [wtype.note, String(f.get("wnote") || "").trim()].filter(Boolean).join(" ") || null : null;
     const btn = form.querySelector('button[type="submit"]');
     btn.disabled = true;
     st.className = "lit-result";
@@ -328,10 +452,11 @@ export async function lessonsListView(host, render) {
           title,
           kind,
           exam_code: code,
-          duration_minutes: kind === "lesson" ? null : Number(f.get("duration")) || null,
+          duration_minutes: kind === "lesson" || kind === "written" ? null : Number(f.get("duration")) || null,
           show_results: f.get("show_results") || "manual",
-          starts_at: fromLocalInput(f.get("starts_at")),
-          closes_at: kind === "lesson" ? null : fromLocalInput(f.get("closes_at")),
+          starts_at: wtype ? new Date().toISOString() : fromLocalInput(f.get("starts_at")),
+          closes_at: kind === "lesson" || kind === "written" ? null : fromLocalInput(f.get("closes_at")),
+          notes,
           group_id: groupId,
         })
         .select("id")
@@ -346,6 +471,18 @@ export async function lessonsListView(host, render) {
         const roster = [...new Set([...(await groupMemberIds(groupId)), ...picked])];
         const tasks = await composeVariant(code, roster);
         await insertItems(lesson.id, tasks, { kind: "test" });
+      }
+      if (wtype) {
+        st.textContent = "Подбираем текст…";
+        const roster = [...new Set([...(await groupMemberIds(groupId)), ...picked])];
+        const task = await pickWrittenTask(wtype.source, wtype.no, roster);
+        if (task) {
+          await insertItems(lesson.id, [task], { kind: "homework", reveal: "after_review", attempts: null, due });
+          if (f.get("open_now")) {
+            const { error: e3 } = await supa.from("lessons").update({ status: "live" }).eq("id", lesson.id);
+            if (e3) throw humanError(e3);
+          }
+        }
       }
       location.hash = `#/cabinet/lesson/${lesson.id}`;
     } catch (err) {
@@ -390,7 +527,7 @@ async function loadBoard(items) {
   if (!ids.length) return { attempts: [], works: [] };
   const [a, w] = await Promise.all([
     supa.from("attempts").select("student_id, item_id, is_correct, answer, created_at").in("item_id", ids).order("created_at"),
-    supa.from("written_works").select("id, student_id, item_id, status, score, max_score").in("item_id", ids),
+    supa.from("written_works").select("id, student_id, item_id, status, score, max_score, submitted_at").in("item_id", ids),
   ]);
   return { attempts: a.data || [], works: w.data || [] };
 }
@@ -424,7 +561,9 @@ function boardHtml({ lesson, items, students, sessions }, { attempts, works }) {
       const w = works.find((x) => x.student_id === st.id && x.item_id === it.id);
       if (!w || w.status === "draft") return `<td class="b-empty">·</td>`;
       const txt = w.status === "graded" ? `${w.score ?? "✓"}` : w.status === "returned" ? "дораб." : "сдано";
-      return `<td class="b-work b-${w.status}"><a href="#/cabinet/works/${w.id}">${txt}</a></td>`;
+      const late = it.due_at && w.submitted_at && new Date(w.submitted_at) > new Date(it.due_at);
+      const when = w.submitted_at ? new Date(w.submitted_at).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
+      return `<td class="b-work b-${w.status}" title="${when ? `сдано ${escapeHtml(when)}` : ""}${late ? " — после срока" : ""}"><a href="#/cabinet/works/${w.id}">${txt}</a>${late ? '<small class="b-late">поздно</small>' : ""}</td>`;
     }
     const list = mine(st, it);
     if (!list.length) return `<td class="b-empty">·</td>`;
@@ -459,7 +598,7 @@ function boardHtml({ lesson, items, students, sessions }, { attempts, works }) {
       <tbody>${rows}</tbody>
       <tfoot><tr><th>Решили</th>${timed ? "<td></td>" : ""}${foot}<td></td></tr></tfoot>
     </table></div>
-    <p class="muted">${lesson.kind === "lesson" ? "✓ — решено (маленькая цифра — сколько было попыток), ✗ — пока неверно" : "✓ / ✗ — последний сохранённый ответ ученика (ученик результат пока не видит, если вы его не открыли)"}, · — не отвечал. Наведите на клетку, чтобы увидеть ответы. Таблица обновляется сама.</p>`;
+    <p class="muted">${lesson.kind === "written" ? "«сдано» — ждёт проверки (нажмите, чтобы проверить), число — поставленный балл, «дораб.» — вернули на доработку, «поздно» — сдано после срока, · — ещё не сдал. Таблица обновляется сама.</p>" : `${lesson.kind === "lesson" ? "✓ — решено (маленькая цифра — сколько было попыток), ✗ — пока неверно" : "✓ / ✗ — последний сохранённый ответ ученика (ученик результат пока не видит, если вы его не открыли)"}, · — не отвечал. Наведите на клетку, чтобы увидеть ответы. Таблица обновляется сама.</p>`}`;
 }
 
 function itemsTableHtml(items, lesson) {
@@ -467,6 +606,7 @@ function itemsTableHtml(items, lesson) {
   const sel = (name, map, value) =>
     `<select data-f="${name}">${Object.entries(map).map(([k, v]) => `<option value="${k}" ${k === value ? "selected" : ""}>${v}</option>`).join("")}</select>`;
   const isWork = lesson.kind !== "lesson";
+  const isWritten = lesson.kind === "written";
   return `
     <div class="t-table-wrap"><table class="t-table l-items">
       <thead><tr><th>#</th><th>Задание</th>${isWork ? "" : "<th>Тип</th><th>Разбор открыть</th><th>Попыток</th><th>Срок</th>"}<th>Показ</th><th></th></tr></thead>
@@ -491,6 +631,7 @@ function itemsTableHtml(items, lesson) {
             <button class="btn secondary" data-act="up" title="Выше">↑</button>
             <button class="btn secondary" data-act="down" title="Ниже">↓</button>
             ${lesson.kind === "exam" ? `<button class="btn secondary" data-act="replace" title="Другое задание этого номера">Заменить</button>` : ""}
+            ${isWritten ? `<button class="btn secondary" data-act="replace" title="Другой текст с тем же заданием, который эти ученики ещё не писали">Другой текст</button>` : ""}
             <button class="btn secondary" data-act="reveal" title="Открыть ученикам результат и разбор">${it.revealed ? "Закрыть разбор" : "Открыть разбор"}</button>
             <button class="btn secondary" data-act="remove" title="Убрать">✕</button>
           </td>
@@ -574,7 +715,12 @@ export async function lessonEditView(host, render, id) {
   if (!state) return render(`<div class="empty">Не найдено. <a href="#/cabinet/lessons">К занятиям</a></div>`);
   const { lesson } = state;
   const isWork = lesson.kind !== "lesson";
-  const defaults = isWork
+  const isWritten = lesson.kind === "written";
+  const isTimed = isWork && !isWritten;
+  const lessonDue = state.items.map((i) => i.due_at).filter(Boolean).sort()[0] || null;
+  const defaults = isWritten
+    ? { kind: "homework", reveal: "after_review", attempts: null }
+    : isWork
     ? { kind: "test", reveal: "after_due", attempts: null }
     : { reveal: "after_correct", attempts: 3, ...JSON.parse(sessionStorage.getItem("lesson-defaults") || "{}"), kind: "classwork" };
   const [{ data: groups }, { data: allStudents }] = await Promise.all([
@@ -601,21 +747,22 @@ export async function lessonEditView(host, render, id) {
       <p class="lede">${escapeHtml(WORK_KIND[lesson.kind])}${lesson.exam_code ? ` · ${escapeHtml(EXAMS[lesson.exam_code]?.title || "")}` : ""} · ${escapeHtml(who || "никому не назначено")} · <span class="lesson-status lesson-${lesson.status}">${LESSON_STATUS[lesson.status]}</span></p>
       <div class="t-filter card">
         <label>Открыть с<input type="datetime-local" name="starts_at" value="${toLocalInput(lesson.starts_at)}" /></label>
+        ${isWritten ? `<label>Сдать до<input type="datetime-local" name="due_at" value="${toLocalInput(lessonDue)}" /></label>${duePresetsHtml()}` : ""}
         ${
-          isWork
+          isTimed
             ? `<label>Начать можно до<input type="datetime-local" name="closes_at" value="${toLocalInput(lesson.closes_at)}" /></label>
         <label>Время, мин<input type="number" name="duration" min="5" max="600" value="${lesson.duration_minutes ?? ""}" placeholder="без ограничения" /></label>
         <label>Результат ученику<select name="show_results">${Object.entries(SHOW_RESULTS).map(([k, v]) => `<option value="${k}" ${k === lesson.show_results ? "selected" : ""}>${v}</option>`).join("")}</select></label>`
             : ""
         }
-        <label>Заметка (ученики видят)<input name="notes" value="${escapeHtml(lesson.notes || "")}" placeholder="Например: повторить § 25" /></label>
+        <label>${isWritten ? "Пояснение ученикам" : "Заметка (ученики видят)"}<input name="notes" value="${escapeHtml(lesson.notes || "")}" placeholder="${isWritten ? "Например: объём не меньше 150 слов" : "Например: повторить § 25"}" /></label>
         <button class="btn secondary" type="submit">Сохранить</button>
       </div>
       <div class="actions">
         ${lesson.status === "done" ? `<button class="btn" type="button" data-status="live">Открыть ученикам</button>` : ""}
         ${lesson.status === "live" ? `<button class="btn secondary" type="button" data-status="done">Завершить</button><button class="btn secondary" type="button" data-status="draft">Скрыть (черновик)</button>` : ""}
         ${lesson.status === "done" ? `<button class="btn secondary" type="button" data-status="draft">В черновик</button>` : ""}
-        <button class="btn secondary" type="button" id="l-reveal-all">${isWork ? "Открыть результаты и разборы" : "Открыть все разборы"}</button>
+        ${isWritten ? "" : `<button class="btn secondary" type="button" id="l-reveal-all">${isWork ? "Открыть результаты и разборы" : "Открыть все разборы"}</button>`}
         ${isWork ? "" : `<button class="btn secondary" type="button" id="l-show-all">Показать все скрытые</button>`}
         <a class="btn secondary" href="#/lesson/${lesson.id}" target="_blank">Как видит ученик</a>
       </div>
@@ -682,7 +829,12 @@ export async function lessonEditView(host, render, id) {
     e.preventDefault();
     const f = new FormData(head);
     const row = { title: String(f.get("title")).trim(), starts_at: fromLocalInput(f.get("starts_at")), notes: String(f.get("notes") || "").trim() || null };
-    if (isWork) {
+    if (isWritten) {
+      const due = fromLocalInput(f.get("due_at"));
+      const { error: e2 } = await supa.from("lesson_items").update({ due_at: due }).eq("lesson_id", id);
+      if (e2) return alert(humanError(e2).message);
+    }
+    if (isTimed) {
       row.closes_at = fromLocalInput(f.get("closes_at"));
       row.duration_minutes = Number(f.get("duration")) || null;
       row.show_results = f.get("show_results");
@@ -692,6 +844,7 @@ export async function lessonEditView(host, render, id) {
     else reload();
   });
   head.querySelector(".l-title").addEventListener("change", () => head.requestSubmit());
+  if (isWritten) bindDuePresets(head, head.querySelector('[name="due_at"]'));
   head.querySelectorAll("[data-status]").forEach((b) =>
     b.addEventListener("click", async () => {
       if (b.dataset.status === "live" && !state.students.length) return alert("Сначала назначьте работу группе или ученикам.");
@@ -701,7 +854,7 @@ export async function lessonEditView(host, render, id) {
       else reload();
     })
   );
-  host.querySelector("#l-reveal-all").addEventListener("click", async () => {
+  host.querySelector("#l-reveal-all")?.addEventListener("click", async () => {
     if (!confirm(isWork ? "Открыть ученикам результаты и разборы всех заданий?" : "Открыть разборы всех заданий для учеников?")) return;
     await supa.from("lesson_items").update({ revealed: true }).eq("lesson_id", id);
     reload();
@@ -755,7 +908,13 @@ export async function lessonEditView(host, render, id) {
         } else if (act === "replace") {
           const answered = await supa.from("attempts").select("id", { count: "exact", head: true }).eq("item_id", itemId);
           if (answered.count && !confirm("На это задание уже отвечали. Заменить всё равно? Их ответы останутся в истории.")) return;
-          const alt = await alternativeTask(lesson.exam_code, it.tasks.task_no, it.tasks.passage_id, items.map((x) => x.task_id));
+          if (isWritten) {
+            const w = await supa.from("written_works").select("id", { count: "exact", head: true }).eq("item_id", itemId);
+            if (w.count && !confirm("Кто-то уже начал писать по этому тексту. Заменить всё равно? Их черновики и работы останутся, но без привязки к этой работе.")) return;
+          }
+          const alt = isWritten
+            ? (await pickWrittenTask(it.tasks.source, it.tasks.task_no, rosterIds, items.map((x) => x.task_id)))?.id
+            : await alternativeTask(lesson.exam_code, it.tasks.task_no, it.tasks.passage_id, items.map((x) => x.task_id));
           if (!alt) return alert("Другого подходящего задания в банке нет.");
           const { error } = await supa.from("lesson_items").update({ task_id: alt }).eq("id", itemId);
           if (error) return alert(humanError(error).message);
@@ -775,6 +934,7 @@ export async function lessonEditView(host, render, id) {
   const rosterIds = state.students.map((s) => s.id);
   const nameOf = new Map(state.students.map((s) => [s.id, s.name]));
   const readDefaults = () => {
+    if (isWritten) return { kind: "homework", reveal: "after_review", attempts: null, due: lessonDue, hidden: false };
     if (isWork) return { kind: "test", reveal: "after_due", attempts: null, due: null, hidden: false };
     const d = {
       kind: host.querySelector("#l-def-kind").value,
@@ -1033,7 +1193,7 @@ export async function lessonEditView(host, render, id) {
 /* УЧЕНИК                                                               */
 /* ================================================================== */
 
-const KIND_LABEL = { lesson: "Занятие", test: "Контрольная работа", exam: "Пробный экзамен" };
+const KIND_LABEL = { lesson: "Занятие", written: "Письменная работа", test: "Контрольная работа", exam: "Пробный экзамен" };
 
 /** Блок «Мои занятия и работы» для личного кабинета. */
 export async function myLessonsHtml({ today = false } = {}) {
@@ -1125,7 +1285,9 @@ function todayLessonsHtml(lessons, done, sessions) {
         </span>
         <strong>${escapeHtml(l.title)}</strong>
         ${
-          l.duration_minutes
+          l.kind === "written"
+            ? `<span class="muted">${due && Date.parse(due) < now ? "Срок прошёл — сдай как можно скорее" : "Напиши и отправь на проверку"}</span>`
+            : l.duration_minutes
             ? `<span class="muted">${escapeHtml(state)}</span>`
             : `<span class="muted">${its.length} ${its.length % 10 === 1 && its.length % 100 !== 11 ? "задание" : its.length % 10 >= 2 && its.length % 10 <= 4 && (its.length % 100 < 12 || its.length % 100 > 14) ? "задания" : "заданий"} · сделано ${n}</span>
                <span class="today-bar"><span style="width:${pct}%"></span></span>`
@@ -1223,6 +1385,8 @@ export async function mountLesson(root, parts) {
       });
       return;
     }
+    // письменная работа из одного задания — сразу к заданию, без лишнего списка
+    if (!itemId && st.lesson.kind === "written" && st.items.length === 1) return lessonTask(host, st, st.items[0].id, att || [], { mode: "normal", single: true });
     if (!itemId) return lessonOverview(host, st, att || [], works || [], false);
     return lessonTask(host, st, itemId, att || [], { mode: "normal" });
   } catch (err) {
@@ -1253,7 +1417,7 @@ function lessonOverview(host, { lesson, items }, att, works, timed) {
     <div class="lit-list">${rows || '<p class="muted">Заданий пока нет — преподаватель добавит их.</p>'}</div>`;
 }
 
-async function lessonTask(host, { lesson, items }, itemId, att, { mode = "normal", visible = false } = {}) {
+async function lessonTask(host, { lesson, items }, itemId, att, { mode = "normal", visible = false, single = false } = {}) {
   const i = items.findIndex((x) => x.id === itemId);
   if (i < 0) {
     host.innerHTML = `<div class="empty">Задание не найдено. <a href="#/lesson/${lesson.id}">Ко всем заданиям</a></div>`;
@@ -1272,6 +1436,11 @@ async function lessonTask(host, { lesson, items }, itemId, att, { mode = "normal
     passage = data?.html || null;
   }
   const written = TEACHER_CHECKED.has(t.answer_mode);
+  let written_done = false;
+  if (lesson.kind === "written" && it.due_at && new Date(it.due_at) < new Date()) {
+    const { data: w } = await supa.from("written_works").select("status").eq("item_id", it.id).eq("student_id", currentUser()?.id).neq("status", "draft").limit(1);
+    written_done = Boolean(w?.length);
+  }
   const mine = att.filter((a) => a.item_id === it.id);
   const solved = mine.some((a) => a.is_correct);
   const hiddenTest = it.kind === "test" && !it.revealed && (!it.due_at || new Date(it.due_at) > new Date()) && !(mode === "over" && visible);
@@ -1293,19 +1462,26 @@ async function lessonTask(host, { lesson, items }, itemId, att, { mode = "normal
   const lastOk = Boolean(mine.at(-1)?.is_correct);
   const showCheck = !written && !over && !(solved && !hiddenTest && !timed) && !exhausted;
   host.innerHTML = `
-    <p class="crumbs"><a href="#/lesson/${lesson.id}">← ${escapeHtml(lesson.title)}</a></p>
+    <p class="crumbs">${single ? `<a href="#/me">← Главная</a>` : `<a href="#/lesson/${lesson.id}">← ${escapeHtml(lesson.title)}</a>`}</p>
     <article class="lit-problem">
-      <p class="eyebrow">${lesson.kind === "lesson" ? escapeHtml(KIND[it.kind]) : escapeHtml(KIND_LABEL[lesson.kind])} · ${i + 1} из ${items.length}${it.due_at ? ` · сдать до ${fmtDT(it.due_at)}` : ""}</p>
-      <h1>${escapeHtml(SOURCES[t.source]?.title || "")}, задание ${t.task_no ?? ""}</h1>
+      ${
+        lesson.kind === "written"
+          ? `<p class="eyebrow">Письменная работа${it.due_at ? ` · сдать до ${fmtDT(it.due_at)}` : ""}</p>
+      <h1>${escapeHtml(lesson.title)}</h1>
+      ${it.due_at && new Date(it.due_at) < new Date() && !written_done ? `<p class="lit-result is-bad">Срок сдачи прошёл. Всё равно напиши и отправь — преподаватель увидит, что работа сдана позже.</p>` : ""}
+      ${lesson.notes ? `<p class="l-note">${escapeHtml(lesson.notes)}</p>` : ""}`
+          : `<p class="eyebrow">${lesson.kind === "lesson" ? escapeHtml(KIND[it.kind]) : escapeHtml(KIND_LABEL[lesson.kind])} · ${i + 1} из ${items.length}${it.due_at ? ` · сдать до ${fmtDT(it.due_at)}` : ""}</p>
+      <h1>${escapeHtml(SOURCES[t.source]?.title || "")}, задание ${t.task_no ?? ""}</h1>`
+      }
       ${passage ? `<section class="lit-passage"><p class="lit-kicker">Текст</p><div class="lit-html">${sanitize(passage)}</div></section>` : ""}
       <section class="lit-question"><div class="lit-html">${sanitize(t.data?.questionHtml || "")}</div></section>
       ${history}
       ${written ? writtenBlockHtml() : showCheck ? checkBlockHtml({ label, placeholder: numeric ? "Например: 24" : "Введите ответ", numeric }) : `<div id="pr-solution"></div>`}
-      <div class="lit-pager">
+      ${single ? "" : `<div class="lit-pager">
         ${prev ? `<a href="#/lesson/${lesson.id}/${prev.id}">← Предыдущее</a>` : "<span></span>"}
         <a href="#/lesson/${lesson.id}" class="muted">Все задания</a>
         ${next ? `<a href="#/lesson/${lesson.id}/${next.id}">Следующее →</a>` : "<span></span>"}
-      </div>
+      </div>`}
     </article>`;
   const problem = { ...t.data, _tid: t.id };
   if (written) {
