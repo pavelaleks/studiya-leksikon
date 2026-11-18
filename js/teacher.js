@@ -1,18 +1,19 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land140";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land142";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land140";
+import { taskHref } from "./account.js?v=land142";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land140";
-import { readingView } from "./teacher-reading.js?v=land140";
-import { optionsOf } from "./practice.js?v=land140";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land140";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land140";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land140";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land142";
+import { readingView } from "./teacher-reading.js?v=land142";
+import { optionsOf } from "./practice.js?v=land142";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land142";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land142";
+import { scheduleTodayMount, weekView } from "./calendar.js?v=land142";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land142";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land140";
+} from "./review.js?v=land142";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -226,6 +227,7 @@ async function saveTasks(built) {
 
 const TABS = [
   ["today", "Сегодня"],
+  ["week", "Неделя"],
   ["lessons", "Занятия"],
   ["students", "Ученики"],
   ["works", "Проверка работ"],
@@ -274,6 +276,7 @@ export async function mountTeacher(root, parts) {
   const render = (body) => (host.innerHTML = shell(active, body, b));
   try {
     if (tab === "today") return await todayView(host, render);
+    if (tab === "week") return await weekView(host, render, sub);
     if (tab === "lessons") return await lessonsListView(host, render);
     if (tab === "lesson") return await lessonEditView(host, render, sub);
     if (tab === "students") return await studentsView(host, render);
@@ -489,6 +492,7 @@ async function todayView(host, render) {
       <span class="actions"><a class="btn secondary" href="#/cabinet/lessons?new=written">+ Письменная работа</a><a class="btn" href="#/cabinet/lessons?new=1">+ Новое занятие</a></span>
     </header>
     <div class="tt-list">${blocks.join("")}</div>
+    <section class="me-section" id="tt-schedule"><p class="muted">Загружаем расписание…</p></section>
     <section class="me-section">
       <h2>Ученики сегодня</h2>
       <div class="tt-stats">
@@ -513,6 +517,7 @@ async function todayView(host, render) {
     }
     ${tgSlotHtml()}`);
   mountTg(host, "teacher");
+  scheduleTodayMount(host);
 }
 
 /** Отдельная страница входа для преподавателя (ссылка внизу сайта). Регистрации здесь нет. */

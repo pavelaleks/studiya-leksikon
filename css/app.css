@@ -2128,3 +2128,33 @@ body.is-reading .lh-btn { display: none; }
   .t-students .t-access { grid-template-columns: 1fr 1fr; align-items: center; }
   .t-students .t-access small { grid-column: 1 / -1; }
 }
+
+/* Неделя: расписание из календаря + сроки работ */
+.wk-nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.wk-grid { display: grid; gap: 12px; margin-top: 12px; }
+@media (min-width: 1100px) { .wk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.wk-day { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; background: var(--card, transparent); display: grid; gap: 8px; align-content: start; }
+.wk-day h3 { margin: 0; font-size: 1rem; text-transform: capitalize; display: flex; gap: 8px; align-items: center; }
+.wk-day.is-today { border-color: var(--accent); }
+.wk-day.is-drop { outline: 2px dashed var(--accent); outline-offset: 2px; }
+.wk-empty { margin: 0; }
+.wk-ev { display: grid; gap: 6px; padding: 8px 10px; border-left: 3px solid var(--line); border-radius: 0 10px 10px 0; background: color-mix(in srgb, var(--ink) 4%, transparent); }
+.wk-ev.is-mapped { border-left-color: var(--accent); }
+.wk-ev.is-skip { background: none; border-left-style: dashed; padding: 4px 10px; }
+.wk-ev-head strong { margin-right: 4px; }
+.wk-ev-who { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; font-size: 0.9rem; }
+.wk-map { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.wk-map select { max-width: 100%; }
+.wk-ev-due, .wk-loose { display: grid; gap: 6px; }
+.wk-chip { border: 1px solid var(--line); border-radius: 10px; background: var(--card, var(--surface)); }
+.wk-chip > summary { list-style: none; cursor: pointer; padding: 6px 10px; display: grid; gap: 1px; }
+.wk-chip > summary::-webkit-details-marker { display: none; }
+.wk-chip-t { font-weight: 700; }
+.wk-chip.is-late { border-color: #b3261e; }
+.wk-chip.is-done { opacity: 0.75; }
+.wk-chip-body { padding: 4px 10px 10px; display: grid; gap: 6px; }
+.wk-quick { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.wk-open { margin: 0; }
+.wk-setup { padding: 18px; }
+.wk-help { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.wk-settings { margin-top: 20px; }

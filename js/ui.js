@@ -1,5 +1,5 @@
 import { accessState, currentProfile } from "./supa.js";
-import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land140";
+import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land142";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -37,7 +37,7 @@ function tabbar(active) {
       ["#/cabinet/lessons", "calendar", "Занятия", active === "teacher" && (sub === "lessons" || sub === "lesson")],
       ["#/cabinet/students", "users", "Ученики", active === "teacher" && (sub === "students" || sub === "student")],
       ["#/cabinet/works", "check", "Работы", active === "teacher" && sub === "works"],
-      ["more", "dots", "Ещё", (active === "teacher" && ["bank", "groups", "reading"].includes(sub)) || active === "literature" || active === "rules"],
+      ["more", "dots", "Ещё", (active === "teacher" && ["bank", "groups", "reading", "week"].includes(sub)) || active === "literature" || active === "rules"],
     ];
   } else if (state === "guest") {
     // гость — чаще родитель: программы, цены, тест и запись; материалы — в разделе «Материалы» на главной
@@ -72,6 +72,7 @@ function tabbar(active) {
           <div class="sheet-backdrop" data-close></div>
           <div class="sheet-panel" role="menu" aria-label="Ещё">
             <span class="sheet-grip" aria-hidden="true"></span>
+            <a role="menuitem" href="#/cabinet/week">Неделя (расписание)</a>
             <a role="menuitem" href="#/cabinet/bank">Банк заданий</a>
             <a role="menuitem" href="#/cabinet/groups">Группы</a>
             <a role="menuitem" href="#/cabinet/reading">Чтение и стихи</a>

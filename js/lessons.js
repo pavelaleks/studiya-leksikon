@@ -5,13 +5,14 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land140";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land140";
-import { SOURCES, bankFiles } from "./teacher.js?v=land140";
+import { taskHref } from "./account.js?v=land142";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land142";
+import { SOURCES, bankFiles } from "./teacher.js?v=land142";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
+import { nextLessonFor } from "./calendar.js?v=land142";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land140";
+} from "./exams.js?v=land142";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -274,7 +275,7 @@ function dueFromPreset(key) {
   return d;
 }
 function duePresetsHtml() {
-  return `<span class="l-due-presets">${DUE_PRESETS.map(([k, v]) => `<button type="button" class="chip-btn" data-due="${k}">${v}</button>`).join("")}</span>`;
+  return `<span class="l-due-presets"><span data-due-next></span>${DUE_PRESETS.map(([k, v]) => `<button type="button" class="chip-btn" data-due="${k}">${v}</button>`).join("")}</span>`;
 }
 function bindDuePresets(form, input) {
   form.querySelectorAll("[data-due]").forEach((b) =>
@@ -582,6 +583,7 @@ export async function lessonsListView(host, render) {
       sync();
       openNew();
       if (kindSel.value === "written" && !chosen) reroll();
+      if (kindSel.value === "written") refreshNext();
     })
   );
   form.querySelector("[data-close-new]").addEventListener("click", closeNew);
@@ -745,15 +747,62 @@ export async function lessonsListView(host, render) {
     if (!pickedByHand && (await usedNow()).has(chosen)) return reroll();
     showChosen(chosen);
   };
-  form.querySelector('[name="group_id"]')?.addEventListener("change", recheck);
-  form.querySelectorAll('input[name="student"]').forEach((cb) => cb.addEventListener("change", recheck));
+  // Срок «к следующему занятию» — по расписанию из Google Календаря (если подключено и занятие сопоставлено)
+  const nextSlot = form.querySelector("[data-due-next]");
+  let nextSeq = 0;
+  const refreshNext = async () => {
+    const my = ++nextSeq;
+    const g = form.querySelector('[name="group_id"]')?.value;
+    const keys = g ? [`g:${g}`] : pickedStudents(form).map((id) => `s:${id}`);
+    let next = null;
+    try {
+      next = keys.length ? await nextLessonFor(keys) : null;
+    } catch {}
+    if (my !== nextSeq) return;
+    if (!next) {
+      nextSlot.innerHTML = "";
+      return;
+    }
+    const d = new Date(next.start);
+    const label = `к следующему занятию · ${d.toLocaleDateString("ru-RU", { weekday: "short", day: "numeric", month: "numeric" })}, ${d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+    nextSlot.innerHTML = `<button type="button" class="chip-btn" data-due-at="${next.start}">${escapeHtml(label)}</button>`;
+    const b = nextSlot.querySelector("button");
+    if (dueIn.value === toLocalInput(next.start)) b.classList.add("is-on");
+    b.addEventListener("click", () => {
+      dueIn.value = toLocalInput(next.start);
+      form.querySelectorAll("[data-due], [data-due-at]").forEach((x) => x.classList.toggle("is-on", x === b));
+    });
+  };
+  form.querySelector('[name="group_id"]')?.addEventListener("change", () => (recheck(), refreshNext()));
+  form.querySelectorAll('input[name="student"]').forEach((cb) => cb.addEventListener("change", () => (recheck(), refreshNext())));
+  dueIn.addEventListener("input", () => nextSlot.querySelector("button")?.classList.remove("is-on"));
   sync();
-  const wantNew = (location.hash.match(/[?&]new=([a-z0-9]+)/) || [])[1];
+  const params = new URLSearchParams((location.hash.split("?")[1] || ""));
+  const wantNew = params.get("new");
   if (wantNew) {
+    // из «Недели»: кому и к какому сроку уже известно
+    const to = params.get("to") || "";
+    if (to.startsWith("g:")) {
+      const sel = form.querySelector('[name="group_id"]');
+      if (sel && sel.querySelector(`option[value="${CSS.escape(to.slice(2))}"]`)) sel.value = to.slice(2);
+    } else if (to.startsWith("s:")) {
+      const cb = form.querySelector(`input[name="student"][value="${CSS.escape(to.slice(2))}"]`);
+      if (cb) {
+        cb.checked = true;
+        cb.closest("details")?.setAttribute("open", "");
+        cb.dispatchEvent(new Event("change"));
+      }
+    }
     if (wantNew === "written") {
       kindSel.value = "written";
       sync();
+      const due = params.get("due");
+      if (due && Date.parse(due) > Date.now()) {
+        dueIn.value = toLocalInput(due);
+        form.querySelectorAll("[data-due]").forEach((x) => x.classList.remove("is-on"));
+      }
       reroll();
+      refreshNext();
     }
     openNew();
   }
