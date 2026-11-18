@@ -5,13 +5,13 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land138";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land138";
-import { SOURCES, bankFiles } from "./teacher.js?v=land138";
+import { taskHref } from "./account.js?v=land140";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land140";
+import { SOURCES, bankFiles } from "./teacher.js?v=land140";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land138";
+} from "./exams.js?v=land140";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -341,33 +341,118 @@ export async function lessonsListView(host, render) {
   const [{ data: lessons, error }, { data: groups }, { data: students }, { data: items }, { data: assignees }] = await Promise.all([
     supa
       .from("lessons")
-      .select("id, title, status, kind, exam_code, duration_minutes, starts_at, created_at, group_id, student_id, self_made, groups(title), profiles!lessons_student_id_fkey(full_name, email)")
+      .select("id, title, status, kind, exam_code, duration_minutes, starts_at, closes_at, created_at, group_id, student_id, self_made, groups(title), profiles!lessons_student_id_fkey(full_name, email)")
       .order("starts_at", { ascending: false, nullsFirst: true })
       .order("created_at", { ascending: false }),
     supa.from("groups").select("id, title").eq("archived", false).order("title"),
     supa.from("profiles").select("id, full_name, email").neq("role", "teacher").eq("status", "active").order("full_name"),
-    supa.from("lesson_items").select("lesson_id"),
-    supa.from("lesson_assignees").select("lesson_id"),
+    supa.from("lesson_items").select("id, lesson_id, due_at"),
+    supa.from("lesson_assignees").select("lesson_id, student_id"),
   ]);
   if (error) throw humanError(error);
-  const count = (id) => (items || []).filter((i) => i.lesson_id === id).length;
+  const { data: members } = await supa.from("group_members").select("group_id, student_id");
+  const itemsOf = (id) => (items || []).filter((i) => i.lesson_id === id);
+  const count = (id) => itemsOf(id).length;
   const extra = (id) => (assignees || []).filter((a) => a.lesson_id === id).length;
-  const rows = (lessons || [])
-    .map((l) => {
-      const who = [l.groups?.title ? `группа «${l.groups.title}»` : "", l.profiles?.full_name || l.profiles?.email || "", extra(l.id) ? `${extra(l.id)} уч.` : ""]
-        .filter(Boolean)
-        .join(" + ");
-      return `
-      <a class="lit-item" href="#/cabinet/lesson/${l.id}">
+  const rosterOf = (l) =>
+    new Set([
+      ...(l.student_id ? [l.student_id] : []),
+      ...(members || []).filter((m) => m.group_id === l.group_id).map((m) => m.student_id),
+      ...(assignees || []).filter((a) => a.lesson_id === l.id).map((a) => a.student_id),
+    ]);
+  const now = Date.now();
+  const dueOf = (id) => itemsOf(id).map((i) => i.due_at).filter(Boolean).sort()[0] || null;
+  // Куда отнести работу: идёт сейчас, запланирована, черновик, завершена; пробники, которые ученик собрал сам, — отдельно.
+  const phase = (l) => {
+    if (l.self_made) return "self";
+    if (l.status === "draft") return "draft";
+    if (l.status === "done") return "done";
+    if (l.starts_at && Date.parse(l.starts_at) > now) return "planned";
+    const due = dueOf(l.id);
+    if ((due && Date.parse(due) < now) || (l.closes_at && Date.parse(l.closes_at) < now && !l.duration_minutes)) return "past";
+    return "current";
+  };
+  const list = (lessons || []).map((l) => ({ l, ph: phase(l), due: dueOf(l.id), roster: rosterOf(l) }));
+  // Кто уже сделал текущие и прошедшие работы: «выполнили N из M», «на проверке K»
+  const watchIds = list.filter((x) => ["current", "past"].includes(x.ph)).flatMap((x) => itemsOf(x.l.id).map((i) => i.id));
+  const doneBy = new Map(); // item_id -> Set(student)
+  const waitBy = new Map();
+  for (let i = 0; i < watchIds.length; i += 200) {
+    const part = watchIds.slice(i, i + 200);
+    const [{ data: at }, { data: wk }] = await Promise.all([
+      supa.from("attempts").select("item_id, student_id").in("item_id", part).limit(20000),
+      supa.from("written_works").select("item_id, student_id, status").in("item_id", part).neq("status", "draft"),
+    ]);
+    (at || []).forEach((a) => (doneBy.get(a.item_id) || doneBy.set(a.item_id, new Set()).get(a.item_id)).add(a.student_id));
+    (wk || []).forEach((w) => {
+      (doneBy.get(w.item_id) || doneBy.set(w.item_id, new Set()).get(w.item_id)).add(w.student_id);
+      if (w.status === "submitted") (waitBy.get(w.item_id) || waitBy.set(w.item_id, new Set()).get(w.item_id)).add(w.student_id);
+    });
+  }
+  const progress = ({ l, roster }) => {
+    const its = itemsOf(l.id);
+    if (!its.length || !roster.size) return "";
+    const done = [...roster].filter((sid) => its.every((it) => doneBy.get(it.id)?.has(sid))).length;
+    const wait = new Set(its.flatMap((it) => [...(waitBy.get(it.id) || [])])).size;
+    return `<span class="l-progress"><span class="today-bar"><span style="width:${Math.round((100 * done) / roster.size)}%"></span></span>выполнили ${done} из ${roster.size}${
+      wait ? ` · <b>на проверке ${wait}</b>` : ""
+    }</span>`;
+  };
+  const rowHtml = (x) => {
+    const { l, ph, due } = x;
+    const who = [l.groups?.title ? `группа «${l.groups.title}»` : "", l.profiles?.full_name || l.profiles?.email || "", extra(l.id) ? `${extra(l.id)} уч.` : ""]
+      .filter(Boolean)
+      .join(" + ");
+    const when =
+      ph === "planned"
+        ? ` · откроется ${fmtDT(l.starts_at)}`
+        : due
+          ? ` · ${ph === "past" ? "срок был" : "сдать до"} ${fmtDT(due)}`
+          : l.starts_at
+            ? ` · ${fmtDT(l.starts_at)}`
+            : "";
+    const blob = [l.title, who, ...[...x.roster].map((sid) => (students || []).find((s) => s.id === sid)?.full_name || "")].join(" ").toLowerCase();
+    return `
+      <a class="lit-item" href="#/cabinet/lesson/${l.id}" data-blob="${escapeHtml(blob)}" data-group="${l.group_id || ""}" data-who="${escapeHtml([...x.roster].join(" "))}" data-kind="${l.kind}">
         <span class="lit-item-n">${count(l.id)}</span>
         <span class="lit-item-body">
           <strong>${escapeHtml(l.title)}</strong>
-          <span>${l.self_made ? '<span class="badge">сам</span> ' : ""}${escapeHtml(WORK_KIND[l.kind] || "Занятие")}${l.duration_minutes ? ` · ${durationText(l.duration_minutes)}` : ""} · ${escapeHtml(who || "никому не назначено")}${l.starts_at ? ` · ${fmtDT(l.starts_at)}` : ""}</span>
-          <span class="lesson-status lesson-${l.status}">${LESSON_STATUS[l.status]}</span>
+          <span>${l.self_made ? '<span class="badge">сам</span> ' : ""}${escapeHtml(WORK_KIND[l.kind] || "Занятие")}${l.duration_minutes ? ` · ${durationText(l.duration_minutes)}` : ""} · ${escapeHtml(who || "никому не назначено")}${when}</span>
+          ${["current", "past"].includes(ph) ? progress(x) : ""}
+          ${ph === "draft" ? `<span class="lesson-status lesson-draft">${LESSON_STATUS.draft}</span>` : ""}
         </span>
       </a>`;
-    })
-    .join("");
+  };
+  const byDue = (a, b) => (a.due ? Date.parse(a.due) : Infinity) - (b.due ? Date.parse(b.due) : Infinity);
+  const SECTIONS = [
+    ["current", "Сейчас — ждут выполнения", "Открыты ученикам, срок ещё не прошёл. Сверху — у которых срок раньше.", (a, b) => byDue(a, b), true],
+    ["planned", "Запланированы", "Откроются ученикам в указанное время.", (a, b) => Date.parse(a.l.starts_at) - Date.parse(b.l.starts_at), true],
+    ["draft", "Черновики", "Ученики их не видят, пока вы не нажмёте «Открыть ученикам».", null, true],
+    ["past", "Срок прошёл", "Ещё открыты ученикам — можно проверить и нажать «Завершить».", (a, b) => byDue(b, a), false],
+    ["done", "Завершённые", "", null, false],
+    ["self", "Пробники, которые ученики собрали сами", "", null, false],
+  ];
+  const rows = SECTIONS.map(([ph, title, note, sort, open]) => {
+    const part = list.filter((x) => x.ph === ph);
+    if (sort) part.sort(sort);
+    if (!part.length) return "";
+    return `<details class="l-sec" data-ph="${ph}" ${open ? "open" : ""}>
+      <summary><strong>${title}</strong> <span class="tt-count">${part.length}</span></summary>
+      ${note ? `<p class="muted">${note}</p>` : ""}
+      <div class="lit-list">${part.map(rowHtml).join("")}</div>
+    </details>`;
+  }).join("");
+  const filterHtml = (lessons || []).length
+    ? `<div class="t-filter l-filter">
+        <label>Кому<select id="l-f-who"><option value="">все группы и ученики</option>${(groups || [])
+          .map((g) => `<option value="g:${g.id}">группа «${escapeHtml(g.title)}»</option>`)
+          .join("")}${(students || []).map((st) => `<option value="s:${st.id}">${escapeHtml(st.full_name || st.email)}</option>`).join("")}</select></label>
+        <label>Вид<select id="l-f-kind"><option value="">все</option>${Object.entries(WORK_KIND)
+          .map(([k, v]) => `<option value="${k}">${v}</option>`)
+          .join("")}</select></label>
+        <label>Поиск<input id="l-f-q" type="search" placeholder="название, ученик" /></label>
+      </div>`
+    : "";
   const examOpts = Object.entries(EXAMS).map(([k, v]) => `<option value="${k}">${escapeHtml(v.title)} — ${durationText(v.minutes)}</option>`).join("");
   render(`
     <header class="tt-head">
@@ -437,7 +522,37 @@ export async function lessonsListView(host, render) {
       </div>
     </form>
     <p class="muted">Как назначить: создайте занятие → добавьте задания → нажмите «Открыть ученикам». До этого оно черновик и ученики его не видят.</p>
-    <div class="lit-list">${rows || '<p class="muted">Пока ничего нет.</p>'}</div>`);
+    ${filterHtml}
+    <div id="l-sections">${rows || '<p class="muted">Пока ничего нет.</p>'}</div>`);
+
+  // Фильтр: кому, вид, поиск. Пустые разделы прячем, в заголовке — сколько осталось.
+  const applyFilter = () => {
+    const who = host.querySelector("#l-f-who")?.value || "";
+    const kind = host.querySelector("#l-f-kind")?.value || "";
+    const q = String(host.querySelector("#l-f-q")?.value || "").trim().toLowerCase();
+    host.querySelectorAll(".l-sec").forEach((sec) => {
+      let n = 0;
+      sec.querySelectorAll("a.lit-item").forEach((a) => {
+        const okWho = !who || (who.startsWith("g:") ? a.dataset.group === who.slice(2) : a.dataset.who.split(" ").includes(who.slice(2)));
+        const ok = okWho && (!kind || a.dataset.kind === kind) && (!q || a.dataset.blob.includes(q));
+        a.hidden = !ok;
+        if (ok) n += 1;
+      });
+      sec.hidden = n === 0;
+      sec.querySelector(".tt-count").textContent = n;
+    });
+    try {
+      sessionStorage.setItem("lessons-filter", JSON.stringify({ who, kind }));
+    } catch {}
+  };
+  try {
+    const saved = JSON.parse(sessionStorage.getItem("lessons-filter") || "{}");
+    if (saved.who && host.querySelector(`#l-f-who option[value="${saved.who}"]`)) host.querySelector("#l-f-who").value = saved.who;
+    if (saved.kind && host.querySelector("#l-f-kind")) host.querySelector("#l-f-kind").value = saved.kind;
+  } catch {}
+  ["#l-f-who", "#l-f-kind"].forEach((sel) => host.querySelector(sel)?.addEventListener("change", applyFilter));
+  host.querySelector("#l-f-q")?.addEventListener("input", applyFilter);
+  applyFilter();
 
   const form = host.querySelector("#l-new");
   bindPicker(form);

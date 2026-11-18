@@ -2086,3 +2086,45 @@ body.is-reading .lh-btn { display: none; }
 }
 .l-wrow:hover, .l-wrow.is-on { border-color: var(--accent); }
 .l-wrow .muted { font-size: 0.86rem; }
+
+/* Занятия и работы: разделы по состоянию, фильтр, прогресс */
+.l-filter { margin: 12px 0 4px; }
+.l-sec { margin: 18px 0; }
+.l-sec > summary { cursor: pointer; font-size: 1.15rem; padding: 6px 0; list-style: none; display: flex; align-items: center; gap: 8px; }
+.l-sec > summary::-webkit-details-marker { display: none; }
+.l-sec > summary::before { content: "▸"; color: var(--ink-soft); transition: transform 0.15s; }
+.l-sec[open] > summary::before { transform: rotate(90deg); }
+.l-sec > .muted { margin: 0 0 8px; }
+.l-progress { display: flex; align-items: center; gap: 8px; font-size: 0.86rem; color: var(--ink-soft); }
+.l-progress .today-bar { width: 90px; flex: none; }
+
+/* Сегодня: кто занимался */
+.tt-who-list { display: grid; gap: 8px; margin-top: 10px; }
+.tt-who { padding: 0; }
+.tt-who > summary { cursor: pointer; list-style: none; display: grid; gap: 2px; padding: 12px 16px; }
+.tt-who > summary::-webkit-details-marker { display: none; }
+.tt-who-name { font-weight: 700; }
+.tt-who-weak { font-size: 0.86rem; color: #b3261e; }
+.tt-who[open] > summary { border-bottom: 1px solid var(--line); }
+.tt-who > :not(summary) { margin-left: 16px; margin-right: 16px; }
+.tt-who-table { margin: 10px 16px; width: auto; }
+.tt-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 520px) { .tt-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Ученики: таблица по ширине экрана, на телефоне — карточки */
+.t-students td > small, .t-students td > span { display: block; }
+.t-students td > small { margin-top: 2px; }
+.t-students .t-access { display: grid; gap: 4px; min-width: 150px; }
+.t-students .t-access select, .t-students .t-access input[type="date"] { width: 100%; }
+.t-students td:nth-child(1) { width: 30%; }
+@media (max-width: 760px) {
+  .t-students thead { display: none; }
+  .t-students, .t-students tbody, .t-students tr, .t-students td { display: block; width: 100%; }
+  .t-students tr { border-bottom: 1px solid var(--line); padding: 8px 0; }
+  .t-students td { border: 0; padding: 4px 12px; width: auto !important; }
+  .t-students td[data-label="Курсы"]::before, .t-students td[data-label="Активность"]::before {
+    content: attr(data-label) ": "; color: var(--ink-soft); font-size: 0.8rem;
+  }
+  .t-students .t-access { grid-template-columns: 1fr 1fr; align-items: center; }
+  .t-students .t-access small { grid-column: 1 / -1; }
+}

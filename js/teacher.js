@@ -1,18 +1,18 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land138";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land140";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land138";
+import { taskHref } from "./account.js?v=land140";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land138";
-import { readingView } from "./teacher-reading.js?v=land138";
-import { optionsOf } from "./practice.js?v=land138";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land138";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land138";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land138";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land140";
+import { readingView } from "./teacher-reading.js?v=land140";
+import { optionsOf } from "./practice.js?v=land140";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land140";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land140";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land140";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land138";
+} from "./review.js?v=land140";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -310,9 +310,16 @@ function agoText(d) {
 const SECTION_TITLE = {
   home: "Главная сайта", me: "Кабинет", lesson: "Занятия", ege: "ЕГЭ · русский", "ege-item": "ЕГЭ · русский", oge: "ОГЭ · русский",
   literature: "Литература", library: "Библиотека", rules: "Правила", rule: "Правила", practice: "Практика",
-  exercise: "Практика", trainer: "Тренажёры", admin: "Кабинет",
+  exercise: "Практика", trainer: "Тренажёры", admin: "Кабинет", vpr: "ВПР · русский", check: "Тест «Проверь себя»",
 };
 const sectionTitle = (s) => SECTION_TITLE[s] || s;
+
+/** Доступ по умолчанию — до конца лета следующего учебного года: с июня по декабрь — до 31 августа следующего года, иначе — до 31 августа этого. */
+export function defaultUntil() {
+  const d = new Date();
+  return `${d.getMonth() >= 5 ? d.getFullYear() + 1 : d.getFullYear()}-08-31`;
+}
+const fmtUntil = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
 
 /** Когда был последний раз: «сегодня в 14:05», «вчера», «3 дня назад», «—». */
 function seenText(d) {
@@ -348,12 +355,16 @@ async function todayView(host, render) {
     supa.from("written_works").select("id, submitted_at, profiles(full_name, email), tasks(source, task_no)").eq("status", "submitted").order("submitted_at"),
     supa.from("lessons").select("id, title, kind, duration_minutes, exam_sessions(student_id, started_at, finished_at)").eq("status", "live").not("duration_minutes", "is", null),
     supa.from("lessons").select("id, title, kind, status, starts_at").gte("starts_at", dayStart.toISOString()).lt("starts_at", dayEnd.toISOString()).order("starts_at"),
-    supa.from("attempts").select("student_id, is_correct").gte("created_at", dayStart.toISOString()).limit(5000),
+    supa.from("attempts").select("student_id, is_correct, item_id, created_at, tasks(source, task_no)").gte("created_at", dayStart.toISOString()).limit(5000),
     supa.from("attempts").select("student_id").gte("created_at", fiveDays).limit(5000),
     supa.from("written_works").select("student_id").gte("updated_at", fiveDays).limit(2000),
     supa.from("profiles").select("id, full_name, email").neq("role", "teacher").eq("status", "active").order("full_name"),
     supa.from("course_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supa.from("lessons").select("id, title, starts_at").eq("status", "draft").eq("self_made", false).gte("created_at", new Date(Date.now() - 30 * 86400000).toISOString()).order("created_at", { ascending: false }),
+  ]);
+  const [{ data: actToday }, { data: worksToday }] = await Promise.all([
+    supa.from("activity_log").select("student_id, section, at").gte("at", dayStart.toISOString()).limit(5000),
+    supa.from("written_works").select("id, student_id, status, submitted_at, tasks(source, task_no)").gte("submitted_at", dayStart.toISOString()).limit(500),
   ]);
   const now = Date.now();
   const liveRows = (live.data || [])
@@ -365,7 +376,9 @@ async function todayView(host, render) {
     .filter((x) => x.going > 0);
   const active = new Set([...(recentAtt.data || []).map((a) => a.student_id), ...(recentWorks.data || []).map((w) => w.student_id)]);
   const idle = (students.data || []).filter((p) => !active.has(p.id));
-  const att = todayAtt.data || [];
+  // только ученики (без ваших собственных ответов при проверке заданий)
+  const studentIds = new Set((students.data || []).map((p) => p.id));
+  const att = (todayAtt.data || []).filter((a) => studentIds.has(a.student_id));
   const solvers = new Set(att.map((a) => a.student_id)).size;
   const q = queue.data || [];
   const name = (p) => escapeHtml(p?.full_name || p?.email || "ученик");
@@ -417,6 +430,56 @@ async function todayView(host, render) {
       )
     )
   );
+  // Кто занимался сегодня: ответы, верные, ошибки по номерам, разделы, сданные работы
+  const people = new Map((students.data || []).map((p) => [p.id, p]));
+  const whoIds = new Set([...att.map((a) => a.student_id), ...(actToday || []).map((a) => a.student_id), ...(worksToday || []).map((w) => w.student_id)]);
+  const shortSrc = (src) => ({ "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Лит." }[src] || "");
+  const todayPeople = [...whoIds]
+    .filter((id) => people.has(id))
+    .map((id) => {
+      const mine = att.filter((a) => a.student_id === id);
+      const ok = mine.filter((a) => a.is_correct).length;
+      const byNo = new Map();
+      mine.forEach((a) => {
+        const key = `${shortSrc(a.tasks?.source)} № ${a.tasks?.task_no ?? "?"}`;
+        const v = byNo.get(key) || { n: 0, ok: 0 };
+        v.n += 1;
+        if (a.is_correct) v.ok += 1;
+        byNo.set(key, v);
+      });
+      const nums = [...byNo.entries()].sort((a, b) => b[1].n - b[1].ok - (a[1].n - a[1].ok));
+      const weak = nums.filter(([, v]) => v.n - v.ok > 0);
+      const acts = (actToday || []).filter((a) => a.student_id === id);
+      const sections = [...new Set(acts.map((a) => sectionTitle(a.section)))];
+      const min = sessionsOf([...acts.map((a) => a.at), ...mine.map((a) => a.created_at)]).reduce((x, s0) => x + s0.min, 0);
+      const works = (worksToday || []).filter((w) => w.student_id === id);
+      const fromLesson = mine.filter((a) => a.item_id).length;
+      return { id, p: people.get(id), mine, ok, nums, weak, sections, min, works, fromLesson };
+    })
+    .sort((a, b) => b.mine.length - a.mine.length || b.min - a.min);
+  const todayPeopleHtml = todayPeople.length
+    ? `<div class="tt-who-list">${todayPeople
+        .map(
+          (x) => `<details class="tt-who card">
+        <summary>
+          <span class="tt-who-name">${name(x.p)}</span>
+          <span class="muted">${x.mine.length ? `${x.mine.length} отв. · ${Math.round((100 * x.ok) / x.mine.length)}% верно` : "заходил, заданий не решал"}${x.min ? ` · ~${x.min} мин` : ""}${x.works.length ? ` · сдал работ: ${x.works.length}` : ""}</span>
+          ${x.weak.length ? `<span class="tt-who-weak">ошибки: ${x.weak.slice(0, 4).map(([k, v]) => `<b>${escapeHtml(k)}</b> ${v.n - v.ok}`).join(", ")}${x.weak.length > 4 ? "…" : ""}</span>` : ""}
+        </summary>
+        ${
+          x.nums.length
+            ? `<table class="t-table tt-who-table"><thead><tr><th>Задание</th><th>Ответов</th><th>Верно</th><th>Ошибок</th></tr></thead><tbody>${x.nums
+                .map(([k, v]) => `<tr class="${v.n - v.ok ? "t-bad" : "t-ok"}"><td>${escapeHtml(k)}</td><td>${v.n}</td><td>${v.ok}</td><td>${v.n - v.ok || ""}</td></tr>`)
+                .join("")}</tbody></table>`
+            : ""
+        }
+        <p class="muted">${x.fromLesson ? `Из занятий: ${x.fromLesson} отв., самостоятельно: ${x.mine.length - x.fromLesson}. ` : x.mine.length ? "Всё — самостоятельно. " : ""}${x.sections.length ? `Разделы: ${escapeHtml(x.sections.join(", "))}.` : ""}</p>
+        ${x.works.map((w) => `<p><a href="#/cabinet/works/${w.id}">Работа ${escapeHtml(shortSrc(w.tasks?.source))} № ${w.tasks?.task_no ?? ""}</a> — ${escapeHtml(WORK_STATUS[w.status] || "")}</p>`).join("")}
+        <p><a class="btn secondary" href="#/cabinet/student/${x.id}">Карточка ученика</a></p>
+      </details>`
+        )
+        .join("")}</div>`
+    : '<p class="muted">Сегодня ещё никто не заходил.</p>';
   render(`
     <header class="tt-head">
       <div>
@@ -429,10 +492,13 @@ async function todayView(host, render) {
     <section class="me-section">
       <h2>Ученики сегодня</h2>
       <div class="tt-stats">
-        <div><strong>${solvers}</strong><span>занимались</span></div>
+        <div><strong>${todayPeople.length}</strong><span>заходили</span></div>
+        <div><strong>${solvers}</strong><span>решали</span></div>
         <div><strong>${att.length}</strong><span>ответов</span></div>
         <div><strong>${att.length ? Math.round((100 * att.filter((a) => a.is_correct).length) / att.length) : 0}%</strong><span>верных</span></div>
       </div>
+      <p class="muted">Нажмите на ученика — что решал, где ошибался, какие разделы открывал.</p>
+      ${todayPeopleHtml}
     </section>
     ${
       idle.length
@@ -571,6 +637,7 @@ function newStudentHtml(groupOpts) {
           <div class="grid-2">
             <label>Класс<select name="grade">${GRADES.map((g) => `<option value="${g}" ${g === 9 ? "selected" : ""}>${g} класс</option>`).join("")}</select></label>
             <label>Группа<select name="group"><option value="">без группы</option>${groupOpts}</select></label>
+            <label>Доступ до<input type="date" name="until" value="${defaultUntil()}" /></label>
           </div>
           <fieldset class="t-inline-set"><legend>Предметы</legend>
             <label class="t-inline"><input type="checkbox" name="subj" value="rus" checked /> Русский язык</label>
@@ -605,6 +672,10 @@ function bindNewStudent(host) {
         courses,
         group: form.group.value || null,
       });
+      if (form.until.value) {
+        const { error: eu } = await supa.rpc("teacher_set_student", { p_student: r.id, p_status: "active", p_group: null, p_until: form.until.value });
+        if (eu) console.warn("access_until", eu);
+      }
       st.textContent = "";
       const done = host.querySelector("#t-new-student-done");
       done.innerHTML = credsHtml(r.login, form.password.value.trim(), form.elements.namedItem("name").value.trim()) + `<p class="actions"><a class="btn secondary" href="#/cabinet/students" data-reload>К списку учеников</a></p>`;
@@ -725,7 +796,7 @@ async function studentsView(host, render) {
         </div>
         <div class="t-actions">
           <select data-f="group"><option value="">без группы</option>${groupOpts}</select>
-          <label class="t-inline">доступ до <input type="date" data-f="until" /></label>
+          <label class="t-inline">доступ до <input type="date" data-f="until" value="${defaultUntil()}" /></label>
           <button class="btn" data-act="approve">Подтвердить</button>
           <button class="btn secondary" data-act="reject">Отклонить</button>
         </div>
@@ -737,22 +808,19 @@ async function studentsView(host, render) {
   const restHtml = rest
     .map(
       (p) => `
-      <tr data-id="${p.id}" data-blob="${escapeHtml([p.full_name, p.email, p.contact, p.exam_target].join(" ").toLowerCase())}">
-        <td><a href="#/cabinet/student/${p.id}">${escapeHtml(p.full_name || p.email || "—")}</a><br><small class="muted">${escapeHtml(p.email || "")}</small></td>
-        <td>${p.grade || ""}</td>
-        <td>${(p.courses || []).length ? (p.courses || []).map((c) => escapeHtml(courseLabel(c))).join("<br>") : escapeHtml(p.exam_target || "")}</td>
-        <td>${escapeHtml(groupsOf(p.id).join(", "))}</td>
-        <td title="за 7 дней: ${weekOf(p.id)}">${xpOf(p.id)}${weekOf(p.id) ? ` <small class="t-okc">+${weekOf(p.id)}</small>` : ""}</td>
-        <td>${seenText(lastSeen(p.id))}</td>
-        <td>${visits7(p.id) || "—"}</td>
-        <td>${answers7(p.id) || "—"}</td>
-        <td>
-          <select data-f="status">${Object.entries(STATUS_TEXT)
+      <tr data-id="${p.id}" data-blob="${escapeHtml([p.full_name, p.email, p.contact, p.exam_target, groupsOf(p.id).join(" ")].join(" ").toLowerCase())}">
+        <td data-label="Ученик"><a href="#/cabinet/student/${p.id}"><strong>${escapeHtml(p.full_name || p.email || "—")}</strong></a>
+          <small class="muted">${isPseudoEmail(p.email) ? escapeHtml(loginOf(p.email)) : escapeHtml(p.email || "")}${groupsOf(p.id).length ? ` · ${escapeHtml(groupsOf(p.id).join(", "))}` : ""}${p.tg_chat_id ? " · Telegram" : ""}</small></td>
+        <td data-label="Курсы">${(p.courses || []).length ? (p.courses || []).map((c) => escapeHtml(courseLabel(c))).join("<br>") : escapeHtml([p.grade ? `${p.grade} кл.` : "", p.exam_target || ""].filter(Boolean).join(" · "))}</td>
+        <td data-label="Активность"><span>был: ${seenText(lastSeen(p.id))}</span>
+          <small class="muted">7 дн.: ${visits7(p.id) || 0} заход. · ${answers7(p.id) || 0} отв. · очки ${xpOf(p.id)}${weekOf(p.id) ? ` <span class="t-okc">+${weekOf(p.id)}</span>` : ""}</small></td>
+        <td data-label="Доступ" class="t-access">
+          <select data-f="status" aria-label="Статус">${Object.entries(STATUS_TEXT)
             .map(([k, v]) => `<option value="${k}" ${p.status === k ? "selected" : ""}>${v}</option>`)
             .join("")}</select>
+          <input type="date" data-f="until" value="${p.access_until || ""}" aria-label="Доступ до" />
+          <small class="muted" data-saved></small>
         </td>
-        <td><input type="date" data-f="until" value="${p.access_until || ""}" /></td>
-        <td><button class="btn secondary" data-act="save">Сохранить</button></td>
       </tr>`
     )
     .join("");
@@ -791,10 +859,16 @@ async function studentsView(host, render) {
     <section class="me-section">
       <h2>Все ученики · ${rest.length}</h2>
       <input class="search" id="t-q" type="search" placeholder="Поиск по имени, почте, цели" />
-      <div class="t-table-wrap"><table class="t-table">
-        <thead><tr><th>Ученик</th><th>Класс</th><th>Курсы</th><th>Группы</th><th title="Очки за самостоятельную работу; зелёным — за неделю">Очки</th><th>Был на сайте</th><th title="Сеансов за 7 дней (заходы с перерывом больше 30 минут)">Заходов 7 дн.</th><th>Ответов 7 дн.</th><th>Статус</th><th>Доступ до</th><th></th></tr></thead>
-        <tbody>${restHtml || `<tr><td colspan="11" class="muted">Пока никого.</td></tr>`}</tbody>
+      <div class="t-table-wrap"><table class="t-table t-students">
+        <thead><tr><th>Ученик</th><th>Курсы</th><th title="Заходы — сеансы с перерывом больше 30 минут; очки — за самостоятельную работу, зелёным — за неделю">Активность</th><th>Статус и доступ до</th></tr></thead>
+        <tbody>${restHtml || `<tr><td colspan="4" class="muted">Пока никого.</td></tr>`}</tbody>
       </table></div>
+      <p class="muted">Статус и дата доступа сохраняются сразу после изменения.</p>
+      ${
+        rest.some((p) => p.status === "active" && (!p.access_until || p.access_until < defaultUntil()))
+          ? `<p class="actions"><button class="btn secondary" type="button" id="t-extend-all">Продлить доступ всем активным до ${fmtUntil(defaultUntil())}</button> <span class="muted" id="t-extend-status"></span></p>`
+          : ""
+      }
     </section>`);
 
   bindNewStudent(host);
@@ -815,7 +889,39 @@ async function studentsView(host, render) {
     const q = e.target.value.trim().toLowerCase();
     host.querySelectorAll("tbody tr[data-blob]").forEach((tr) => (tr.hidden = q && !tr.dataset.blob.includes(q)));
   });
-  host.querySelectorAll("[data-act]").forEach((btn) =>
+  host.querySelectorAll("tr[data-id] [data-f]").forEach((el) =>
+    el.addEventListener("change", async () => {
+      const row = el.closest("tr[data-id]");
+      const note = row.querySelector("[data-saved]");
+      note.textContent = "сохраняем…";
+      const { error } = await supa.rpc("teacher_set_student", {
+        p_student: row.dataset.id,
+        p_status: row.querySelector('[data-f="status"]').value,
+        p_group: null,
+        p_until: row.querySelector('[data-f="until"]').value || null,
+      });
+      note.textContent = error ? humanError(error).message : "сохранено ✓";
+      if (!error) setTimeout(() => (note.textContent = ""), 1800);
+    })
+  );
+  host.querySelector("#t-extend-all")?.addEventListener("click", async (e) => {
+    const until = defaultUntil();
+    const list = rest.filter((p) => p.status === "active" && (!p.access_until || p.access_until < until));
+    if (!confirm(`Продлить доступ до ${fmtUntil(until)} активным ученикам: ${list.length}?`)) return;
+    e.target.disabled = true;
+    const st = host.querySelector("#t-extend-status");
+    for (const [i, p] of list.entries()) {
+      st.textContent = `${i + 1} из ${list.length}…`;
+      const { error } = await supa.rpc("teacher_set_student", { p_student: p.id, p_status: "active", p_group: null, p_until: until });
+      if (error) {
+        st.textContent = humanError(error).message;
+        e.target.disabled = false;
+        return;
+      }
+    }
+    mountTeacher(document, ["students"]);
+  });
+  host.querySelectorAll(".t-row [data-act]").forEach((btn) =>
     btn.addEventListener("click", async () => {
       const row = btn.closest("[data-id]");
       const id = row.dataset.id;
