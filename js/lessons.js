@@ -5,13 +5,13 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land135";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land135";
-import { SOURCES, bankFiles } from "./teacher.js?v=land135";
+import { taskHref } from "./account.js?v=land137";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land137";
+import { SOURCES, bankFiles } from "./teacher.js?v=land137";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land135";
+} from "./exams.js?v=land137";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -155,6 +155,77 @@ async function pickWrittenTask(source, no, roster = [], exclude = []) {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+/** Все задания этого типа в банке (кратко) — для выбора текста вручную. */
+const writtenPoolCache = new Map();
+async function writtenPool(source, no) {
+  const key = `${source}:${no}`;
+  if (writtenPoolCache.has(key)) return writtenPoolCache.get(key);
+  const ex = EXAMS[source];
+  let q = supa
+    .from("tasks")
+    .select("id, source, task_no, source_ref, passage_id, answer_mode, q:data->>questionText, work:data->>work, author:data->>author")
+    .eq("source", source)
+    .eq("task_no", no)
+    .eq("is_published", true)
+    .order("id")
+    .limit(1000);
+  if (ex) q = q.eq("bank_file", ex.bank(no));
+  const { data, error } = await q;
+  if (error) throw humanError(error);
+  writtenPoolCache.set(key, data || []);
+  return data || [];
+}
+
+/** Какие из заданий уже писал кто-то из этих учеников. */
+async function writtenSeen(roster, ids) {
+  if (!roster.length || !ids.length) return new Set();
+  const { data } = await supa.from("written_works").select("task_id").in("student_id", roster).in("task_id", ids.slice(0, 900));
+  return new Set((data || []).map((w) => w.task_id));
+}
+
+const plain = (html) => {
+  const d = document.createElement("div");
+  d.innerHTML = String(html || "");
+  return (d.textContent || "").replace(/\s+/g, " ").trim();
+};
+const cut = (t, n) => (t.length > n ? `${t.slice(0, n - 1)}…` : t);
+
+/** Суть задания без общей инструкции: темы сочинений (1–5), нужное задание 13.x или проблема текста. */
+function gist(qText, typeKey = "") {
+  const lines = String(qText || "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const oge = lines.filter((l) => /^13\.[123]\b/.test(l));
+  if (oge.length) {
+    const want = (typeKey.match(/13\.([123])$/) || [])[1];
+    const pick = want ? oge.filter((l) => l.startsWith(`13.${want}`)) : oge;
+    return (pick.length ? pick : oge).map((l) => cut(l, 220)).join(" · ");
+  }
+  const topics = lines.filter((l) => /^[1-5]\.\s/.test(l));
+  if (topics.length >= 2) return topics.map((l) => cut(l, 140)).join(" · ");
+  return lines.join(" ");
+}
+
+/** Карточка выбранного текста: начало текста, задание, полный текст — по кнопке. */
+async function writtenPreviewHtml(t, seen, typeKey = "") {
+  let passage = "";
+  if (t.passage_id) {
+    const { data } = await supa.from("passages").select("html").eq("id", t.passage_id).maybeSingle();
+    passage = data?.html || "";
+  }
+  const { data: full } = await supa.from("tasks").select("data").eq("id", t.id).maybeSingle();
+  const sanitize = sanitizeFor(t.source);
+  const q = full?.data?.questionHtml || "";
+  const qGist = gist(full?.data?.questionText || plain(q) || t.q || "", typeKey);
+  return `
+    <p class="l-wpick-head"><strong>№ ${escapeHtml(String(t.source_ref))}</strong>${t.work ? ` · «${escapeHtml(t.work)}»${t.author ? `, ${escapeHtml(t.author)}` : ""}` : ""}
+      ${seen ? '<span class="badge">кто-то из них уже писал</span>' : '<span class="chip">ещё не писали</span>'}</p>
+    ${passage ? `<p class="muted l-wpick-text">${escapeHtml(cut(plain(passage), 360))}</p>` : ""}
+    <p class="l-wpick-q">${escapeHtml(cut(qGist, 700))}</p>
+    <details><summary>Показать ${passage ? "текст и задание" : "задание"} полностью</summary>
+      ${passage ? `<div class="lit-html l-wpick-full">${sanitize(passage)}</div>` : ""}
+      <div class="lit-html">${sanitize(q)}</div>
+    </details>`;
+}
+
 /** Быстрые сроки: «к концу занятия», «завтра», «через 3 дня», «через неделю» (вечер — 20:00). */
 const DUE_PRESETS = [
   ["end", "к концу занятия"],
@@ -291,7 +362,7 @@ export async function lessonsListView(host, render) {
       <div class="stack" data-for="written" hidden>
         <label>Что пишут<select name="wtype">${writtenTypeOptions()}</select></label>
         <label>Пояснение ученикам <span class="muted">(необязательно)</span><textarea name="wnote" rows="2" placeholder="Например: объём не меньше 150 слов; можно написать от руки и прикрепить фото"></textarea></label>
-        <p class="muted">Текст и задание подберутся из банка — такие, которые эти ученики ещё не писали. Заменить можно будет на странице работы.</p>
+        <p class="muted">Текст подберётся из банка — такой, который эти ученики ещё не писали. Ниже, в «Тексте работы», его можно посмотреть, заменить или выбрать самому.</p>
       </div>
       <div class="grid-2" data-for="timed" hidden>
         <label>Время на работу, мин<input type="number" name="duration" min="5" max="600" placeholder="без ограничения" /></label>
@@ -307,6 +378,16 @@ export async function lessonsListView(host, render) {
         <div class="grid-2">
           <label data-for="notwritten">Когда (открыть с)<input type="datetime-local" name="starts_at" /></label>
           <label data-for="timed" hidden>Начать можно до<input type="datetime-local" name="closes_at" /></label>
+        </div>
+        <div class="stack l-wtext" data-for="written" hidden>
+          <p class="l-label">Текст работы <span class="muted">— посмотрите, прежде чем отправлять</span></p>
+          <div class="card l-wpick" id="l-wpick"><p class="muted">Подбираем…</p></div>
+          <p class="actions"><button type="button" class="btn secondary" id="l-wreroll">↻ Другой текст</button>
+            <button type="button" class="btn secondary" id="l-wbrowse">Выбрать из базы</button></p>
+          <div id="l-wlist" class="l-wlist" hidden>
+            <input type="search" id="l-wsearch" placeholder="Слова из задания, автор, произведение или №" />
+            <div id="l-wrows"></div>
+          </div>
         </div>
         <div class="stack" data-for="written" hidden>
           <label>Сдать до<input type="datetime-local" name="due_at" /></label>
@@ -351,6 +432,7 @@ export async function lessonsListView(host, render) {
       kindSel.value = b.dataset.openNew === "written" ? "written" : kindSel.value === "written" ? "lesson" : kindSel.value;
       sync();
       openNew();
+      if (kindSel.value === "written" && !chosen) reroll();
     })
   );
   form.querySelector("[data-close-new]").addEventListener("click", closeNew);
@@ -402,12 +484,102 @@ export async function lessonsListView(host, render) {
   kindSel.addEventListener("change", sync);
   examSel.addEventListener("change", sync);
   wtypeSel.addEventListener("change", sync);
+
+  // Текст письменной работы: выбирается заранее, преподаватель видит его до отправки.
+  let chosen = null;
+  let tried = [];
+  let pickSeq = 0;
+  const pickBox = form.querySelector("#l-wpick");
+  const listBox = form.querySelector("#l-wlist");
+  const rosterNow = async () => [...new Set([...(await groupMemberIds(form.querySelector('[name="group_id"]')?.value || "")), ...pickedStudents(form)])];
+  const showChosen = async (t, seenSet) => {
+    const my = ++pickSeq;
+    chosen = t;
+    if (!t) {
+      pickBox.innerHTML = '<p class="muted">В банке нет заданий этого типа.</p>';
+      return;
+    }
+    pickBox.innerHTML = '<p class="muted">Загружаем текст…</p>';
+    const seen = seenSet ? seenSet.has(t.id) : (await writtenSeen(await rosterNow(), [t.id])).has(t.id);
+    const html = await writtenPreviewHtml(t, seen, wtypeSel.value);
+    if (my === pickSeq) pickBox.innerHTML = html;
+  };
+  const reroll = async () => {
+    if (kindSel.value !== "written") return;
+    const wt = WRITTEN_TYPES[wtypeSel.value];
+    pickBox.innerHTML = '<p class="muted">Подбираем…</p>';
+    try {
+      const pool = await writtenPool(wt.source, wt.no);
+      const seen = await writtenSeen(await rosterNow(), pool.map((t) => t.id));
+      let options = pool.filter((t) => !seen.has(t.id) && !tried.includes(t.id));
+      if (!options.length) options = pool.filter((t) => !tried.includes(t.id));
+      if (!options.length) {
+        tried = [];
+        options = pool;
+      }
+      const t = options[Math.floor(Math.random() * options.length)] || null;
+      if (t) tried.push(t.id);
+      await showChosen(t, seen);
+    } catch (err) {
+      pickBox.innerHTML = `<p class="lit-result is-bad">${escapeHtml(err.message)}</p>`;
+    }
+  };
+  const renderList = async () => {
+    const wt = WRITTEN_TYPES[wtypeSel.value];
+    const rows = form.querySelector("#l-wrows");
+    rows.innerHTML = '<p class="muted">Загружаем…</p>';
+    const pool = await writtenPool(wt.source, wt.no);
+    const seen = await writtenSeen(await rosterNow(), pool.map((t) => t.id));
+    const needle = String(form.querySelector("#l-wsearch").value || "").trim().toLowerCase();
+    const hits = pool
+      .filter((t) => !needle || `${t.source_ref} ${t.q || ""} ${t.work || ""} ${t.author || ""}`.toLowerCase().includes(needle))
+      .sort((a, b) => seen.has(a.id) - seen.has(b.id));
+    rows.innerHTML =
+      hits
+        .slice(0, 40)
+        .map(
+          (t) => `<button type="button" class="l-wrow${chosen?.id === t.id ? " is-on" : ""}" data-pick="${t.id}">
+            <strong>№ ${escapeHtml(String(t.source_ref))}${t.work ? ` · «${escapeHtml(t.work)}»` : ""}</strong>${seen.has(t.id) ? ' <span class="badge">уже писали</span>' : ""}
+            <span class="muted">${escapeHtml(cut(gist(t.q, wtypeSel.value), 260))}</span></button>`
+        )
+        .join("") + `<p class="muted">Найдено: ${hits.length}${hits.length > 40 ? " — показаны первые 40, уточните поиск" : ""}.</p>`;
+    rows.querySelectorAll("[data-pick]").forEach((b) =>
+      b.addEventListener("click", async () => {
+        const t = pool.find((x) => String(x.id) === b.dataset.pick);
+        listBox.hidden = true;
+        await showChosen(t, seen);
+        pickBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      })
+    );
+  };
+  form.querySelector("#l-wreroll").addEventListener("click", reroll);
+  form.querySelector("#l-wbrowse").addEventListener("click", () => {
+    listBox.hidden = !listBox.hidden;
+    if (!listBox.hidden) renderList();
+  });
+  let searchTimer = null;
+  form.querySelector("#l-wsearch").addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(renderList, 250);
+  });
+  const restart = () => {
+    tried = [];
+    chosen = null;
+    listBox.hidden = true;
+    if (kindSel.value === "written") reroll();
+  };
+  wtypeSel.addEventListener("change", restart);
+  kindSel.addEventListener("change", () => kindSel.value === "written" && !chosen && reroll());
+  // сменились ученики — пометка «уже писали» могла измениться
+  form.querySelector('[name="group_id"]')?.addEventListener("change", () => chosen && showChosen(chosen));
+  form.querySelectorAll('input[name="student"]').forEach((cb) => cb.addEventListener("change", () => chosen && kindSel.value === "written" && showChosen(chosen)));
   sync();
   const wantNew = (location.hash.match(/[?&]new=([a-z0-9]+)/) || [])[1];
   if (wantNew) {
     if (wantNew === "written") {
       kindSel.value = "written";
       sync();
+      reroll();
     }
     openNew();
   }
@@ -475,7 +647,7 @@ export async function lessonsListView(host, render) {
       if (wtype) {
         st.textContent = "Подбираем текст…";
         const roster = [...new Set([...(await groupMemberIds(groupId)), ...picked])];
-        const task = await pickWrittenTask(wtype.source, wtype.no, roster);
+        const task = chosen && chosen.source === wtype.source && chosen.task_no === wtype.no ? chosen : await pickWrittenTask(wtype.source, wtype.no, roster);
         if (task) {
           await insertItems(lesson.id, [task], { kind: "homework", reveal: "after_review", attempts: null, due });
           if (f.get("open_now")) {

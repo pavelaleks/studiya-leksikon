@@ -1,18 +1,18 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land135";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land137";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land135";
+import { taskHref } from "./account.js?v=land137";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land135";
-import { readingView } from "./teacher-reading.js?v=land135";
-import { optionsOf } from "./practice.js?v=land135";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land135";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land135";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land135";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land137";
+import { readingView } from "./teacher-reading.js?v=land137";
+import { optionsOf } from "./practice.js?v=land137";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land137";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land137";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land137";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land135";
+} from "./review.js?v=land137";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */

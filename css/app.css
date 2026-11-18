@@ -2070,3 +2070,19 @@ body.is-reading .lh-btn { display: none; }
 .b-late { display: block; font-size: 0.7rem; color: #b3261e; }
 .t-late { color: #b3261e; font-weight: 600; }
 .tt-head .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Письменная работа: выбор текста до отправки */
+.l-wpick { padding: 14px 16px; }
+.l-wpick-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 8px; }
+.l-wpick-text { margin: 0 0 8px; font-style: italic; }
+.l-wpick-q { margin: 0 0 8px; }
+.l-wpick-full { max-height: 50vh; overflow: auto; margin: 8px 0; padding: 10px; border-left: 3px solid var(--line); }
+.l-wlist { display: grid; gap: 8px; }
+.l-wlist input[type="search"] { width: 100%; }
+#l-wrows { display: grid; gap: 6px; max-height: 52vh; overflow: auto; }
+.l-wrow {
+  display: grid; gap: 2px; text-align: left; font: inherit; color: inherit; cursor: pointer;
+  padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface, transparent);
+}
+.l-wrow:hover, .l-wrow.is-on { border-color: var(--accent); }
+.l-wrow .muted { font-size: 0.86rem; }
