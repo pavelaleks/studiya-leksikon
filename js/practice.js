@@ -5,7 +5,7 @@
  *  - письменная работа: черновик, фото, сдача на проверку, оценка.
  */
 import { escapeHtml } from "./ui.js";
-import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land148";
+import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land149";
 import {
   accessState,
   currentUser,
@@ -104,6 +104,21 @@ export function checkBlockHtml({ label, placeholder = "Введите ответ
     <div id="pr-solution"></div>`;
 }
 
+/** Преподавателю разбор и ответ открыты сразу — без попытки. Ученикам этот блок не показывается. */
+async function teacherSolution(holder, problem, sanitize, item, title = "Ответ и разбор") {
+  if (accessState() !== "teacher" || !holder || !problem?._tid) return;
+  try {
+    const res = await showSolution(problem._tid, item?.id || null);
+    if (!res || res.locked) return;
+    const answer = res.answer ? `<p class="pr-answer-key"><strong>Ответ:</strong> ${escapeHtml(String(res.answer).replace(/\|/g, " или "))}</p>` : "";
+    const body = res.solution ? `<div class="lit-html">${sanitize(res.solution)}</div>` : "";
+    if (!answer && !body) return;
+    holder.innerHTML = `<details class="lit-solution t-solution" open><summary>${escapeHtml(title)} <small class="muted">· видно только вам</small></summary>${answer}${body}</details>`;
+  } catch {
+    /* разбор не обязателен */
+  }
+}
+
 function solutionHtml(sanitize, res, title = "Разбор") {
   if (!res || res.locked) return "";
   // Строку «Ответ» показываем, только если разбора нет: в разборах ответ уже записан по-человечески.
@@ -159,6 +174,7 @@ export function bindCheck(root, problem, { sanitize, onCorrect, item = null, exa
   if (!input || !btn) return;
   const started = Date.now();
   let tries = 0;
+  teacherSolution(solution, problem, sanitize, item);
 
   const setResult = (text, cls = "") => {
     result.className = `lit-result ${cls}`;
@@ -309,6 +325,7 @@ export function bindWritten(
   };
   let work = null;
   let files = [];
+  teacherSolution(solution, problem, sanitize, item, solutionTitle);
 
   const loadSolution = async () => {
     try {
