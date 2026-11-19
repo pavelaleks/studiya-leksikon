@@ -1,6 +1,6 @@
 // Окно «Записаться»: открывается по любой ссылке #apply. На телефоне выезжает снизу.
-import { applyFormHtml } from "./pages.js?v=land159";
-import { bindApplyForm, applyPrefill } from "./apply.js?v=land159";
+import { applyFormHtml } from "./pages.js?v=land161";
+import { bindApplyForm, applyPrefill } from "./apply.js?v=land161";
 import { studioTelegram, studioWhatsApp } from "./config.js";
 
 let dlg = null;
@@ -15,7 +15,7 @@ function build() {
     <div class="lx-dialog-box">
       <button type="button" class="lx-dialog-x" data-close aria-label="Закрыть">×</button>
       <h2 id="lx-apply-title">Записаться на занятия</h2>
-      <p class="lx-dialog-lede">Перезвоним в течение дня и договоримся о времени и формате.</p>
+      <p class="lx-dialog-lede">Ответим в течение дня — в мессенджере или по телефону.</p>
       ${applyFormHtml()}
       <p class="lx-dialog-alt muted">Удобнее написать самим?
         ${tg.url ? `<a href="${tg.url}" target="_blank" rel="noopener noreferrer">Telegram</a>` : ""}

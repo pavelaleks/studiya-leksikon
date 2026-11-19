@@ -1,6 +1,6 @@
 import { accessState, currentProfile } from "./supa.js";
 import { studioTelegram, studioWhatsApp } from "./config.js";
-import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land159";
+import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land161";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -125,7 +125,7 @@ function footerHtml(full) {
             <a href="#/oge">ОГЭ по русскому</a>
             <a href="#/vpr">ВПР по русскому</a>
             <a href="#/literature">Литература</a>
-            <a href="#/check">Проверь себя перед экзаменом</a>
+            <a href="#/check">Проверить себя перед экзаменом</a>
           </nav>
           <nav class="fv-col" aria-label="Ученикам">
             <p class="footer-h">Ученикам</p>

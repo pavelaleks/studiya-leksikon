@@ -2508,3 +2508,66 @@ body.is-landing .landing-hero + .landing-offer { border-top: 0; padding-top: 16p
 .lx-programs .landing-program-tag { display: none; }
 /* первый экран без анимации появления: текст сразу чёткий */
 .landing-hero-copy, .landing-hero-frame { animation: none !important; opacity: 1; transform: none; }
+
+/* ===== Главная: правки по независимому разбору ===== */
+/* первый экран */
+.lx-kicker { margin: 14px 0 6px; font-size: 15px; font-weight: 500; color: var(--ink-soft); }
+body.is-landing .landing-title { font-size: clamp(1.05rem, 1.6vw, 1.25rem); font-weight: 400; line-height: 1.5; max-width: 34em; }
+.lx-facts { margin: 10px 0 14px; font-size: 15px; color: var(--ink-soft); }
+.lx-facts a { color: inherit; }
+.lx-teacher-line { display: flex; align-items: center; gap: 12px; }
+.lx-teacher-line img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex: none; }
+.lx-link { font-weight: 650; color: var(--accent); align-self: center; }
+.lx-hero-actions { align-items: center; gap: 12px 20px; }
+
+/* программы: все четыре сразу */
+.lx-programs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.lx-programs > .landing-program { max-width: none; padding: 20px; }
+.lx-programs .landing-program h3 { font-size: 1.15rem; }
+.lx-programs .landing-program-tag { display: block; }
+.lx-programs .landing-program ul { padding-left: 1.1em; font-size: 15px; }
+.lx-programs .landing-program-focus { font-size: 15px; }
+.lx-programs .landing-program-check { font-size: 14.5px; }
+body.is-landing .landing-source { max-width: 68ch; font-size: 15px; }
+
+/* цены */
+.lx-price-h { margin: 0 0 6px; font-size: 15px; font-weight: 600; color: var(--ink-soft); }
+body.is-landing .landing-price-sum { font-family: var(--serif); font-weight: 700; font-size: 31px; color: var(--ink); }
+.lx-price-note { max-width: 68ch; margin-top: 16px; font-size: 15px; }
+
+/* финал */
+.lx-final-contacts { margin: 0 0 6px !important; font-size: 15px; }
+.lx-final .landing-contacts-line a, .lx-final .landing-contacts-line .link-btn { white-space: nowrap; }
+
+/* вопросы */
+body.is-landing .landing-faq-item summary { font-family: var(--sans); font-weight: 600; font-size: 16px; }
+body.is-landing .landing-faq-item[open] summary::after { content: "−"; }
+
+/* подвал: подписи колонок обычным регистром */
+.site-footer-v2 .footer-h { text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 650; color: var(--ink); }
+
+/* тёмная тема: «и литература» спокойнее */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .landing-subject-second { color: #c98d92; } }
+:root[data-theme="dark"] .landing-subject-second { color: #c98d92; }
+
+@media (max-width: 1000px) {
+  .lx-programs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  /* рисунок на телефоне — под кнопками, обрезан по высоте */
+  body.is-landing .landing-hero-art { display: block !important; order: 2; margin: 4px 0 0; }
+  body.is-landing .landing-hero-frame { min-height: 0; height: 220px; max-height: none; border-radius: 16px; box-shadow: none; }
+  body.is-landing .landing-hero-frame img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
+  body.is-landing .landing-hero-art figcaption { font-size: 12px; }
+}
+@media (max-width: 600px) {
+  .lx-programs { grid-template-columns: 1fr; }
+  .lx-hero-actions .btn { flex: 1 1 auto; }
+  /* подвал на телефоне короче: только «Связаться» и строка внизу */
+  .site-footer-v2 .fv-grid > nav { display: none; }
+  .site-footer-v2 .fv-grid { grid-template-columns: 1fr; }
+}
+/* программы — две колонки: в четыре текст слишком узкий */
+.lx-programs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lx-programs > .landing-program { padding: 22px 24px; }
+@media (max-width: 600px) { .lx-programs { grid-template-columns: 1fr; } }
