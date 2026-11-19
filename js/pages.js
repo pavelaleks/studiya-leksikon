@@ -294,6 +294,7 @@ export function homePage(content) {
         <ul class="landing-facts" aria-label="Формат занятий">
           <li>Очно и онлайн</li>
           <li>Индивидуально или в группе до четырёх</li>
+          <li><a href="#platform">Своя учебная платформа</a></li>
           <li><a href="#prices">Идёт набор в группы</a></li>
         </ul>
         <p class="landing-teacher-line">Ведёт <a href="#teacher">Павел Викторович Алексеев</a> — доктор филологических наук, преподаёт с 2002 года</p>
@@ -315,6 +316,45 @@ export function homePage(content) {
         </div>
         <figcaption>Рисунок Сарбиназ Алексеевой</figcaption>
       </figure>
+    </section>
+
+    <section class="landing-platform" id="platform" aria-labelledby="platform-title">
+      <p class="eyebrow">Как мы занимаемся</p>
+      <h2 id="platform-title">Своя учебная платформа</h2>
+      <p class="lede">Студия занимается на собственной платформе: мы разработали её под свои уроки. Она связывает занятие и работу дома. Ученик закрепляет тему между уроками, а преподаватель видит, где он ошибается, и начинает занятие с этого. Поэтому онлайн заниматься так же удобно, как очно.</p>
+      <div class="landing-platform-grid">
+        <article class="lp-card">
+          <span class="lp-ico" aria-hidden="true">🗓</span>
+          <h3>Задания к каждому занятию</h3>
+          <p>В личном кабинете видно, что сделать и к какому сроку. Если подключить Telegram, придут напоминания.</p>
+        </article>
+        <article class="lp-card">
+          <span class="lp-ico" aria-hidden="true">✅</span>
+          <h3>Проверка сразу</h3>
+          <p>Больше 7&nbsp;000 заданий ВПР, ОГЭ и ЕГЭ по русскому и 3&nbsp;000 по литературе. Ответ проверяется сразу, разбор открывается после попытки.</p>
+        </article>
+        <article class="lp-card">
+          <span class="lp-ico" aria-hidden="true">🔁</span>
+          <h3>Тренировка дня</h3>
+          <p>10 заданий в день: по прошлым ошибкам, слабым и новым номерам. Трудное возвращается, пока не закрепится.</p>
+        </article>
+        <article class="lp-card">
+          <span class="lp-ico" aria-hidden="true">📖</span>
+          <h3>Теория к каждому номеру</h3>
+          <p>Как устроено задание, алгоритм и частые ловушки. Если ученик ошибается, сайт подскажет, что повторить.</p>
+        </article>
+        <article class="lp-card">
+          <span class="lp-ico" aria-hidden="true">✍️</span>
+          <h3>Сочинения проверяет преподаватель</h3>
+          <p>Пометки пером прямо на тексте, как ручкой в тетради, и баллы по критериям экзамена. Проверенная работа приходит в кабинет.</p>
+        </article>
+        <article class="lp-card">
+          <span class="lp-ico" aria-hidden="true">📈</span>
+          <h3>Видно, где вы сейчас</h3>
+          <p>Пробные экзамены с таймером и прогресс по каждому номеру. Преподаватель видит, кто что решал и где ошибся.</p>
+        </article>
+      </div>
+      <p class="landing-platform-note">Доступ к платформе получает каждый ученик студии. <a href="#/check">Попробуйте: 10 вопросов перед экзаменом →</a></p>
     </section>
 
     <section class="landing-about" id="teacher" aria-labelledby="teacher-title">

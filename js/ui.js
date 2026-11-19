@@ -1,5 +1,5 @@
 import { accessState, currentProfile } from "./supa.js";
-import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land149";
+import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land150";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -141,6 +141,7 @@ export function layout(content, active = "", { hideFooter = false } = {}) {
   const nav = isHome
     ? `
           <a href="#about">Программы</a>
+          <a href="#platform">Платформа</a>
           <a href="#teacher">Команда</a>
           <a href="#apply">Запись</a>
           <a href="#learn">Материалы</a>

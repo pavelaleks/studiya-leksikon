@@ -5,7 +5,7 @@
  *  - письменная работа: черновик, фото, сдача на проверку, оценка.
  */
 import { escapeHtml } from "./ui.js";
-import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land149";
+import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land150";
 import {
   accessState,
   currentUser,

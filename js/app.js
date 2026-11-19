@@ -1,25 +1,25 @@
-import { mountHelper } from "./helper.js?v=land149";
-import { applyTheme, layout } from "./ui.js?v=land149";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land149";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land149";
-import { mountLiterature } from "./literature.js?v=land149";
-import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land149";
-import { mountRussian } from "./russian.js?v=land149";
-import { mountOge } from "./oge.js?v=land149";
-import { markVprDone, mountVpr } from "./vpr.js?v=land149";
-import { mountQuiz } from "./quiz.js?v=land149";
-import { bindApplyForm } from "./apply.js?v=land149";
-import { EGE_TITLES } from "./ege.js?v=land149";
-import { renderExercise } from "./exercises.js?v=land149";
-import { mountTrainer } from "./trainers.js?v=land149";
-import { parseRoute } from "./route.js?v=land149";
+import { mountHelper } from "./helper.js?v=land150";
+import { applyTheme, layout } from "./ui.js?v=land150";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land150";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land150";
+import { mountLiterature } from "./literature.js?v=land150";
+import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land150";
+import { mountRussian } from "./russian.js?v=land150";
+import { mountOge } from "./oge.js?v=land150";
+import { markVprDone, mountVpr } from "./vpr.js?v=land150";
+import { mountQuiz } from "./quiz.js?v=land150";
+import { bindApplyForm } from "./apply.js?v=land150";
+import { EGE_TITLES } from "./ege.js?v=land150";
+import { renderExercise } from "./exercises.js?v=land150";
+import { mountTrainer } from "./trainers.js?v=land150";
+import { parseRoute } from "./route.js?v=land150";
 import { accessState, currentProfile, hasAccess, initAuth, mySolved, onAuthChange, supa } from "./supa.js";
-import { routeSubject, subjectsOf } from "./track.js?v=land149";
+import { routeSubject, subjectsOf } from "./track.js?v=land150";
 import { markEgeDone, markOgeDone } from "./progress.js";
-import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land149";
-import { mountTeacher, teacherPage } from "./teacher.js?v=land149";
-import "./session.js?v=land149";
-import { lessonPage, mountLesson } from "./lessons.js?v=land149";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land150";
+import { mountTeacher, teacherPage } from "./teacher.js?v=land150";
+import "./session.js?v=land150";
+import { lessonPage, mountLesson } from "./lessons.js?v=land150";
 
 const app = document.getElementById("app");
 let content = null;
@@ -78,7 +78,7 @@ function bindSearch(sectionId, q) {
   if (!search) return;
   search.addEventListener("input", () => {
     mountHtml(rulesIndex(content, sectionId, search.value), "rules", { scroll: false });
-    import("./rulequiz.js?v=land149").then((m) => m.markRulesIndex(app)).catch(() => {});
+    import("./rulequiz.js?v=land150").then((m) => m.markRulesIndex(app)).catch(() => {});
     bindSearch(sectionId, search.value);
     const again = app.querySelector("#rule-search");
     if (again) {
@@ -109,7 +109,7 @@ function bindHomeSearch() {
 }
 
 // Правила (≈1 МБ) нужны только этим разделам; кабинеты и библиотека их не ждут.
-const NEEDS_CONTENT = new Set(["", "formats", "apply", "learn", "contact", "materials", "about", "teacher", "faq", "prices", "reviews", "program-vpr", "program-oge", "program-ege", "rules", "rule", "practice", "exercise"]);
+const NEEDS_CONTENT = new Set(["", "formats", "apply", "learn", "contact", "materials", "about", "teacher", "faq", "prices", "reviews", "program-vpr", "program-oge", "program-ege", "platform", "rules", "rule", "practice", "exercise"]);
 
 /** Журнал для преподавателя: какой раздел открыл ученик (не чаще раза в 5 минут на раздел). */
 function logVisit() {
@@ -165,6 +165,7 @@ async function render() {
     "program-vpr",
     "program-oge",
     "program-ege",
+    "platform",
   ]);
   if (!a || homeAnchors.has(a)) {
     document.body.classList.add("is-landing");
@@ -210,7 +211,7 @@ async function render() {
 
   if (a === "rules") {
     mountHtml(rulesIndex(content, b || "", q), "rules");
-    import("./rulequiz.js?v=land149").then((m) => m.markRulesIndex(app)).catch(() => {});
+    import("./rulequiz.js?v=land150").then((m) => m.markRulesIndex(app)).catch(() => {});
     bindSearch(b || "", q);
     setTitle(b ? "Правила" : "Правила");
     return;
@@ -229,7 +230,7 @@ async function render() {
       : {};
     mountHtml(rulePage(rule, neighbors), "rules");
     bindRulePrint();
-    import("./rulequiz.js?v=land149").then((m) => m.mountRuleQuiz(app)).catch((e) => console.warn(e));
+    import("./rulequiz.js?v=land150").then((m) => m.mountRuleQuiz(app)).catch((e) => console.warn(e));
     setTitle(rule?.title || "Правило");
     return;
   }
