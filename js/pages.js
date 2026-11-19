@@ -247,26 +247,12 @@ function homeStartHtml() {
   try {
     been = !!localStorage.getItem("lx-was-student");
   } catch {}
-  const join = `<a class="home-path" href="#apply">
-        <span class="home-path-ico" aria-hidden="true">🙋</span>
-        <span><strong>Хочу заниматься в студии</strong><span>Оставьте заявку — договоримся о времени и формате</span></span>
-        <span class="home-path-go" aria-hidden="true">›</span>
-      </a>`;
-  const login = `<a class="home-path${been ? " is-main" : ""}" href="#/login">
-        <span class="home-path-ico" aria-hidden="true">🔑</span>
-        <span><strong>${been ? "Войти в кабинет" : "Я уже занимаюсь в студии"}</strong><span>${been ? "Вы уже заходили с этого устройства" : "Вход по логину и паролю от преподавателя"}</span></span>
-        <span class="home-path-go" aria-hidden="true">›</span>
-      </a>`;
-  const tryit = `<a class="home-path" href="#/check">
-        <span class="home-path-ico" aria-hidden="true">✏️</span>
-        <span><strong>Проверьте себя перед экзаменом</strong><span>10 вопросов за 5–7 минут: ВПР, ОГЭ или ЕГЭ — и что подтянуть</span></span>
-        <span class="home-path-go" aria-hidden="true">›</span>
-      </a>`;
-  return `<div class="home-start">
-      <p class="home-start-q">Что вы хотите сделать?</p>
-      ${been ? login + join : join + login}
-      ${tryit}
-    </div>`;
+  const login = `<a class="btn btn-lg${been ? "" : " secondary"}" href="#/login">${been ? "Войти в кабинет" : "Войти"}</a>`;
+  const join = `<a class="btn btn-lg${been ? " secondary" : ""}" href="#apply">Записаться</a>`;
+  return `<div class="lx-hero-actions">
+      ${been ? login + join : join + `<a class="btn btn-lg secondary" href="#/check">Проверить себя перед экзаменом</a>`}
+    </div>
+    <p class="lx-hero-note">${been ? `<a href="#/check">Проверить себя перед экзаменом</a> · 10 вопросов, 5–7 минут` : `Уже занимаетесь в студии? <a href="#/login">Войти в кабинет</a>`}</p>`;
 }
 
 /** Форма записи — открывается в окне по любой кнопке «Записаться» (см. applymodal.js). */
@@ -354,7 +340,7 @@ export function applyFormHtml() {
       </form>`;
 }
 
-/** Главная: вкладки программ и плавное появление блоков. */
+/** Главная: вкладки программ. */
 export function bindHome(root, anchor = "") {
   const tabs = [...root.querySelectorAll(".lx-tabs [data-prog]")];
   const show = (id) => {
@@ -363,23 +349,6 @@ export function bindHome(root, anchor = "") {
   };
   tabs.forEach((t) => t.addEventListener("click", () => show(t.dataset.prog)));
   show(/^program-/.test(anchor) && root.querySelector(`#${anchor}`) ? anchor : "program-ege");
-  const els = [...root.querySelectorAll(".lx-reveal")];
-  if (!("IntersectionObserver" in window) || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  document.documentElement.classList.add("lx-anim");
-  const io = new IntersectionObserver(
-    (entries) =>
-      entries.forEach((e) => {
-        if (e.isIntersecting) {
-          e.target.classList.add("is-in");
-          io.unobserve(e.target);
-        }
-      }),
-    { rootMargin: "0px 0px -8% 0px" }
-  );
-  els.forEach((el) => {
-    if (el.getBoundingClientRect().top < innerHeight) el.classList.add("is-in");
-    else io.observe(el);
-  });
 }
 
 export function homePage(content) {
@@ -391,9 +360,6 @@ export function homePage(content) {
   return `
     <section class="landing-hero" aria-label="Студия Лексикон">
       <div class="landing-hero-copy">
-        <p class="landing-exams landing-exams-hero" aria-label="К чему готовим">
-          <a href="#program-vpr" title="Подготовка к ВПР, 8 класс"><span class="exam-vpr">ВПР</span></a><a href="#program-oge" title="Подготовка к ОГЭ, 9 класс"><span class="exam-oge">ОГЭ</span></a><a href="#program-ege" title="Подготовка к ЕГЭ, 10–11 класс"><span class="exam-ege">ЕГЭ</span></a>
-        </p>
         <p class="eyebrow landing-kicker">
           <span>Студия Лексикон</span>
           <span aria-hidden="true">·</span>
@@ -431,16 +397,8 @@ export function homePage(content) {
       </figure>
     </section>
 
-    <section class="lx-trust lx-reveal" id="reviews" aria-label="Почему нам доверяют">
-      <div class="lx-trust-item"><strong>с 2002</strong><span>преподаёт руководитель студии</span></div>
-      <div class="lx-trust-item"><strong>д. ф. н.</strong><span>доктор филологических наук, профессор</span></div>
-      <div class="lx-trust-item"><strong>ГЭК</strong><span>был членом региональной комиссии ЕГЭ</span></div>
-      <a class="lx-trust-item" href="https://2gis.ru/gornoaltaysk/firm/70000001093540016/tab/reviews" target="_blank" rel="noopener noreferrer"><strong>5,0 <span class="lx-stars" aria-hidden="true">★</span></strong><span>оценка на 2ГИС · отзывы родителей →</span></a>
-      <div class="lx-trust-item"><strong>до 4</strong><span>учеников в группе — каждого слышно</span></div>
-    </section>
 
-    <section class="landing-offer lx-reveal" id="about" aria-labelledby="offer-title">
-      <p class="eyebrow">Программы</p>
+    <section class="landing-offer" id="about" aria-labelledby="offer-title">
       <h2 id="offer-title">Чему учим</h2>
       <p class="lede">Знаем все типы заданий ВПР, ОГЭ и ЕГЭ по русскому языку, критерии проверки и ошибки, на которых чаще всего теряют баллы. Больше всего времени уделяем письменной части: изложению и сочинению.</p>
 
@@ -502,47 +460,21 @@ export function homePage(content) {
       <p class="landing-source">Задания берём из открытого банка ФИПИ. Для трудных тем делаем свои тренажёры. Занятия очно в Горно-Алтайске или онлайн.</p>
     </section>
 
-    <section class="landing-platform lx-band lx-reveal" id="platform" aria-labelledby="platform-title">
-      <p class="eyebrow">Как мы занимаемся</p>
-      <h2 id="platform-title">Своя учебная платформа</h2>
-      <p class="lede">Студия занимается на собственной платформе: мы разработали её под свои уроки. Она связывает занятие и работу дома. Ученик закрепляет тему между уроками, а преподаватель видит, где он ошибается, и начинает занятие с этого. Поэтому онлайн заниматься так же удобно, как очно.</p>
-      <div class="landing-platform-grid">
-        <article class="lp-card">
-          <span class="lp-ico" aria-hidden="true">🗓</span>
-          <h3>Задания к каждому занятию</h3>
-          <p>В личном кабинете видно, что сделать и к какому сроку. Если подключить Telegram, придут напоминания.</p>
-        </article>
-        <article class="lp-card">
-          <span class="lp-ico" aria-hidden="true">✅</span>
-          <h3>Проверка сразу</h3>
-          <p>Больше 7&nbsp;000 заданий ВПР, ОГЭ и ЕГЭ по русскому и 3&nbsp;000 по литературе. Ответ проверяется сразу, разбор открывается после попытки.</p>
-        </article>
-        <article class="lp-card">
-          <span class="lp-ico" aria-hidden="true">🔁</span>
-          <h3>Тренировка дня</h3>
-          <p>10 заданий в день: по прошлым ошибкам, слабым и новым номерам. Трудное возвращается, пока не закрепится.</p>
-        </article>
-        <article class="lp-card">
-          <span class="lp-ico" aria-hidden="true">📖</span>
-          <h3>Теория к каждому номеру</h3>
-          <p>Как устроено задание, алгоритм и частые ловушки. Если ученик ошибается, сайт подскажет, что повторить.</p>
-        </article>
-        <article class="lp-card">
-          <span class="lp-ico" aria-hidden="true">✍️</span>
-          <h3>Сочинения проверяет преподаватель</h3>
-          <p>Пометки пером прямо на тексте, как ручкой в тетради, и баллы по критериям экзамена. Проверенная работа приходит в кабинет.</p>
-        </article>
-        <article class="lp-card">
-          <span class="lp-ico" aria-hidden="true">📈</span>
-          <h3>Видно, где вы сейчас</h3>
-          <p>Пробные экзамены с таймером и прогресс по каждому номеру. Преподаватель видит, кто что решал и где ошибся.</p>
-        </article>
-      </div>
-      <p class="landing-platform-note">Доступ к платформе получает каждый ученик студии — он входит в стоимость занятий. <a href="#/check">Попробуйте: 10 вопросов перед экзаменом →</a></p>
+    <section class="landing-platform lx-band" id="platform" aria-labelledby="platform-title">
+      <h2 id="platform-title">Учебная платформа студии</h2>
+      <p class="lede">Платформу студия разработала сама. Ученик получает в ней задания к занятию и выполняет их дома. Преподаватель видит ответы и ошибки и разбирает их на уроке. Поэтому онлайн-занятия устроены так же, как очные.</p>
+      <dl class="lx-features">
+        <div><dt>Задания к занятиям</dt><dd>В личном кабинете указано, что сделать и к какому сроку. По желанию — напоминания в Telegram.</dd></div>
+        <div><dt>Банк заданий</dt><dd>Более 7&nbsp;000 заданий ВПР, ОГЭ и ЕГЭ по русскому языку и 3&nbsp;000 по литературе. Ответ проверяется сразу, разбор открывается после попытки.</dd></div>
+        <div><dt>Тренировка дня</dt><dd>10 заданий в день: прошлые ошибки, слабые и новые номера экзамена.</dd></div>
+        <div><dt>Теория к заданиям</dt><dd>К каждому номеру экзамена: как устроено задание, порядок решения, типичные ошибки.</dd></div>
+        <div><dt>Проверка сочинений</dt><dd>Преподаватель делает пометки на тексте работы и ставит баллы по критериям экзамена.</dd></div>
+        <div><dt>Пробные экзамены</dt><dd>С таймером, как на экзамене. Результаты и прогресс по каждому номеру видны ученику и преподавателю.</dd></div>
+      </dl>
+      <p class="landing-platform-note">Доступ к платформе входит в стоимость занятий.</p>
     </section>
 
-    <section class="landing-about lx-reveal" id="teacher" aria-labelledby="teacher-title">
-      <p class="eyebrow">Команда</p>
+    <section class="landing-about" id="teacher" aria-labelledby="teacher-title">
       <h2 id="teacher-title">${escapeHtml(STUDIO.teacherFull)}</h2>
       <div class="landing-teacher-card">
         <img
@@ -560,13 +492,12 @@ export function homePage(content) {
             <li>Был членом региональной государственной экзаменационной комиссии по проведению ЕГЭ в Республике Алтай</li>
           </ul>
           <p>Открыл студию в 2024 году и ведёт большую часть занятий. Вместе с ним работает команда опытных филологов.</p>
-          <p><a href="${escapeHtml(STUDIO.teacherSite)}" target="_blank" rel="noopener noreferrer">Личный сайт</a></p>
+          <p><a href="${escapeHtml(STUDIO.teacherSite)}" target="_blank" rel="noopener noreferrer">Личный сайт</a> · <a href="https://2gis.ru/gornoaltaysk/firm/70000001093540016/tab/reviews" target="_blank" rel="noopener noreferrer">Отзывы родителей на 2ГИС</a> (оценка 5,0)</p>
         </div>
       </div>
     </section>
 
-    <section class="landing-prices lx-band lx-reveal" id="prices" aria-labelledby="prices-title">
-      <p class="eyebrow">Стоимость</p>
+    <section class="landing-prices" id="prices" aria-labelledby="prices-title">
       <h2 id="prices-title">Сколько стоят занятия</h2>
       <div class="landing-price-grid">
         <article class="landing-price card">
@@ -583,8 +514,7 @@ export function homePage(content) {
       <p class="actions"><a class="btn btn-lg" href="#apply">Записаться</a> <a class="btn btn-lg secondary" href="#/check">Проверить себя перед экзаменом</a></p>
     </section>
 
-    <section class="landing-faq lx-reveal" id="faq" aria-labelledby="faq-title">
-      <p class="eyebrow">Вопросы</p>
+    <section class="landing-faq" id="faq" aria-labelledby="faq-title">
       <h2 id="faq-title">Частые вопросы</h2>
       <div class="landing-faq-list">
         <details class="landing-faq-item" open>
@@ -622,14 +552,12 @@ export function homePage(content) {
       </div>
     </section>
 
-    <section class="lx-final lx-reveal" aria-labelledby="final-title">
-      <div>
-        <h2 id="final-title">Готовы начать?</h2>
-        <p>Оставьте заявку — перезвоним в течение дня, договоримся о формате и подскажем, с чего начать.</p>
-      </div>
+    <section class="lx-final" aria-labelledby="final-title">
+      <h2 id="final-title">Записаться на занятия</h2>
+      <p>Оставьте заявку. Перезвоним в течение дня и договоримся о времени и формате.</p>
       <div class="lx-final-actions">
-        <a class="btn btn-lg lx-btn-light" href="#apply">Записаться</a>
-        <a class="btn btn-lg lx-btn-ghost" href="#/check">Проверить себя — 10 вопросов</a>
+        <a class="btn btn-lg" href="#apply">Записаться</a>
+        <a class="btn btn-lg secondary" href="#/check">Проверить себя перед экзаменом</a>
       </div>
       ${contactsLine()}
     </section>

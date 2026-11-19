@@ -2444,3 +2444,67 @@ body.is-landing .landing-faq + .lx-final { margin-top: 0; }
   .lx-dialog .apply-input { min-height: 46px; }
   .lx-dialog-box h2 { font-size: 1.4rem; padding-right: 40px; }
 }
+
+/* ===== Главная: строже, без украшений ===== */
+.lx-hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 10px; }
+.lx-hero-note { margin: 0; font-size: 14px; color: var(--ink-soft); }
+body.is-landing .landing-offer,
+body.is-landing .landing-about,
+body.is-landing .landing-faq,
+body.is-landing .landing-prices { border-top: 1px solid var(--line); }
+body.is-landing .landing-offer h2,
+body.is-landing .landing-about h2,
+body.is-landing .landing-faq h2,
+body.is-landing .landing-platform h2,
+body.is-landing .landing-prices h2,
+.lx-final h2 { font-size: clamp(1.6rem, 2.8vw, 2.15rem); letter-spacing: 0; }
+
+/* программы: вкладки — простой линией */
+.lx-tabs { gap: 0; border-bottom: 1px solid var(--line); margin: 20px 0 22px; }
+.lx-tabs button {
+  border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none;
+  padding: 10px 16px 9px; margin-bottom: -1px; color: var(--ink-soft); font-weight: 650;
+}
+.lx-tabs button:hover { color: var(--ink); border-color: transparent; }
+.lx-tabs button[aria-selected="true"] { background: none; color: var(--accent); border-bottom-color: var(--accent); }
+.lx-programs > .landing-program { border-radius: 14px; box-shadow: none; }
+.lx-programs .landing-program-focus { background: none; padding: 0 0 0 14px; border-left: 2px solid var(--accent); border-radius: 0; }
+
+/* платформа: список возможностей без карточек и значков */
+.lx-features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px 32px; margin: 28px 0 0; }
+.lx-features > div { border-top: 1px solid var(--line); padding-top: 14px; }
+.lx-features dt { font-weight: 700; font-size: 1.02rem; margin: 0 0 6px; color: var(--ink); }
+.lx-features dd { margin: 0; color: var(--ink-soft); font-size: 15px; line-height: 1.55; }
+.landing-platform-note { margin-top: 26px; font-weight: 600; }
+
+/* запись внизу страницы — без цветной плашки */
+.lx-final {
+  background: none; color: var(--ink); border-radius: 0;
+  padding: clamp(40px, 6vw, 64px) 0; margin: 0;
+  border-top: 1px solid var(--line); display: block;
+}
+.lx-final h2 { color: var(--ink); }
+.lx-final p { color: var(--ink-soft); margin: 0 0 18px; }
+.lx-final-actions { margin-bottom: 14px; }
+.lx-final .landing-contacts-line { color: var(--ink-soft) !important; }
+.lx-final .landing-contacts-line a, .lx-final .landing-contacts-line .link-btn { color: var(--accent); }
+
+/* окно записи — без размытия и «пружины» */
+.lx-dialog::backdrop { backdrop-filter: none; background: rgba(25, 18, 14, 0.45); }
+.lx-dialog[open] { animation: none; }
+.lx-dialog { border-radius: 16px; }
+
+@media (max-width: 900px) {
+  .lx-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .lx-features { grid-template-columns: 1fr; gap: 16px; }
+  .lx-tabs button { padding: 9px 12px 8px; }
+  .lx-hero-actions .btn { flex: 1 1 100%; }
+  .lx-dialog { border-radius: 16px 16px 0 0; }
+  .lx-dialog[open] { animation: none; }
+}
+body.is-landing .landing-hero + .landing-offer { border-top: 0; padding-top: 16px; }
+.lx-programs .landing-program-tag { display: none; }
+/* первый экран без анимации появления: текст сразу чёткий */
+.landing-hero-copy, .landing-hero-frame { animation: none !important; opacity: 1; transform: none; }
