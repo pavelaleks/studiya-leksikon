@@ -2703,3 +2703,8 @@ html, body { background: var(--paper); }
   .bk-price i { min-width: 20px; }
   .bk-endpaper { margin: 64px -16px 0; }
 }
+.bk-plate img { max-height: min(62vh, 560px); }
+.bk-portrait { height: auto; }
+/* у картины по правому краю тёмная кромка рамы — срезаем её */
+.bk-plate picture, .bk-endpaper { display: block; overflow: hidden; }
+.bk-plate img, .bk-endpaper img { width: 104%; max-width: none; margin-left: -1%; }
