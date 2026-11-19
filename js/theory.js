@@ -102,10 +102,20 @@ export function mdToHtml(md) {
     const li = /^\s*(?:[-*]|\d+[.)])\s+/;
     if (li.test(line)) {
       const ordered = /^\s*\d/.test(line);
+      // пункты с отступом (2+ пробела) — вложенный список внутри предыдущего пункта
       const items = [];
-      while (i < lines.length && li.test(lines[i])) items.push(lines[i++].replace(li, ""));
+      while (i < lines.length && li.test(lines[i])) {
+        const raw = lines[i++];
+        const text = raw.replace(li, "");
+        if (/^\s{2,}/.test(raw) && items.length) items[items.length - 1].sub.push(text);
+        else items.push({ text, sub: [] });
+      }
       const tag = ordered ? "ol" : "ul";
-      out.push(`<${tag}>${items.map((t) => `<li>${inline(t)}</li>`).join("")}</${tag}>`);
+      out.push(
+        `<${tag}>${items
+          .map((t) => `<li>${inline(t.text)}${t.sub.length ? `<ul>${t.sub.map((x) => `<li>${inline(x)}</li>`).join("")}</ul>` : ""}</li>`)
+          .join("")}</${tag}>`
+      );
       continue;
     }
     const para = [];
