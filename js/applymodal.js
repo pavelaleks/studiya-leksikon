@@ -1,6 +1,6 @@
 // Окно «Записаться»: открывается по любой ссылке #apply. На телефоне выезжает снизу.
-import { applyFormHtml } from "./pages.js?v=land158";
-import { bindApplyForm, applyPrefill } from "./apply.js?v=land158";
+import { applyFormHtml } from "./pages.js?v=land159";
+import { bindApplyForm, applyPrefill } from "./apply.js?v=land159";
 import { studioTelegram, studioWhatsApp } from "./config.js";
 
 let dlg = null;

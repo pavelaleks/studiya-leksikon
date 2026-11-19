@@ -360,6 +360,9 @@ export function homePage(content) {
   return `
     <section class="landing-hero" aria-label="Студия Лексикон">
       <div class="landing-hero-copy">
+        <p class="landing-exams landing-exams-hero" aria-label="К чему готовим">
+          <a href="#program-vpr" title="Подготовка к ВПР, 8 класс"><span class="exam-vpr">ВПР</span></a><a href="#program-oge" title="Подготовка к ОГЭ, 9 класс"><span class="exam-oge">ОГЭ</span></a><a href="#program-ege" title="Подготовка к ЕГЭ, 10–11 класс"><span class="exam-ege">ЕГЭ</span></a>
+        </p>
         <p class="eyebrow landing-kicker">
           <span>Студия Лексикон</span>
           <span aria-hidden="true">·</span>
