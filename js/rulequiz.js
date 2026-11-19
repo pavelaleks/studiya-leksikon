@@ -2,7 +2,7 @@
 // 4 из 5 с первой попытки — глава закреплена (+15 очков, ✓ у всех её правил).
 import { escapeHtml } from "./ui.js";
 import { accessState, currentUser, humanError, submitAnswer, supa } from "./supa.js";
-import { sanitizeFor } from "./lessons.js?v=land154";
+import { sanitizeFor } from "./lessons.js?v=land156";
 
 const QUIZ_SIZE = 5;
 let chaptersCache = null;
@@ -162,7 +162,7 @@ async function run(host, ch, chapterId, title) {
       </div>`;
     host.querySelector("[data-rq-again]").addEventListener("click", () => run(host, ch, chapterId, title));
     if (r.passed && !teacher) {
-      import("./session.js?v=land154").then((m) =>
+      import("./session.js?v=land156").then((m) =>
         m.celebrate({
           emoji: "📘",
           title: "Глава закреплена!",

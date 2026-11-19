@@ -11,17 +11,19 @@ function val(form, name) {
 }
 
 function buildBody(form) {
-  const lines = [
-    "Заявка в Студию Лексикон",
-    "",
-    `Имя: ${val(form, "name")}`,
-    `Телефон: ${val(form, "phone")}`,
-    `Класс: ${val(form, "grade")}`,
-    `Предмет: ${val(form, "subject")}`,
-    `Цель: ${val(form, "goal")}`,
-    `Формат: ${val(form, "place")}`,
-    `Занятия: ${val(form, "mode")}`,
-  ];
+  const lines = ["Заявка в Студию Лексикон", ""];
+  [
+    ["Имя", "name"],
+    ["Телефон", "phone"],
+    ["Класс", "grade"],
+    ["Предмет", "subject"],
+    ["Цель", "goal"],
+    ["Формат", "place"],
+    ["Занятия", "mode"],
+  ].forEach(([label, key]) => {
+    const v = val(form, key);
+    if (v) lines.push(`${label}: ${v}`);
+  });
   const note = val(form, "note");
   if (note) lines.push("", `Комментарий: ${note}`);
   if (form.elements.namedItem("consent")?.checked) lines.push("", "Согласие на обработку персональных данных дано на сайте.");
@@ -63,6 +65,24 @@ export function bindRevealPhone(root = document) {
  * Заявка: кнопка Telegram или WhatsApp открывает чат с текстом → #/thanks.
  * Почта в форме не используется (FormSubmit нестабилен; mailto на телефонах часто пустой).
  */
+/** Заявка после «Проверь себя»: класс, предмет, цель и результат теста подставляются сами. */
+export function applyPrefill(root = document) {
+  const form = root.querySelector("#apply-form");
+  if (!form) return;
+  try {
+    const pre = JSON.parse(sessionStorage.getItem("applyPrefill") || "null");
+    if (!pre) return;
+    sessionStorage.removeItem("applyPrefill");
+    for (const [k, v] of Object.entries(pre)) {
+      const el = form.elements.namedItem(k);
+      if (el && "value" in el) el.value = v;
+    }
+    if (pre.note || pre.subject) form.querySelector(".lx-more")?.setAttribute("open", "");
+  } catch {
+    /* ignore */
+  }
+}
+
 export function bindApplyForm(root = document) {
   bindRevealPhone(root);
 
@@ -71,21 +91,6 @@ export function bindApplyForm(root = document) {
 
   const status = root.querySelector("#apply-status");
   form.removeAttribute("action");
-
-  // Заявка после «Проверь себя»: класс, предмет, цель и результат теста подставляются сами.
-  try {
-    const pre = JSON.parse(sessionStorage.getItem("applyPrefill") || "null");
-    if (pre) {
-      sessionStorage.removeItem("applyPrefill");
-      for (const [k, v] of Object.entries(pre)) {
-        const el = form.elements.namedItem(k);
-        if (el && "value" in el) el.value = v;
-      }
-      requestAnimationFrame(() => form.elements.namedItem("name")?.focus({ preventScroll: true }));
-    }
-  } catch {
-    /* ignore */
-  }
 
   const setStatus = (text, ok) => {
     if (!status) return;
@@ -123,6 +128,8 @@ export function bindApplyForm(root = document) {
       true
     );
     window.open(url, "_blank", "noopener");
+    form.closest("dialog")?.close();
+    form.querySelectorAll('button[type="submit"]').forEach((btn) => (btn.disabled = false));
     location.hash = "#/thanks";
   });
 }

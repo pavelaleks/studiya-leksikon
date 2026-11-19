@@ -1,6 +1,6 @@
 import { accessState, currentProfile } from "./supa.js";
 import { studioTelegram, studioWhatsApp } from "./config.js";
-import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land154";
+import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land156";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -103,7 +103,7 @@ function footerHtml(full) {
   const tg = studioTelegram();
   const wa = studioWhatsApp();
   const year = new Date().getFullYear();
-  return `<footer class="site-footer site-footer-v2${full ? "" : " is-app"}">
+  return `<footer class="site-footer site-footer-v2${full ? "" : " is-app"}" id="contact">
       <div class="wrap">
         <div class="fv-grid">
           <div class="fv-col fv-about">
@@ -204,10 +204,11 @@ export function layout(content, active = "", { hideFooter = false } = {}) {
     ? `
           <a href="#about">Программы</a>
           <a href="#platform">Платформа</a>
-          <a href="#teacher">Команда</a>
-          <a href="#apply">Запись</a>
-          <a href="#learn">Материалы</a>
-          ${accountLink(active)}`
+          <a href="#teacher">Преподаватель</a>
+          <a href="#prices">Цены</a>
+          <a href="#faq">Вопросы</a>
+          ${accountLink(active)}
+          ${accessState() === "guest" ? `<a class="btn lx-nav-cta" href="#apply">Записаться</a>` : ""}`
     : `
           <a href="#/">Студия</a>
           ${subj.rus ? `<a href="#/rules" class="${active === "rules" ? "active" : ""}">Правила</a>

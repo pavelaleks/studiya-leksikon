@@ -269,6 +269,119 @@ function homeStartHtml() {
     </div>`;
 }
 
+/** Форма записи — открывается в окне по любой кнопке «Записаться» (см. applymodal.js). */
+export function applyFormHtml() {
+  return `
+      <form class="apply-form lx-apply" id="apply-form" novalidate>
+        <div class="apply-row">
+          <label class="apply-field">
+            <span>Имя ученика или родителя</span>
+            <input class="search apply-input" name="name" required autocomplete="name" placeholder="Как к вам обращаться" />
+          </label>
+          <label class="apply-field">
+            <span>Телефон</span>
+            <input class="search apply-input" name="phone" type="tel" required autocomplete="tel" placeholder="+7 …" />
+          </label>
+        </div>
+        <div class="apply-row">
+          <label class="apply-field">
+            <span>Класс</span>
+            <select class="search apply-input" name="grade" required>
+              <option value="">Выберите</option>
+              <option>8</option><option>9</option><option>10</option><option>11</option>
+            </select>
+          </label>
+          <label class="apply-field">
+            <span>Цель</span>
+            <select class="search apply-input" name="goal" required>
+              <option value="">Выберите</option>
+              <option>ВПР</option>
+              <option>ОГЭ</option>
+              <option>ЕГЭ</option>
+              <option>Подтянуть школьную программу</option>
+              <option>Другое</option>
+            </select>
+          </label>
+        </div>
+        <details class="lx-more">
+          <summary>Добавить подробности <span class="muted">(необязательно)</span></summary>
+          <div class="apply-row">
+            <label class="apply-field">
+              <span>Предмет</span>
+              <select class="search apply-input" name="subject">
+                <option value="">Выберите</option>
+                <option>Русский язык</option>
+                <option>Литература</option>
+                <option>Русский язык и литература</option>
+              </select>
+            </label>
+            <label class="apply-field">
+              <span>Где удобнее</span>
+              <select class="search apply-input" name="place">
+                <option value="">Выберите</option>
+                <option>Очно в студии</option>
+                <option>Онлайн</option>
+                <option>Пока не знаю</option>
+              </select>
+            </label>
+          </div>
+          <label class="apply-field">
+            <span>С кем заниматься</span>
+            <select class="search apply-input" name="mode">
+              <option value="">Выберите</option>
+              <option value="Индивидуально">Один на один</option>
+              <option value="В группе до 4 человек">В группе (до 4)</option>
+              <option value="Посоветуйте">Посоветуйте</option>
+            </select>
+          </label>
+          <label class="apply-field">
+            <span>Комментарий</span>
+            <textarea class="search apply-input apply-textarea" name="note" rows="3" placeholder="Например, удобные дни и время"></textarea>
+          </label>
+        </details>
+        <label class="apply-consent">
+          <input type="checkbox" name="consent" required />
+          <span>Даю <a href="#/consent" target="_blank" rel="noopener">согласие на обработку персональных данных</a>. Если ученику нет 14 лет, согласие даёт родитель. <a href="#/privacy" target="_blank" rel="noopener">Политика конфиденциальности</a></span>
+        </label>
+        <div class="apply-send" role="group" aria-label="Отправить заявку">
+          <div class="apply-actions apply-channel-grid">
+            <button type="submit" class="btn btn-lg msg-btn" name="channel" value="telegram">${iconTelegram()} Отправить в Telegram</button>
+            <button type="submit" class="btn btn-lg secondary msg-btn" name="channel" value="whatsapp">${iconWhatsApp()} Отправить в WhatsApp</button>
+          </div>
+          <p class="muted apply-hint">Откроется чат с готовой заявкой — останется нажать «Отправить».</p>
+        </div>
+        <p class="apply-status" id="apply-status" role="status" hidden></p>
+      </form>`;
+}
+
+/** Главная: вкладки программ и плавное появление блоков. */
+export function bindHome(root, anchor = "") {
+  const tabs = [...root.querySelectorAll(".lx-tabs [data-prog]")];
+  const show = (id) => {
+    tabs.forEach((t) => t.setAttribute("aria-selected", String(t.dataset.prog === id)));
+    root.querySelectorAll(".lx-programs > .landing-program").forEach((a) => (a.hidden = a.id !== id));
+  };
+  tabs.forEach((t) => t.addEventListener("click", () => show(t.dataset.prog)));
+  show(/^program-/.test(anchor) && root.querySelector(`#${anchor}`) ? anchor : "program-ege");
+  const els = [...root.querySelectorAll(".lx-reveal")];
+  if (!("IntersectionObserver" in window) || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  document.documentElement.classList.add("lx-anim");
+  const io = new IntersectionObserver(
+    (entries) =>
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add("is-in");
+          io.unobserve(e.target);
+        }
+      }),
+    { rootMargin: "0px 0px -8% 0px" }
+  );
+  els.forEach((el) => {
+    if (el.getBoundingClientRect().top < innerHeight) el.classList.add("is-in");
+    else io.observe(el);
+  });
+}
+
 export function homePage(content) {
   const ruleCount = content.sections.reduce(
     (a, s) => a + s.chapters.reduce((b, c) => b + c.rules.length, 0),
@@ -318,7 +431,78 @@ export function homePage(content) {
       </figure>
     </section>
 
-    <section class="landing-platform" id="platform" aria-labelledby="platform-title">
+    <section class="lx-trust lx-reveal" id="reviews" aria-label="Почему нам доверяют">
+      <div class="lx-trust-item"><strong>с 2002</strong><span>преподаёт руководитель студии</span></div>
+      <div class="lx-trust-item"><strong>д. ф. н.</strong><span>доктор филологических наук, профессор</span></div>
+      <div class="lx-trust-item"><strong>ГЭК</strong><span>был членом региональной комиссии ЕГЭ</span></div>
+      <a class="lx-trust-item" href="https://2gis.ru/gornoaltaysk/firm/70000001093540016/tab/reviews" target="_blank" rel="noopener noreferrer"><strong>5,0 <span class="lx-stars" aria-hidden="true">★</span></strong><span>оценка на 2ГИС · отзывы родителей →</span></a>
+      <div class="lx-trust-item"><strong>до 4</strong><span>учеников в группе — каждого слышно</span></div>
+    </section>
+
+    <section class="landing-offer lx-reveal" id="about" aria-labelledby="offer-title">
+      <p class="eyebrow">Программы</p>
+      <h2 id="offer-title">Чему учим</h2>
+      <p class="lede">Знаем все типы заданий ВПР, ОГЭ и ЕГЭ по русскому языку, критерии проверки и ошибки, на которых чаще всего теряют баллы. Больше всего времени уделяем письменной части: изложению и сочинению.</p>
+
+      <div class="lx-tabs" role="tablist" aria-label="Программы">
+        <button type="button" role="tab" data-prog="program-vpr">ВПР · 8 класс</button>
+        <button type="button" role="tab" data-prog="program-oge">ОГЭ · 9 класс</button>
+        <button type="button" role="tab" data-prog="program-ege" aria-selected="true">ЕГЭ · 10–11</button>
+        <button type="button" role="tab" data-prog="program-lit">Литература</button>
+      </div>
+      <div class="landing-programs lx-programs">
+        <article class="landing-program" id="program-vpr">
+          <p class="landing-program-tag">8 класс</p>
+          <h3>ВПР по русскому языку</h3>
+          <p class="landing-program-format">Группа до 4 человек или индивидуально</p>
+          <ul>
+            <li>Все задания проверочной работы: списывание, синтаксический анализ, обособленные члены, работа с текстом</li>
+            <li>Основа для ОГЭ: грамматическая основа, причастные и деепричастные обороты, типы предложений</li>
+          </ul>
+          <p class="landing-program-focus"><strong>Упор на синтаксис и пунктуацию.</strong> Пробелы отсюда потом стоят баллов на ОГЭ — закрываем их заранее.</p>
+          <p class="landing-program-check"><a href="#/check?g=8">Проверить свои знания перед ВПР — 10 вопросов, 5–7 минут →</a></p>
+        </article>
+
+        <article class="landing-program" id="program-oge">
+          <p class="landing-program-tag">9 класс</p>
+          <h3>ОГЭ по русскому языку</h3>
+          <p class="landing-program-format">Группа до 4 человек или индивидуально</p>
+          <ul>
+            <li>Все задания экзамена: изложение, тестовая часть, сочинение</li>
+            <li>Итоговое собеседование в феврале (допуск к ОГЭ)</li>
+          </ul>
+          <p class="landing-program-focus"><strong>Упор на изложение и сочинение.</strong> Учимся выделять микротемы и сжимать текст, строить рассуждение и подбирать примеры из текста.</p>
+          <p class="landing-program-check"><a href="#/check?g=9">Проверить свои знания перед ОГЭ — 10 вопросов, 5–7 минут →</a></p>
+        </article>
+
+        <article class="landing-program" id="program-ege">
+          <p class="landing-program-tag">10–11 класс</p>
+          <h3>ЕГЭ по русскому языку</h3>
+          <p class="landing-program-format">Группа до 4 человек или индивидуально</p>
+          <ul>
+            <li>Все 27 заданий экзамена: тестовая часть 1–26 (орфография, пунктуация, нормы, работа с текстом) и сочинение, задание 27</li>
+            <li>Итоговое сочинение в декабре (допуск к ЕГЭ)</li>
+          </ul>
+          <p class="landing-program-focus"><strong>Упор на сочинение (задание 27).</strong> Формулируем проблему и позицию автора, пишем комментарий с примерами, обосновываем своё мнение. Каждую работу разбираем по критериям.</p>
+          <p class="landing-program-check"><a href="#/check?g=11">Проверить свои знания перед ЕГЭ — 10 вопросов, 5–7 минут →</a></p>
+        </article>
+
+        <article class="landing-program" id="program-lit">
+          <p class="landing-program-tag">8–11 класс</p>
+          <h3>Литература</h3>
+          <p class="landing-program-format">Только индивидуально</p>
+          <ul>
+            <li>Чтение и разбор произведений школьной программы</li>
+            <li>Подготовка к ОГЭ и ЕГЭ по литературе</li>
+          </ul>
+          <p class="landing-program-focus"><strong>Сочинение своими словами.</strong> Учимся формулировать тезис, подбирать аргументы из текста и точно пользоваться терминами.</p>
+        </article>
+      </div>
+
+      <p class="landing-source">Задания берём из открытого банка ФИПИ. Для трудных тем делаем свои тренажёры. Занятия очно в Горно-Алтайске или онлайн.</p>
+    </section>
+
+    <section class="landing-platform lx-band lx-reveal" id="platform" aria-labelledby="platform-title">
       <p class="eyebrow">Как мы занимаемся</p>
       <h2 id="platform-title">Своя учебная платформа</h2>
       <p class="lede">Студия занимается на собственной платформе: мы разработали её под свои уроки. Она связывает занятие и работу дома. Ученик закрепляет тему между уроками, а преподаватель видит, где он ошибается, и начинает занятие с этого. Поэтому онлайн заниматься так же удобно, как очно.</p>
@@ -357,7 +541,7 @@ export function homePage(content) {
       <p class="landing-platform-note">Доступ к платформе получает каждый ученик студии — он входит в стоимость занятий. <a href="#/check">Попробуйте: 10 вопросов перед экзаменом →</a></p>
     </section>
 
-    <section class="landing-about" id="teacher" aria-labelledby="teacher-title">
+    <section class="landing-about lx-reveal" id="teacher" aria-labelledby="teacher-title">
       <p class="eyebrow">Команда</p>
       <h2 id="teacher-title">${escapeHtml(STUDIO.teacherFull)}</h2>
       <div class="landing-teacher-card">
@@ -381,64 +565,7 @@ export function homePage(content) {
       </div>
     </section>
 
-    <section class="landing-offer" id="about" aria-labelledby="offer-title">
-      <p class="eyebrow">Программы</p>
-      <h2 id="offer-title">Чему учим</h2>
-      <p class="lede">Знаем все типы заданий ВПР, ОГЭ и ЕГЭ по русскому языку, критерии проверки и ошибки, на которых чаще всего теряют баллы. Больше всего времени уделяем письменной части: изложению и сочинению.</p>
-
-      <div class="landing-programs">
-        <article class="landing-program" id="program-vpr">
-          <p class="landing-program-tag">8 класс</p>
-          <h3>ВПР по русскому языку</h3>
-          <p class="landing-program-format">Группа до 4 человек или индивидуально</p>
-          <ul>
-            <li>Все задания проверочной работы: списывание, синтаксический анализ, обособленные члены, работа с текстом</li>
-            <li>Основа для ОГЭ: грамматическая основа, причастные и деепричастные обороты, типы предложений</li>
-          </ul>
-          <p class="landing-program-focus"><strong>Упор на синтаксис и пунктуацию.</strong> Пробелы отсюда потом стоят баллов на ОГЭ — закрываем их заранее.</p>
-          <p class="landing-program-check"><a href="#/check?g=8">Проверить свои знания перед ВПР — 10 вопросов, 5–7 минут →</a></p>
-        </article>
-
-        <article class="landing-program" id="program-oge">
-          <p class="landing-program-tag">9 класс</p>
-          <h3>ОГЭ по русскому языку</h3>
-          <p class="landing-program-format">Группа до 4 человек или индивидуально</p>
-          <ul>
-            <li>Все задания экзамена: изложение, тестовая часть, сочинение</li>
-            <li>Итоговое собеседование в феврале (допуск к ОГЭ)</li>
-          </ul>
-          <p class="landing-program-focus"><strong>Упор на изложение и сочинение.</strong> Учимся выделять микротемы и сжимать текст, строить рассуждение и подбирать примеры из текста.</p>
-          <p class="landing-program-check"><a href="#/check?g=9">Проверить свои знания перед ОГЭ — 10 вопросов, 5–7 минут →</a></p>
-        </article>
-
-        <article class="landing-program" id="program-ege">
-          <p class="landing-program-tag">10–11 класс</p>
-          <h3>ЕГЭ по русскому языку</h3>
-          <p class="landing-program-format">Группа до 4 человек или индивидуально</p>
-          <ul>
-            <li>Все 27 заданий экзамена: тестовая часть 1–26 (орфография, пунктуация, нормы, работа с текстом) и сочинение, задание 27</li>
-            <li>Итоговое сочинение в декабре (допуск к ЕГЭ)</li>
-          </ul>
-          <p class="landing-program-focus"><strong>Упор на сочинение (задание 27).</strong> Формулируем проблему и позицию автора, пишем комментарий с примерами, обосновываем своё мнение. Каждую работу разбираем по критериям.</p>
-          <p class="landing-program-check"><a href="#/check?g=11">Проверить свои знания перед ЕГЭ — 10 вопросов, 5–7 минут →</a></p>
-        </article>
-
-        <article class="landing-program">
-          <p class="landing-program-tag">8–11 класс</p>
-          <h3>Литература</h3>
-          <p class="landing-program-format">Только индивидуально</p>
-          <ul>
-            <li>Чтение и разбор произведений школьной программы</li>
-            <li>Подготовка к ОГЭ и ЕГЭ по литературе</li>
-          </ul>
-          <p class="landing-program-focus"><strong>Сочинение своими словами.</strong> Учимся формулировать тезис, подбирать аргументы из текста и точно пользоваться терминами.</p>
-        </article>
-      </div>
-
-      <p class="landing-source">Задания берём из открытого банка ФИПИ. Для трудных тем делаем свои тренажёры. Занятия очно в Горно-Алтайске или онлайн.</p>
-    </section>
-
-    <section class="landing-prices" id="prices" aria-labelledby="prices-title">
+    <section class="landing-prices lx-band lx-reveal" id="prices" aria-labelledby="prices-title">
       <p class="eyebrow">Стоимость</p>
       <h2 id="prices-title">Сколько стоят занятия</h2>
       <div class="landing-price-grid">
@@ -456,49 +583,7 @@ export function homePage(content) {
       <p class="actions"><a class="btn btn-lg" href="#apply">Записаться</a> <a class="btn btn-lg secondary" href="#/check">Проверить себя перед экзаменом</a></p>
     </section>
 
-    <section class="landing-reviews" id="reviews" aria-labelledby="reviews-title">
-      <p class="eyebrow">Отзывы</p>
-      <h2 id="reviews-title">Что говорят родители</h2>
-      <a class="landing-rating card" href="https://2gis.ru/gornoaltaysk/firm/70000001093540016/tab/reviews" target="_blank" rel="noopener noreferrer">
-        <span class="landing-rating-score">5,0 <span aria-hidden="true">★★★★★</span></span>
-        <span><strong>Оценка студии на 2ГИС</strong><span class="muted">7 оценок · 5 отзывов родителей</span></span>
-        <span class="landing-rating-go">Читать отзывы →</span>
-      </a>
-    </section>
-
-    <section class="landing-learn" id="learn" aria-labelledby="learn-title">
-      <p class="eyebrow">На сайте</p>
-      <h2 id="learn-title">Материалы для занятий</h2>
-      <p class="lede">Правила, тренажёры и задания ВПР, ОГЭ и ЕГЭ — работаем с ними на уроках, заниматься можно и дома.</p>
-      ${continueHtml(true)}
-
-      <div class="landing-learn-subjects">
-        <article class="landing-learn-subject">
-          <header class="landing-learn-subject-head">
-            <p class="landing-learn-label">Русский язык</p>
-            <p class="landing-learn-subject-note">ВПР, ОГЭ и ЕГЭ</p>
-          </header>
-          <div class="landing-learn-links landing-learn-links-ru">
-            <a href="#/ege"><strong>ЕГЭ</strong><span>Задания 1–27</span></a>
-            <a href="#/oge"><strong>ОГЭ</strong><span>Задания 1–13 · ${ogeTrainers} тренажёра</span></a>
-            <a href="#/vpr"><strong>ВПР, 8 класс</strong><span>Задания 1–12</span></a>
-            <a href="#/rules"><strong>Правила</strong><span>${ruleCount} ${ruleWord(ruleCount)}</span></a>
-          </div>
-        </article>
-        <article class="landing-learn-subject">
-          <header class="landing-learn-subject-head">
-            <p class="landing-learn-label">Литература</p>
-            <p class="landing-learn-subject-note">ЕГЭ</p>
-          </header>
-          <div class="landing-learn-links landing-learn-links-lit">
-            <a href="#/literature"><strong>Задания 1–11</strong><span>Фрагменты, ответы, пояснения</span></a>
-            <a href="#/literature/terms"><strong>Словарь терминов</strong><span>Поиск и тренажёр</span></a>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="landing-faq" id="faq" aria-labelledby="faq-title">
+    <section class="landing-faq lx-reveal" id="faq" aria-labelledby="faq-title">
       <p class="eyebrow">Вопросы</p>
       <h2 id="faq-title">Частые вопросы</h2>
       <div class="landing-faq-list">
@@ -537,107 +622,36 @@ export function homePage(content) {
       </div>
     </section>
 
-    <section class="landing-apply" id="apply" aria-labelledby="apply-title">
-      <div class="landing-apply-intro">
-        <p class="eyebrow">Запись</p>
-        <h2 id="apply-title">Записаться</h2>
-        <p class="lede">Оставьте заявку — перезвоним в течение дня и договоримся о времени и формате.</p>
-        ${contactsLine()}
-      </div>
-      <form class="apply-form" id="apply-form" novalidate>
-        <div class="apply-row">
-          <label class="apply-field">
-            <span>Имя ученика или родителя</span>
-            <input class="search apply-input" name="name" required autocomplete="name" placeholder="Как к вам обращаться" />
-          </label>
-          <label class="apply-field">
-            <span>Телефон</span>
-            <input class="search apply-input" name="phone" type="tel" required autocomplete="tel" placeholder="+7 …" />
-          </label>
-        </div>
-
-        <div class="apply-row">
-          <label class="apply-field">
-            <span>Класс</span>
-            <select class="search apply-input" name="grade" required>
-              <option value="">Выберите</option>
-              <option>8</option><option>9</option><option>10</option><option>11</option>
-            </select>
-          </label>
-          <label class="apply-field">
-            <span>Предмет</span>
-            <select class="search apply-input" name="subject" required>
-              <option value="">Выберите</option>
-              <option>Русский язык</option>
-              <option>Литература</option>
-              <option>Русский язык и литература</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="apply-row">
-          <label class="apply-field">
-            <span>Цель</span>
-            <select class="search apply-input" name="goal" required>
-              <option value="">Выберите</option>
-              <option>ВПР</option>
-              <option>ОГЭ</option>
-              <option>ЕГЭ</option>
-              <option>Подтянуть школьную программу</option>
-              <option>Другое</option>
-            </select>
-          </label>
-          <fieldset class="apply-field apply-fieldset">
-            <legend>Где удобнее</legend>
-            <label class="apply-check"><input type="radio" name="place" value="Очно в студии" required /> Очно</label>
-            <label class="apply-check"><input type="radio" name="place" value="Онлайн" /> Онлайн</label>
-            <label class="apply-check"><input type="radio" name="place" value="Пока не знаю" /> Пока не знаю</label>
-          </fieldset>
-        </div>
-
-        <fieldset class="apply-field apply-fieldset">
-          <legend>С кем заниматься</legend>
-          <label class="apply-check"><input type="radio" name="mode" value="Индивидуально" required /> Один на один</label>
-          <label class="apply-check"><input type="radio" name="mode" value="В группе до 4 человек" /> В группе (до 4)</label>
-          <label class="apply-check"><input type="radio" name="mode" value="Посоветуйте" /> Посоветуйте</label>
-        </fieldset>
-
-        <label class="apply-field">
-          <span>Комментарий <span class="muted">(необязательно)</span></span>
-          <textarea class="search apply-input apply-textarea" name="note" rows="3" placeholder="Например, удобные дни и время"></textarea>
-        </label>
-
-        <label class="apply-consent">
-          <input type="checkbox" name="consent" required />
-          <span>Даю <a href="#/consent" target="_blank" rel="noopener">согласие на обработку персональных данных</a>. Если ученику нет 14 лет, согласие даёт родитель. <a href="#/privacy" target="_blank" rel="noopener">Политика конфиденциальности</a></span>
-        </label>
-
-        <div class="apply-send" role="group" aria-label="Отправить заявку">
-          <p class="apply-send-label">Отправить заявку</p>
-          <div class="landing-cta home-actions apply-actions apply-channel-grid">
-            <button type="submit" class="btn btn-lg msg-btn" name="channel" value="telegram">${iconTelegram()} Отправить в Telegram</button>
-            <button type="submit" class="btn btn-lg secondary msg-btn" name="channel" value="whatsapp">${iconWhatsApp()} Отправить в WhatsApp</button>
-          </div>
-          <p class="muted apply-hint">Откроется чат с уже заполненной заявкой — останется нажать «Отправить» в мессенджере.</p>
-        </div>
-        <p class="apply-status" id="apply-status" role="status" hidden></p>
-      </form>
-    </section>
-
-    <section class="landing-contact" id="contact" aria-labelledby="contact-title">
+    <section class="lx-final lx-reveal" aria-labelledby="final-title">
       <div>
-        <p class="eyebrow">Контакты</p>
-        <h2 id="contact-title">${escapeHtml(STUDIO.city)}</h2>
-        <p class="lede">${escapeHtml(STUDIO.address)} · ${escapeHtml(STUDIO.addressHint)}</p>
-        ${contactsBlock("", { mail: false })}
-        <p class="muted landing-contact-mail">
-          <a href="mailto:${escapeHtml(STUDIO.applyEmail)}">${escapeHtml(STUDIO.applyEmail)}</a>
-        </p>
-        <p class="landing-contact-map">
-          <a href="${escapeHtml(STUDIO.mapUrl)}" target="_blank" rel="noopener noreferrer">Как добраться (2ГИС)</a>
-        </p>
+        <h2 id="final-title">Готовы начать?</h2>
+        <p>Оставьте заявку — перезвоним в течение дня, договоримся о формате и подскажем, с чего начать.</p>
       </div>
+      <div class="lx-final-actions">
+        <a class="btn btn-lg lx-btn-light" href="#apply">Записаться</a>
+        <a class="btn btn-lg lx-btn-ghost" href="#/check">Проверить себя — 10 вопросов</a>
+      </div>
+      ${contactsLine()}
     </section>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
   `;
 }
 

@@ -1,25 +1,26 @@
-import { mountHelper } from "./helper.js?v=land154";
-import { applyTheme, layout } from "./ui.js?v=land154";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land154";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land154";
-import { mountLiterature } from "./literature.js?v=land154";
-import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land154";
-import { mountRussian } from "./russian.js?v=land154";
-import { mountOge } from "./oge.js?v=land154";
-import { markVprDone, mountVpr } from "./vpr.js?v=land154";
-import { mountQuiz } from "./quiz.js?v=land154";
-import { bindApplyForm, bindRevealPhone } from "./apply.js?v=land154";
-import { EGE_TITLES } from "./ege.js?v=land154";
-import { renderExercise } from "./exercises.js?v=land154";
-import { mountTrainer } from "./trainers.js?v=land154";
-import { parseRoute } from "./route.js?v=land154";
+import { mountHelper } from "./helper.js?v=land156";
+import { applyTheme, layout } from "./ui.js?v=land156";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land156";
+import { bindHome, homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land156";
+import { mountLiterature } from "./literature.js?v=land156";
+import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land156";
+import { mountRussian } from "./russian.js?v=land156";
+import { mountOge } from "./oge.js?v=land156";
+import { markVprDone, mountVpr } from "./vpr.js?v=land156";
+import { mountQuiz } from "./quiz.js?v=land156";
+import { bindRevealPhone } from "./apply.js?v=land156";
+import { openApply } from "./applymodal.js?v=land156";
+import { EGE_TITLES } from "./ege.js?v=land156";
+import { renderExercise } from "./exercises.js?v=land156";
+import { mountTrainer } from "./trainers.js?v=land156";
+import { parseRoute } from "./route.js?v=land156";
 import { accessState, currentProfile, hasAccess, initAuth, mySolved, onAuthChange, supa } from "./supa.js";
-import { routeSubject, subjectsOf } from "./track.js?v=land154";
+import { routeSubject, subjectsOf } from "./track.js?v=land156";
 import { markEgeDone, markOgeDone } from "./progress.js";
-import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land154";
-import { mountTeacher, teacherPage } from "./teacher.js?v=land154";
-import "./session.js?v=land154";
-import { lessonPage, mountLesson } from "./lessons.js?v=land154";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land156";
+import { mountTeacher, teacherPage } from "./teacher.js?v=land156";
+import "./session.js?v=land156";
+import { lessonPage, mountLesson } from "./lessons.js?v=land156";
 
 const app = document.getElementById("app");
 let content = null;
@@ -60,6 +61,14 @@ function mountHtml(html, active, opts = {}) {
   if (!(opts.preserveScroll || opts.scroll === false)) scrollToTop();
 }
 
+// Любая ссылка «Записаться» (#apply) открывает окно с формой, не уводя со страницы.
+document.addEventListener("click", (e) => {
+  const link = e.target.closest('a[href="#apply"]');
+  if (!link || e.defaultPrevented || e.metaKey || e.ctrlKey) return;
+  e.preventDefault();
+  openApply();
+});
+
 function bindSkip() {
   const btn = app.querySelector(".skip-link");
   btn?.addEventListener("click", () => {
@@ -79,7 +88,7 @@ function bindSearch(sectionId, q) {
   if (!search) return;
   search.addEventListener("input", () => {
     mountHtml(rulesIndex(content, sectionId, search.value), "rules", { scroll: false });
-    import("./rulequiz.js?v=land154").then((m) => m.markRulesIndex(app)).catch(() => {});
+    import("./rulequiz.js?v=land156").then((m) => m.markRulesIndex(app)).catch(() => {});
     bindSearch(sectionId, search.value);
     const again = app.querySelector("#rule-search");
     if (again) {
@@ -166,16 +175,25 @@ async function render() {
     "program-vpr",
     "program-oge",
     "program-ege",
+    "program-lit",
     "platform",
   ]);
   if (!a || homeAnchors.has(a)) {
     document.body.classList.add("is-landing");
-    mountHtml(homePage(content), "home", { scroll: homeAnchors.has(a) ? false : true });
-    bindApplyForm(app);
+    mountHtml(homePage(content), "home", { scroll: homeAnchors.has(a) && a !== "apply" ? false : true });
+    bindHome(app, a || "");
     setTitle("");
+    if (a === "apply") {
+      // форма записи — в окне; адрес возвращаем на главную, чтобы «назад» не открывал окно снова
+      history.replaceState(null, "", `${location.pathname}${location.search}#/`);
+      openApply();
+      return;
+    }
     if (homeAnchors.has(a)) {
+      // разделы, которых больше нет на главной: материалы — в меню и подвале, контакты — в подвале
+      const target = { learn: "", materials: "", formats: "about", contact: "contact" }[a] ?? a;
       requestAnimationFrame(() => {
-        const el = document.getElementById(a);
+        const el = target && document.getElementById(/^program-/.test(target) ? "about" : target);
         el?.scrollIntoView({ behavior: "smooth", block: "start" });
         if (el?.classList.contains("landing-program")) {
           el.classList.remove("is-target");
@@ -205,7 +223,7 @@ async function render() {
   }
 
   if (a === "privacy" || a === "consent") {
-    const m = await import("./legal.js?v=land154");
+    const m = await import("./legal.js?v=land156");
     mountHtml(a === "privacy" ? m.privacyPage() : m.consentPage(), "legal");
     setTitle(a === "privacy" ? "Политика обработки персональных данных" : "Согласие на обработку персональных данных");
     return;
@@ -219,7 +237,7 @@ async function render() {
 
   if (a === "rules") {
     mountHtml(rulesIndex(content, b || "", q), "rules");
-    import("./rulequiz.js?v=land154").then((m) => m.markRulesIndex(app)).catch(() => {});
+    import("./rulequiz.js?v=land156").then((m) => m.markRulesIndex(app)).catch(() => {});
     bindSearch(b || "", q);
     setTitle(b ? "Правила" : "Правила");
     return;
@@ -238,7 +256,7 @@ async function render() {
       : {};
     mountHtml(rulePage(rule, neighbors), "rules");
     bindRulePrint();
-    import("./rulequiz.js?v=land154").then((m) => m.mountRuleQuiz(app)).catch((e) => console.warn(e));
+    import("./rulequiz.js?v=land156").then((m) => m.mountRuleQuiz(app)).catch((e) => console.warn(e));
     setTitle(rule?.title || "Правило");
     return;
   }
