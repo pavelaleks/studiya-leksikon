@@ -1,6 +1,6 @@
 import { accessState, currentProfile } from "./supa.js";
 import { studioTelegram, studioWhatsApp } from "./config.js";
-import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land161";
+import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land162";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -116,7 +116,7 @@ function footerHtml(full) {
             <a href="#about">Программы</a>
             <a href="#platform">Учебная платформа</a>
             <a href="#prices">Цены</a>
-            <a href="https://2gis.ru/gornoaltaysk/firm/70000001093540016/tab/reviews" target="_blank" rel="noopener noreferrer">Отзывы на 2ГИС</a>
+            <a href="#reviews">Отзывы</a>
             <a href="#faq">Вопросы и ответы</a>
           </nav>
           <nav class="fv-col" aria-label="Подготовка">

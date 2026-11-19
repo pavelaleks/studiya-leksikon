@@ -453,15 +453,36 @@ export function homePage(content) {
             <li>Преподаёт с 2002 года</li>
             <li>Входил в региональную экзаменационную комиссию ЕГЭ в Республике Алтай</li>
           </ul>
-          <p>Открыл студию в 2024 году и ведёт большую часть занятий. Вместе с ним работает команда опытных филологов.</p>
-          <p><a href="${escapeHtml(STUDIO.teacherSite)}" target="_blank" rel="noopener noreferrer">Личный сайт</a> · <a href="https://2gis.ru/gornoaltaysk/firm/70000001093540016/tab/reviews" target="_blank" rel="noopener noreferrer">Отзывы родителей на 2ГИС</a> (оценка 5,0)</p>
+          <p>Открыл студию в 2024 году и ведёт занятия сам.</p>
+          <p><a href="${escapeHtml(STUDIO.teacherSite)}" target="_blank" rel="noopener noreferrer">Личный сайт</a></p>
         </div>
       </div>
+    </section>
+
+    <section class="lx-reviews" id="reviews" aria-labelledby="reviews-title">
+      <h2 id="reviews-title">Отзывы родителей</h2>
+      <p class="lx-reviews-sum">Оценка 5,0 на 2ГИС · 7 оценок</p>
+      <div class="lx-reviews-list">
+        <blockquote class="lx-review"><p>«Знания значительно улучшились. Учителем сын очень доволен, ходит на занятие с удовольствием».</p><footer>Родитель ученика, март 2025</footer></blockquote>
+        <blockquote class="lx-review"><p>«Результат, который я получила, лучше того, на что я рассчитывала».</p><footer>Тамара, март 2025</footer></blockquote>
+        <blockquote class="lx-review"><p>«Значительно улучшились школьные оценки, у ребёнка появилась уверенность в своих знаниях».</p><footer>София, ноябрь 2024</footer></blockquote>
+      </div>
+      <p><a href="https://2gis.ru/gornoaltaysk/firm/70000001093540016/tab/reviews" target="_blank" rel="noopener noreferrer">Все отзывы на 2ГИС</a></p>
     </section>
 
     <section class="landing-platform lx-band" id="platform" aria-labelledby="platform-title">
       <h2 id="platform-title">Учебная платформа студии</h2>
       <p class="lede">У студии своя платформа. Ученик получает в ней задания к занятию и решает их дома, преподаватель видит ответы и ошибки и разбирает их на уроке. Поэтому онлайн-занятия устроены так же, как очные.</p>
+      <div class="lx-shots">
+        <figure class="lx-shot lx-shot-wide">
+          <a href="./css/art/platform-essay.jpg" target="_blank" rel="noopener" title="Открыть крупнее"><img src="./css/art/platform-essay.jpg" alt="Сочинение с пометками преподавателя и баллами по критериям ЕГЭ" width="1600" height="1251" loading="lazy" decoding="async" /></a>
+          <figcaption>Проверенное сочинение: пометки на тексте и баллы по критериям. Пример.</figcaption>
+        </figure>
+        <figure class="lx-shot">
+          <a href="./css/art/platform-task.jpg" target="_blank" rel="noopener" title="Открыть крупнее"><img src="./css/art/platform-task.jpg" alt="Задание из банка: ответ проверен, открыт разбор" width="1300" height="1292" loading="lazy" decoding="async" /></a>
+          <figcaption>Задание из банка: ответ проверяется сразу, разбор — после попытки. Пример.</figcaption>
+        </figure>
+      </div>
       <dl class="lx-features">
         <div><dt>Задания к занятиям</dt><dd>В личном кабинете указано, что сделать и к какому сроку. По желанию — напоминания в Telegram.</dd></div>
         <div><dt>Банк заданий</dt><dd>Более 7&nbsp;000 заданий ВПР, ОГЭ и ЕГЭ по русскому языку и 3&nbsp;000 по литературе. Ответ проверяется сразу, разбор открывается после попытки.</dd></div>

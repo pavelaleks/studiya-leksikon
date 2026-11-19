@@ -2571,3 +2571,20 @@ body.is-landing .landing-faq-item[open] summary::after { content: "−"; }
 .lx-programs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .lx-programs > .landing-program { padding: 22px 24px; }
 @media (max-width: 600px) { .lx-programs { grid-template-columns: 1fr; } }
+
+/* отзывы */
+.lx-reviews { padding: clamp(40px, 6vw, 72px) 0; border-top: 1px solid var(--line); }
+.lx-reviews h2 { font-size: clamp(1.6rem, 2.8vw, 2.15rem); margin: 0 0 6px; }
+.lx-reviews-sum { margin: 0 0 22px; color: var(--ink-soft); font-size: 15px; }
+.lx-reviews-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; margin-bottom: 18px; }
+.lx-review { margin: 0; padding: 2px 0 2px 16px; border-left: 2px solid var(--accent); }
+.lx-review p { margin: 0 0 10px; font-family: var(--serif); font-size: 1.08rem; line-height: 1.5; color: var(--ink); }
+.lx-review footer { font-size: 14px; color: var(--ink-soft); }
+@media (max-width: 800px) { .lx-reviews-list { grid-template-columns: 1fr; gap: 18px; } }
+
+/* скриншоты платформы */
+.lx-shots { display: grid; grid-template-columns: 1.45fr 1fr; gap: 20px; margin: 26px 0 8px; align-items: start; }
+.lx-shot { margin: 0; }
+.lx-shot img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); background: var(--card); }
+.lx-shot figcaption { margin-top: 8px; font-size: 14px; color: var(--ink-soft); }
+@media (max-width: 800px) { .lx-shots { grid-template-columns: 1fr; } }
