@@ -2588,3 +2588,118 @@ body.is-landing .landing-faq-item[open] summary::after { content: "−"; }
 .lx-shot img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); background: var(--card); }
 .lx-shot figcaption { margin-top: 8px; font-size: 14px; color: var(--ink-soft); }
 @media (max-width: 800px) { .lx-shots { grid-template-columns: 1fr; } }
+
+/* ================= Главная: «книжная полоса» ================= */
+/* сплошная бумага без градиентов, панели без размытия */
+html, body { background: var(--paper); }
+.tabbar, .site-header { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+@media (max-width: 760px) { .tabbar { background: var(--paper) !important; } }
+
+.bk { --bk-rule: color-mix(in srgb, var(--ink) 15%, transparent); color: var(--ink); }
+.bk a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.bk a.btn { text-decoration: none; color: #fff; }
+.bk p { margin: 0 0 16px; font-size: 18px; line-height: 1.6; }
+.bk h1, .bk h2, .bk h3 { font-family: var(--serif); color: var(--ink); letter-spacing: 0; }
+
+/* первый экран */
+.bk-hero { padding: 8px 0 0; }
+.bk-plate { margin: 0; }
+.bk-plate img { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; max-height: 62vh; object-fit: cover; object-position: 50% 36%; }
+.bk-plate figcaption { margin-top: 8px; text-align: right; font-size: 14px; color: var(--ink-soft); }
+.bk-hero-grid { display: grid; grid-template-columns: 7fr 5fr; gap: 48px; margin-top: 40px; align-items: end; }
+.bk-exams { font-size: 15px !important; margin: 0 0 14px !important; color: var(--ink-soft); }
+.bk-exams a { color: var(--ink-soft) !important; }
+.bk h1 { font-weight: 400; font-size: clamp(40px, 6vw, 72px); line-height: 1.05; margin: 0 0 18px; }
+.bk-sub { font-size: 20px !important; color: var(--ink-soft); max-width: 30em; }
+.bk-hero-side p { max-width: 30em; }
+.bk-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin: 22px 0 12px !important; }
+.bk-actions a:not(.btn) { font-weight: 500; }
+.bk-note-line { font-size: 14px !important; color: var(--ink-soft); }
+
+/* разделы: заголовок на поле, текст в колонке для чтения */
+.bk-sec { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; padding: 64px 0 0; margin-top: 96px; border-top: 1px solid var(--bk-rule); }
+.bk-sec > h2 { grid-column: 1 / 4; font-weight: 400; font-size: 32px; line-height: 1.15; margin: 0 0 24px; }
+.bk-body { grid-column: 4 / 12; max-width: 40em; }
+.bk-lead { font-size: 20px !important; }
+.bk-footnote { font-size: 14px !important; color: var(--ink-soft); margin-top: 24px !important; }
+.bk-margin { font-size: 15px !important; }
+
+/* преподаватель */
+.bk-teacher { display: grid; grid-template-columns: 220px 1fr; gap: 32px; max-width: none; align-items: start; }
+.bk-portrait { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: 50% 30%; display: block; }
+
+/* программы — как оглавление */
+.bk-toc article { border-top: 1px solid var(--bk-rule); padding: 22px 0 6px; scroll-margin-top: 80px; }
+.bk-toc h3 { font-weight: 500; font-size: 22px; margin: 0 0 8px; }
+.bk-toc h3 span { font-family: var(--sans); font-size: 16px; font-weight: 400; color: var(--ink-soft); }
+.bk-remark { font-family: var(--serif); font-style: italic; color: var(--ink-soft); }
+.bk-more { font-size: 15px !important; }
+
+/* образец правки */
+.bk-proof { margin: 32px 0 36px; padding: 28px 0 8px; border-top: 1px solid var(--bk-rule); border-bottom: 1px solid var(--bk-rule); }
+.bk-proof-row { display: grid; grid-template-columns: 1fr 190px; gap: 28px; align-items: baseline; }
+.bk-proof-row p { font-family: var(--serif); font-size: 20px !important; line-height: 1.65; }
+.bk-proof del { color: var(--accent); text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.bk-proof ins { color: var(--accent); text-decoration: none; font-weight: 700; padding: 0 1px; }
+.bk-note { font-size: 14px; line-height: 1.4; color: var(--accent); }
+.bk-proof figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; padding: 14px 0 8px; font-size: 14px; color: var(--ink-soft); }
+.bk-proof figcaption span:first-child { color: var(--ink); font-weight: 600; }
+
+.bk-defs { margin: 0; }
+.bk-defs > div { display: grid; grid-template-columns: 200px 1fr; gap: 24px; padding: 12px 0; border-top: 1px solid var(--bk-rule); }
+.bk-defs dt { font-family: var(--serif); font-size: 18px; }
+.bk-defs dd { margin: 0; font-size: 16px; line-height: 1.5; color: var(--ink-soft); }
+
+/* отзывы */
+.bk-quote { margin: 0; }
+.bk-quote p { font-family: var(--serif); font-style: italic; font-size: 18px !important; line-height: 1.5; }
+.bk-quote footer { font-size: 14px; color: var(--ink-soft); }
+.bk-quote-main p { font-size: 28px !important; line-height: 1.35; }
+.bk-quotes { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 36px; }
+
+/* цены — как в меню */
+.bk-price { display: flex; align-items: baseline; gap: 12px; padding: 14px 0; border-top: 1px solid var(--bk-rule); font-size: 18px; }
+.bk-price > span:last-child { font-weight: 500; white-space: nowrap; }
+.bk-price i { flex: 1; border-bottom: 1px dotted color-mix(in srgb, var(--ink) 35%, transparent); transform: translateY(-4px); }
+
+/* вопросы — список с линиями */
+.bk-faq-item { border-top: 1px solid var(--bk-rule); }
+.bk-faq-item:last-child { border-bottom: 1px solid var(--bk-rule); }
+.bk-faq-item summary { list-style: none; cursor: pointer; padding: 16px 32px 16px 0; position: relative; font-weight: 500; font-size: 18px; }
+.bk-faq-item summary::-webkit-details-marker { display: none; }
+.bk-faq-item summary::after { content: "+"; position: absolute; right: 4px; top: 14px; font-size: 22px; color: var(--ink-soft); }
+.bk-faq-item[open] summary::after { content: "−"; }
+.bk-faq-item p { color: var(--ink-soft); font-size: 17px !important; }
+
+/* запись и форзац */
+.bk-final .landing-contacts-line { font-size: 14px; color: var(--ink-soft); }
+.bk-endpaper { margin: 96px 0 0; }
+.bk-endpaper img { display: block; width: 100%; aspect-ratio: 21 / 9; height: auto; object-fit: cover; object-position: 50% 88%; }
+
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .bk { --bk-rule: rgba(255, 255, 255, 0.14); } }
+:root[data-theme="dark"] .bk { --bk-rule: rgba(255, 255, 255, 0.14); }
+
+@media (max-width: 900px) {
+  .bk-sec { display: block; margin-top: 64px; padding-top: 40px; }
+  .bk-sec > h2 { font-size: 28px; }
+  .bk-body { max-width: none; }
+  .bk-hero-grid { grid-template-columns: 1fr; gap: 8px; margin-top: 24px; }
+}
+@media (max-width: 600px) {
+  body.is-landing main { padding-top: 0; }
+  .bk-plate { margin: 0 -16px; }
+  .bk-plate img { aspect-ratio: 4 / 3; max-height: none; object-position: 50% 30%; }
+  .bk-plate figcaption { padding: 0 16px; }
+  .bk p { font-size: 17px; }
+  .bk-lead, .bk-sub { font-size: 18px !important; }
+  .bk-teacher { grid-template-columns: 1fr; gap: 20px; }
+  .bk-portrait { max-width: 100%; }
+  .bk-proof-row { grid-template-columns: 1fr; gap: 0; margin-bottom: 14px; }
+  .bk-proof-row p { font-size: 18px !important; margin-bottom: 2px; }
+  .bk-defs > div { grid-template-columns: 1fr; gap: 2px; }
+  .bk-quotes { grid-template-columns: 1fr; gap: 20px; }
+  .bk-quote-main p { font-size: 22px !important; }
+  .bk-price { flex-wrap: wrap; }
+  .bk-price i { min-width: 20px; }
+  .bk-endpaper { margin: 64px -16px 0; }
+}
