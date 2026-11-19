@@ -2216,3 +2216,5 @@ body.is-reading .lh-btn { display: none; }
   .th-table td:first-child { white-space: normal; font-size: 16px; margin-bottom: 2px; }
   .th-table td:nth-child(n+3)::before { content: attr(data-label) ": "; color: var(--ink-soft); font-size: 13px; }
 }
+.th-tip { margin: 8px 0 0; padding: 10px 14px; border-radius: 12px; background: rgba(47, 122, 75, 0.08); border: 1px solid rgba(47, 122, 75, 0.25); font-size: 15px; }
+.th-tip a { font-weight: 650; }

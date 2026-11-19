@@ -5,7 +5,7 @@
  *  - письменная работа: черновик, фото, сдача на проверку, оценка.
  */
 import { escapeHtml } from "./ui.js";
-import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land147";
+import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land148";
 import {
   accessState,
   currentUser,
@@ -130,7 +130,26 @@ function emitAnswer(detail) {
   window.dispatchEvent(new CustomEvent("lx:answer", { detail }));
 }
 
-export function bindCheck(root, problem, { sanitize, onCorrect, item = null, examMode = false } = {}) {
+// Сколько раз подряд ученик ошибался в заданиях одного номера (в этом браузере) — чтобы вовремя посоветовать теорию.
+const MISS_KEY = "leksikon-theory-miss";
+function missCount(key, delta = 0) {
+  try {
+    const all = JSON.parse(localStorage.getItem(MISS_KEY) || "{}");
+    if (delta) {
+      all[key] = Math.max(0, (all[key] || 0) + delta);
+      localStorage.setItem(MISS_KEY, JSON.stringify(all));
+    }
+    return all[key] || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function theoryTipHtml(theory) {
+  return `<p class="th-tip">📖 Похоже, задание ${theory.task} пока даётся непросто. <a href="${theory.href}">Повторите теорию к заданию ${theory.task}</a> — там алгоритм и частые ловушки.</p>`;
+}
+
+export function bindCheck(root, problem, { sanitize, onCorrect, item = null, examMode = false, theory = null } = {}) {
   const input = root.querySelector("#pr-answer");
   const result = root.querySelector("#pr-result");
   const btn = root.querySelector("#pr-check");
@@ -181,6 +200,7 @@ export function bindCheck(root, problem, { sanitize, onCorrect, item = null, exa
         } catch {}
         revealRow.hidden = true;
         solution.innerHTML = solutionHtml(sanitize, res);
+        if (theory) missCount(theory.key, tries === 1 ? -2 : -1);
         emitAnswer({ taskId: problem._tid, itemId: item?.id || null, correct: true, firstTry: tries === 1, anchor: result });
         onCorrect?.();
       } else {
@@ -194,6 +214,11 @@ export function bindCheck(root, problem, { sanitize, onCorrect, item = null, exa
           "is-bad"
         );
         if (exhausted) input.disabled = true;
+        if (theory) {
+          // совет — после второй ошибки в этом задании или сразу, если в заданиях этого номера уже 3+ ошибки
+          const misses = tries === 1 ? missCount(theory.key, 1) : missCount(theory.key);
+          if ((tries >= 2 || misses >= 3) && !result.parentNode.querySelector(".th-tip")) result.insertAdjacentHTML("afterend", theoryTipHtml(theory));
+        }
         emitAnswer({ taskId: problem._tid, itemId: item?.id || null, correct: false });
         revealRow.hidden = !res.can_reveal;
         if (!res.can_reveal && item) {
