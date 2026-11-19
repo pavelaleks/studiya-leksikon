@@ -1,5 +1,6 @@
 import { accessState, currentProfile } from "./supa.js";
-import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land151";
+import { studioTelegram, studioWhatsApp } from "./config.js";
+import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land152";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -90,6 +91,66 @@ function tabbar(active) {
 }
 
 /** Переключатель темы — в подвале, в «Я» у ученика и в «Ещё» у преподавателя. */
+/** Подвал: навигация по сайту, связь, адрес. На телефоне внутри заданий и кабинетов его нет — там меню внизу экрана. */
+function footerHtml(full) {
+  const st = accessState();
+  const cabinet =
+    st === "teacher"
+      ? `<a href="#/cabinet/today">Кабинет преподавателя</a>`
+      : st === "guest"
+        ? `<a href="#/login">Войти в кабинет</a>`
+        : `<a href="#/me">Мой кабинет</a>`;
+  const tg = studioTelegram();
+  const wa = studioWhatsApp();
+  const year = new Date().getFullYear();
+  return `<footer class="site-footer site-footer-v2${full ? "" : " is-app"}">
+      <div class="wrap">
+        <div class="fv-grid">
+          <div class="fv-col fv-about">
+            <p class="footer-name">Студия Лексикон</p>
+            <p class="fv-note">Русский язык и литература для 8–11 классов. Очно в Горно-Алтайске и онлайн.</p>
+            <p class="fv-note">Основатель и руководитель — П. В. <a href="https://palekseev.ru/" target="_blank" rel="noopener noreferrer">Алексеев</a></p>
+          </div>
+          <nav class="fv-col" aria-label="О студии">
+            <p class="footer-h">Студия</p>
+            <a href="#about">Программы</a>
+            <a href="#platform">Учебная платформа</a>
+            <a href="#prices">Цены</a>
+            <a href="#reviews">Отзывы</a>
+            <a href="#faq">Вопросы и ответы</a>
+          </nav>
+          <nav class="fv-col" aria-label="Подготовка">
+            <p class="footer-h">Подготовка</p>
+            <a href="#/ege">ЕГЭ по русскому</a>
+            <a href="#/oge">ОГЭ по русскому</a>
+            <a href="#/vpr">ВПР по русскому</a>
+            <a href="#/literature">Литература</a>
+            <a href="#/check">Проверь себя перед экзаменом</a>
+          </nav>
+          <nav class="fv-col" aria-label="Ученикам">
+            <p class="footer-h">Ученикам</p>
+            ${cabinet}
+            <a href="#/ege/theory">Теория к заданиям ЕГЭ</a>
+            <a href="#/rules">Правила</a>
+          </nav>
+          <div class="fv-col">
+            <p class="footer-h">Связаться</p>
+            <a href="#apply">Записаться</a>
+            ${tg.url ? `<a href="${tg.url}" target="_blank" rel="noopener noreferrer">Telegram</a>` : ""}
+            ${wa.url ? `<a href="${wa.url}" target="_blank" rel="noopener noreferrer">WhatsApp</a>` : ""}
+            <button type="button" class="link-btn fv-phone" data-reveal-phone>Позвонить</button>
+            <a href="https://go.2gis.com/lknNX" target="_blank" rel="noopener noreferrer">пр. Коммунистический, 47<span class="fv-sub">вход с ул. Головина</span></a>
+          </div>
+        </div>
+        <div class="fv-bottom">
+          <span>© 2024–${year} Студия Лексикон</span>
+          ${themeSwitchHtml()}
+          <a class="fv-admin" href="#/cabinet">Для преподавателя</a>
+        </div>
+      </div>
+    </footer>`;
+}
+
 export function themeSwitchHtml() {
   return `<span class="theme-switch" role="group" aria-label="Тема оформления">
     <button type="button" data-theme-set="auto">Авто</button>
@@ -175,31 +236,7 @@ export function layout(content, active = "", { hideFooter = false } = {}) {
     ${
       hideFooter
         ? ""
-        : isHome || active === "login"
-          ? `<footer class="site-footer">
-      <div class="wrap footer-grid">
-        <div>
-          <p class="footer-name">Студия Лексикон</p>
-          <p class="footer-note">Русский язык и литература для 8–11 классов. Очно и онлайн.</p>
-          <p>Основатель и руководитель — П. В. <a href="https://palekseev.ru/" target="_blank" rel="noopener noreferrer">Алексеев</a></p>
-        </div>
-        <div>
-          <p class="footer-h">Где мы</p>
-          <p><a href="https://go.2gis.com/lknNX" target="_blank" rel="noopener noreferrer">г. Горно-Алтайск, пр. Коммунистический, 47</a><br><span class="muted">вход со стороны ул. Головина</span></p>
-        </div>
-        <div>
-          ${accessState() === "guest" ? "" : `<p class="footer-h">Оформление</p>${themeSwitchHtml()}`}
-          <p class="footer-admin"><a href="#/cabinet">Вход для преподавателя</a></p>
-        </div>
-      </div>
-    </footer>`
-          : `<footer class="site-footer is-compact">
-      <div class="wrap footer-line">
-        <span>© Студия Лексикон</span>
-        ${themeSwitchHtml()}
-        <a class="footer-admin" href="#/cabinet">Вход для преподавателя</a>
-      </div>
-    </footer>`
+        : footerHtml(isHome || active === "login")
     }
   `;
 }

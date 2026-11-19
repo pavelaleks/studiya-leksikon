@@ -1,19 +1,19 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land151";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land152";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land151";
+import { taskHref } from "./account.js?v=land152";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land151";
-import { readingView } from "./teacher-reading.js?v=land151";
-import { optionsOf } from "./practice.js?v=land151";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land151";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land151";
-import { scheduleTodayMount, weekView } from "./calendar.js?v=land151";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land151";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land152";
+import { readingView } from "./teacher-reading.js?v=land152";
+import { optionsOf } from "./practice.js?v=land152";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land152";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land152";
+import { scheduleTodayMount, weekView } from "./calendar.js?v=land152";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land152";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land151";
+} from "./review.js?v=land152";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
