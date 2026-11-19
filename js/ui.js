@@ -1,6 +1,6 @@
 import { accessState, currentProfile } from "./supa.js";
 import { studioTelegram, studioWhatsApp } from "./config.js";
-import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land152";
+import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land153";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -144,6 +144,7 @@ function footerHtml(full) {
         </div>
         <div class="fv-bottom">
           <span>© 2024–${year} Студия Лексикон</span>
+          <a class="fv-admin" href="#/privacy">Политика конфиденциальности</a>
           ${themeSwitchHtml()}
           <a class="fv-admin" href="#/cabinet">Для преподавателя</a>
         </div>
@@ -234,9 +235,10 @@ export function layout(content, active = "", { hideFooter = false } = {}) {
     <main id="main" class="${isHome ? "is-home" : "is-app"}"><div class="wrap">${content}</div></main>
     ${tabbar(active)}
     ${
-      hideFooter
+      // в кабинетах ученика и преподавателя (и в занятиях) подвала нет — там всё как в приложении
+      hideFooter || active === "me" || active === "teacher"
         ? ""
-        : footerHtml(isHome || active === "login")
+        : footerHtml(isHome || active === "login" || active === "legal")
     }
   `;
 }

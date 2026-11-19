@@ -2260,3 +2260,13 @@ body.is-reading .lh-btn { display: none; }
   /* в заданиях и кабинетах на телефоне подвала нет — меню внизу экрана */
   .site-footer-v2.is-app { display: none; }
 }
+
+/* ---------- Документы и согласие ---------- */
+.legal-page { max-width: 780px; margin: 0 auto; padding-bottom: 30px; }
+.legal-page h2 { margin: 28px 0 8px; font-size: 1.2rem; }
+.legal-page h3 { margin: 16px 0 6px; font-size: 1.02rem; }
+.legal-page p, .legal-page li { font-size: 16px; line-height: 1.6; }
+.legal-page ul, .legal-page ol { padding-left: 1.3em; }
+.legal-page li { margin: 4px 0; }
+.apply-consent { display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 14px; font-size: 14px; line-height: 1.45; color: var(--ink-soft); cursor: pointer; }
+.apply-consent input { width: 18px; height: 18px; margin-top: 2px; flex: none; accent-color: var(--accent-fill); }

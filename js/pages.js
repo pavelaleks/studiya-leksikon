@@ -607,6 +607,11 @@ export function homePage(content) {
           <textarea class="search apply-input apply-textarea" name="note" rows="3" placeholder="Например, удобные дни и время"></textarea>
         </label>
 
+        <label class="apply-consent">
+          <input type="checkbox" name="consent" required />
+          <span>Даю <a href="#/consent" target="_blank" rel="noopener">согласие на обработку персональных данных</a>. Если ученику нет 14 лет, согласие даёт родитель. <a href="#/privacy" target="_blank" rel="noopener">Политика конфиденциальности</a></span>
+        </label>
+
         <div class="apply-send" role="group" aria-label="Отправить заявку">
           <p class="apply-send-label">Отправить заявку</p>
           <div class="landing-cta home-actions apply-actions apply-channel-grid">

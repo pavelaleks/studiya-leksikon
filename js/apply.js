@@ -24,6 +24,7 @@ function buildBody(form) {
   ];
   const note = val(form, "note");
   if (note) lines.push("", `Комментарий: ${note}`);
+  if (form.elements.namedItem("consent")?.checked) lines.push("", "Согласие на обработку персональных данных дано на сайте.");
   return lines.join("\n");
 }
 
