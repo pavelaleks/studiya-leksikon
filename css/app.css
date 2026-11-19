@@ -2179,3 +2179,40 @@ body.is-reading .lh-btn { display: none; }
 .me-lesson p { margin: 0; }
 .me-lesson-when strong { text-transform: none; }
 .me-lesson-todo { margin-top: 4px !important; font-size: 0.92rem; }
+
+/* ---- Теория к заданию ---- */
+.lit-theory-mark { color: #2f7a4b; }
+.th-cta {
+  display: flex; gap: 12px; align-items: center; margin: 14px 0 4px; padding: 12px 16px;
+  border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: inherit; text-decoration: none;
+}
+.th-cta:hover { border-color: rgba(111, 45, 50, 0.35); }
+.th-cta > span:first-child { font-size: 1.5rem; }
+.th-cta strong { display: block; }
+.th-cta small { color: var(--ink-soft); }
+.th-page { max-width: 860px; }
+.th-body { line-height: 1.6; }
+.th-body h2 { margin: 28px 0 10px; font-size: 1.35rem; }
+.th-body h3 { margin: 20px 0 8px; font-size: 1.1rem; }
+.th-body p, .th-body li { font-size: 17px; }
+.th-body ul, .th-body ol { padding-left: 1.3em; }
+.th-body li { margin: 4px 0; }
+.th-table { overflow-x: auto; margin: 10px 0 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.th-table table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.th-table th, .th-table td { padding: 8px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+.th-table tr:last-child td { border-bottom: 0; }
+.th-table th { font-weight: 700; background: rgba(111, 45, 50, 0.05); }
+.th-table td:first-child { font-weight: 650; white-space: nowrap; }
+.th-actions { margin-top: 24px; }
+.th-inline { margin: 18px 0; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+.th-inline > summary { cursor: pointer; padding: 12px 16px; font-weight: 650; }
+.th-inline-body { padding: 0 16px 12px; }
+@media (max-width: 600px) {
+  .th-table { border: 0; background: none; overflow: visible; }
+  .th-table table, .th-table tbody, .th-table tr, .th-table td { display: block; width: auto; }
+  .th-table thead { display: none; }
+  .th-table tr { margin: 0 0 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+  .th-table td { padding: 2px 0; border: 0; font-size: 15px; }
+  .th-table td:first-child { white-space: normal; font-size: 16px; margin-bottom: 2px; }
+  .th-table td:nth-child(n+3)::before { content: attr(data-label) ": "; color: var(--ink-soft); font-size: 13px; }
+}

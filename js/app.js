@@ -1,25 +1,25 @@
-import { mountHelper } from "./helper.js?v=land145";
-import { applyTheme, layout } from "./ui.js?v=land145";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land145";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land145";
-import { mountLiterature } from "./literature.js?v=land145";
-import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land145";
-import { mountRussian } from "./russian.js?v=land145";
-import { mountOge } from "./oge.js?v=land145";
-import { markVprDone, mountVpr } from "./vpr.js?v=land145";
-import { mountQuiz } from "./quiz.js?v=land145";
-import { bindApplyForm } from "./apply.js?v=land145";
-import { EGE_TITLES } from "./ege.js?v=land145";
-import { renderExercise } from "./exercises.js?v=land145";
-import { mountTrainer } from "./trainers.js?v=land145";
-import { parseRoute } from "./route.js?v=land145";
+import { mountHelper } from "./helper.js?v=land146";
+import { applyTheme, layout } from "./ui.js?v=land146";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land146";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land146";
+import { mountLiterature } from "./literature.js?v=land146";
+import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land146";
+import { mountRussian } from "./russian.js?v=land146";
+import { mountOge } from "./oge.js?v=land146";
+import { markVprDone, mountVpr } from "./vpr.js?v=land146";
+import { mountQuiz } from "./quiz.js?v=land146";
+import { bindApplyForm } from "./apply.js?v=land146";
+import { EGE_TITLES } from "./ege.js?v=land146";
+import { renderExercise } from "./exercises.js?v=land146";
+import { mountTrainer } from "./trainers.js?v=land146";
+import { parseRoute } from "./route.js?v=land146";
 import { accessState, currentProfile, hasAccess, initAuth, mySolved, onAuthChange, supa } from "./supa.js";
-import { routeSubject, subjectsOf } from "./track.js?v=land145";
+import { routeSubject, subjectsOf } from "./track.js?v=land146";
 import { markEgeDone, markOgeDone } from "./progress.js";
-import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land145";
-import { mountTeacher, teacherPage } from "./teacher.js?v=land145";
-import "./session.js?v=land145";
-import { lessonPage, mountLesson } from "./lessons.js?v=land145";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land146";
+import { mountTeacher, teacherPage } from "./teacher.js?v=land146";
+import "./session.js?v=land146";
+import { lessonPage, mountLesson } from "./lessons.js?v=land146";
 
 const app = document.getElementById("app");
 let content = null;
@@ -78,7 +78,7 @@ function bindSearch(sectionId, q) {
   if (!search) return;
   search.addEventListener("input", () => {
     mountHtml(rulesIndex(content, sectionId, search.value), "rules", { scroll: false });
-    import("./rulequiz.js?v=land145").then((m) => m.markRulesIndex(app)).catch(() => {});
+    import("./rulequiz.js?v=land146").then((m) => m.markRulesIndex(app)).catch(() => {});
     bindSearch(sectionId, search.value);
     const again = app.querySelector("#rule-search");
     if (again) {
@@ -210,7 +210,7 @@ async function render() {
 
   if (a === "rules") {
     mountHtml(rulesIndex(content, b || "", q), "rules");
-    import("./rulequiz.js?v=land145").then((m) => m.markRulesIndex(app)).catch(() => {});
+    import("./rulequiz.js?v=land146").then((m) => m.markRulesIndex(app)).catch(() => {});
     bindSearch(b || "", q);
     setTitle(b ? "Правила" : "Правила");
     return;
@@ -229,7 +229,7 @@ async function render() {
       : {};
     mountHtml(rulePage(rule, neighbors), "rules");
     bindRulePrint();
-    import("./rulequiz.js?v=land145").then((m) => m.mountRuleQuiz(app)).catch((e) => console.warn(e));
+    import("./rulequiz.js?v=land146").then((m) => m.mountRuleQuiz(app)).catch((e) => console.warn(e));
     setTitle(rule?.title || "Правило");
     return;
   }

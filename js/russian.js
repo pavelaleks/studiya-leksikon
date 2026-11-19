@@ -2,7 +2,8 @@ import { BASE } from "./config.js";
 import { doneIds, markEgeDone, pickEgeVariant, readProgress, touchEge } from "./progress.js";
 import { escapeHtml } from "./ui.js";
 import { accessState, bankList, bankProblem, clearBankCache } from "./supa.js";
-import { bindCheck, bindWritten, checkBlockHtml, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js?v=land145";
+import { theoryTasks, theoryBody, theoryArticleHtml, theoryClosedHtml, clearTheoryCache } from "./theory.js?v=land146";
+import { bindCheck, bindWritten, checkBlockHtml, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js?v=land146";
 
 const SOURCE = "ege-rus";
 
@@ -180,7 +181,7 @@ function sanitizeHtml(html) {
   return root.innerHTML;
 }
 
-function hubHtml(manifest) {
+function hubHtml(manifest, theory = new Set()) {
   const cards = taskFiles(manifest)
     .map((file) => {
       const essay = file.task === 27;
@@ -197,6 +198,7 @@ function hubHtml(manifest) {
                 ? `<span class="lit-write-mark">письменно</span>`
                 : ""
             }
+            ${theory.has(file.task) ? `<span class="lit-theory-mark">теория</span>` : ""}
           </span>
         </a>`;
     })
@@ -213,7 +215,7 @@ function hubHtml(manifest) {
     ${sourceNote()}`;
 }
 
-function listHtml({ file, bank }) {
+function listHtml({ file, bank, hasTheory = false }) {
   const task = file.task;
   const essay = task === 27;
   const done = doneIds(task);
@@ -253,6 +255,7 @@ function listHtml({ file, bank }) {
         </label>
         <a class="btn" href="#/ege/${task}/random">Случайный</a>
       </div>
+      ${hasTheory ? `<a class="th-cta" href="#/ege/${task}/theory"><span>📖</span><span><strong>Теория к заданию ${task}</strong><small>Как устроено задание, алгоритм, термины и частые ловушки</small></span></a>` : ""}
       <p class="lit-search-status muted" id="rus-status" aria-live="polite"></p>
       ${topics ? `<div class="lit-topic-nav" aria-label="Подборки">${topics}</div>` : ""}
     </header>
@@ -280,7 +283,7 @@ function sourceLine(problem) {
   return titles.slice(0, 2).join("; ");
 }
 
-function problemHtml({ file, problem, passage, index, total, prevId, nextId }) {
+function problemHtml({ file, problem, passage, index, total, prevId, nextId, hasTheory = false }) {
   const task = problem.task;
   const essay = problem.answerMode === "essay" || problem.answerKind === "essay";
   const prev = prevId ? { id: prevId } : null;
@@ -308,6 +311,7 @@ function problemHtml({ file, problem, passage, index, total, prevId, nextId }) {
       ${passageBlock}
       <section class="lit-question"><div class="lit-html">${sanitizeHtml(problem.questionHtml)}</div></section>
       ${answerBlock}
+      ${hasTheory ? `<details class="th-inline" data-theory="${task}"><summary>📖 Повторить теорию к заданию ${task}</summary><div class="th-inline-body muted">Загружаем…</div></details>` : ""}
       <div class="lit-pager">
         ${prev ? `<a href="${hrefOf(prev)}">← Предыдущее</a>` : `<span></span>`}
         <span class="muted">${index + 1} из ${total}</span>
@@ -315,6 +319,22 @@ function problemHtml({ file, problem, passage, index, total, prevId, nextId }) {
       </div>
     </article>
     ${sourceNote()}`;
+}
+
+function theoryHtml(file, md) {
+  const task = file.task;
+  return `
+    <p class="crumbs">
+      <a href="#/ege">ЕГЭ</a><span>/</span>
+      <a href="#/ege/${task}">Задание ${task}</a>
+    </p>
+    ${taskNav(task)}
+    <article class="th-page">
+      <p class="eyebrow">Теория · задание ${task}</p>
+      <h1>${escapeHtml(file.title)}</h1>
+      ${md ? theoryArticleHtml(md) : theoryClosedHtml("ЕГЭ по русскому", `#/ege/${task}`)}
+      ${md ? `<p class="actions th-actions"><a class="btn" href="#/ege/${task}/random">Решать задание ${task}</a> <a class="btn secondary" href="#/ege/${task}">Все задания ${task}</a></p>` : ""}
+    </article>`;
 }
 
 function missingHtml() {
@@ -351,7 +371,26 @@ function bindList(root) {
   });
 }
 
+function bindTheoryInline(root) {
+  const d = root.querySelector(".th-inline");
+  if (!d) return;
+  d.addEventListener("toggle", async () => {
+    if (!d.open || d.dataset.loaded) return;
+    d.dataset.loaded = "1";
+    const body = d.querySelector(".th-inline-body");
+    try {
+      const md = await theoryBody(SOURCE, d.dataset.theory);
+      body.classList.remove("muted");
+      body.innerHTML = md ? theoryArticleHtml(md) : theoryClosedHtml("ЕГЭ по русскому", location.hash);
+    } catch (_) {
+      delete d.dataset.loaded;
+      body.textContent = "Не удалось загрузить теорию. Попробуйте ещё раз.";
+    }
+  });
+}
+
 function bindProblem(root, problem, index) {
+  bindTheoryInline(root);
   touchEge({ id: problem.id, egeTask: problem.task }, index);
   const essay = problem.answerMode === "essay" || problem.answerKind === "essay";
   if (essay) {
@@ -367,10 +406,15 @@ function bindProblem(root, problem, index) {
 async function renderView(rest) {
   const manifest = await loadManifest();
   const [a, b] = rest;
-  if (!a) return { html: hubHtml(manifest), view: "hub", title: "ЕГЭ по русскому" };
+  const theory = await theoryTasks(SOURCE);
+  if (!a) return { html: hubHtml(manifest, theory), view: "hub", title: "ЕГЭ по русскому" };
   const task = Number(a);
   const file = taskFiles(manifest).find((item) => item.task === task);
   if (!file) return { html: missingHtml(), view: "missing", title: "Задание не найдено" };
+  if (b === "theory") {
+    const md = theory.has(task) ? await theoryBody(SOURCE, task) : null;
+    return { html: theoryHtml(file, md), view: "theory", title: `Теория к заданию ${task}` };
+  }
   if (b === "random") {
     const ids = await loadOrder(file.file);
     const pick = pickEgeVariant(ids.map((id) => ({ id, egeTask: task })));
@@ -381,7 +425,7 @@ async function renderView(rest) {
   }
   if (!b) {
     const list = await loadList(file.file);
-    return { html: listHtml({ file, bank: list }), view: "list", title: `Задание ${task}. ${file.title}` };
+    return { html: listHtml({ file, bank: list, hasTheory: theory.has(task) }), view: "list", title: `Задание ${task}. ${file.title}` };
   }
   const [ids, found] = await Promise.all([loadOrder(file.file), bankProblem(SOURCE, b)]);
   if (!found) {
@@ -399,6 +443,7 @@ async function renderView(rest) {
       total: ids.length,
       prevId: index > 0 ? ids[index - 1] : null,
       nextId: index < ids.length - 1 ? ids[index + 1] : null,
+      hasTheory: theory.has(task),
     }),
     view: "problem",
     title: `Задание ${task} · № ${problem.id}`,
@@ -425,6 +470,7 @@ export async function mountRussian(host, rest = []) {
       manifestCache = null;
       bankCache.clear();
       clearBankCache();
+      clearTheoryCache();
       mountRussian(host, rest);
     });
     console.error(err);
