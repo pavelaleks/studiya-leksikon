@@ -247,17 +247,304 @@ function homeStartHtml() {
   try {
     been = !!localStorage.getItem("lx-was-student");
   } catch {}
-  const main = been
-    ? `<a class="btn btn-lg" href="#/login">Войти в кабинет</a><a class="btn btn-lg secondary" href="#apply">Записаться</a>`
-    : `<a class="btn btn-lg" href="#apply">Записаться</a><a class="lx-link" href="#/check">Проверить себя — 10 вопросов</a>`;
-  return `<div class="lx-hero-actions">${main}</div>
-    <p class="lx-hero-note">Идёт набор в группы.${been ? ` <a href="#/check">Проверить себя — 10 вопросов</a>` : ` Уже занимаетесь? <a href="#/login">Войти в кабинет</a>`}</p>`;
+  const join = `<a class="home-path" href="#apply">
+        <span class="home-path-ico" aria-hidden="true">🙋</span>
+        <span><strong>Хочу заниматься в студии</strong><span>Оставьте заявку — договоримся о времени и формате</span></span>
+        <span class="home-path-go" aria-hidden="true">›</span>
+      </a>`;
+  const login = `<a class="home-path${been ? " is-main" : ""}" href="#/login">
+        <span class="home-path-ico" aria-hidden="true">🔑</span>
+        <span><strong>${been ? "Войти в кабинет" : "Я уже занимаюсь в студии"}</strong><span>${been ? "Вы уже заходили с этого устройства" : "Вход по логину и паролю от преподавателя"}</span></span>
+        <span class="home-path-go" aria-hidden="true">›</span>
+      </a>`;
+  const tryit = `<a class="home-path" href="#/check">
+        <span class="home-path-ico" aria-hidden="true">✏️</span>
+        <span><strong>Проверьте себя перед экзаменом</strong><span>10 вопросов за 5–7 минут: ВПР, ОГЭ или ЕГЭ — и что подтянуть</span></span>
+        <span class="home-path-go" aria-hidden="true">›</span>
+      </a>`;
+  return `<div class="home-start">
+      <p class="home-start-q">Что вы хотите сделать?</p>
+      ${been ? login + join : join + login}
+      ${tryit}
+    </div>`;
 }
 
-/** Форма записи — открывается в окне по любой кнопке «Записаться» (см. applymodal.js). */
-export function applyFormHtml() {
+export function homePage(content) {
+  const ruleCount = content.sections.reduce(
+    (a, s) => a + s.chapters.reduce((b, c) => b + c.rules.length, 0),
+    0
+  );
+  const ogeTrainers = (STUDIO.trainers || []).length;
   return `
-      <form class="apply-form lx-apply" id="apply-form" novalidate>
+    <section class="landing-hero" aria-label="Студия Лексикон">
+      <div class="landing-hero-copy">
+        <p class="landing-exams landing-exams-hero" aria-label="К чему готовим">
+          <a href="#program-vpr" title="Подготовка к ВПР, 8 класс"><span class="exam-vpr">ВПР</span></a><a href="#program-oge" title="Подготовка к ОГЭ, 9 класс"><span class="exam-oge">ОГЭ</span></a><a href="#program-ege" title="Подготовка к ЕГЭ, 10–11 класс"><span class="exam-ege">ЕГЭ</span></a>
+        </p>
+        <p class="eyebrow landing-kicker">
+          <span>Студия Лексикон</span>
+          <span aria-hidden="true">·</span>
+          <span>${escapeHtml(STUDIO.city)}</span>
+        </p>
+        <h1 class="landing-subjects">
+          <span class="landing-subject">Русский язык</span>
+          <span class="landing-subject landing-subject-second">и литература</span>
+        </h1>
+        <p class="landing-title">Готовим учеников 8–11 классов к ВПР, ОГЭ и ЕГЭ: разбираемся в правилах и учимся писать изложение и сочинение на высокий балл</p>
+        <ul class="landing-facts" aria-label="Формат занятий">
+          <li>Очно и онлайн</li>
+          <li>Индивидуально или в группе до четырёх</li>
+          <li><a href="#platform">Своя учебная платформа</a></li>
+          <li><a href="#prices">Идёт набор в группы</a></li>
+        </ul>
+        <p class="landing-teacher-line">Ведёт <a href="#teacher">Павел Викторович Алексеев</a> — доктор филологических наук, преподаёт с 2002 года</p>
+        ${homeStartHtml()}
+      </div>
+      <figure class="landing-hero-art">
+        <div class="landing-hero-frame">
+          <picture>
+            <source media="(max-width: 720px)" srcset="./css/art/sarbinaz-hero-sm.jpg" />
+            <img
+              src="./css/art/sarbinaz-hero.jpg"
+              alt="Рисунок Сарбиназ Алексеевой: манулы в горах"
+              width="1500"
+              height="2000"
+              decoding="async"
+              fetchpriority="high"
+            />
+          </picture>
+        </div>
+        <figcaption>Рисунок Сарбиназ Алексеевой</figcaption>
+      </figure>
+    </section>
+
+    <section class="landing-platform" id="platform" aria-labelledby="platform-title">
+      <p class="eyebrow">Как мы занимаемся</p>
+      <h2 id="platform-title">Своя учебная платформа</h2>
+      <p class="lede">Студия занимается на собственной платформе: мы разработали её под свои уроки. Она связывает занятие и работу дома. Ученик закрепляет тему между уроками, а преподаватель видит, где он ошибается, и начинает занятие с этого. Поэтому онлайн заниматься так же удобно, как очно.</p>
+      <div class="landing-platform-grid">
+        <article class="lp-card">
+          <span class="lp-ico" aria-hidden="true">🗓</span>
+          <h3>Задания к каждому занятию</h3>
+          <p>В личном кабинете видно, что сделать и к какому сроку. Если подключить Telegram, придут напоминания.</p>
+        </article>
+        <article class="lp-card">
+          <span class="lp-ico" aria-hidden="true">✅</span>
+          <h3>Проверка сразу</h3>
+          <p>Больше 7&nbsp;000 заданий ВПР, ОГЭ и ЕГЭ по русскому и 3&nbsp;000 по литературе. Ответ проверяется сразу, разбор открывается после попытки.</p>
+        </article>
+        <article class="lp-card">
+          <span class="lp-ico" aria-hidden="true">🔁</span>
+          <h3>Тренировка дня</h3>
+          <p>10 заданий в день: по прошлым ошибкам, слабым и новым номерам. Трудное возвращается, пока не закрепится.</p>
+        </article>
+        <article class="lp-card">
+          <span class="lp-ico" aria-hidden="true">📖</span>
+          <h3>Теория к каждому номеру</h3>
+          <p>Как устроено задание, алгоритм и частые ловушки. Если ученик ошибается, сайт подскажет, что повторить.</p>
+        </article>
+        <article class="lp-card">
+          <span class="lp-ico" aria-hidden="true">✍️</span>
+          <h3>Сочинения проверяет преподаватель</h3>
+          <p>Пометки пером прямо на тексте, как ручкой в тетради, и баллы по критериям экзамена. Проверенная работа приходит в кабинет.</p>
+        </article>
+        <article class="lp-card">
+          <span class="lp-ico" aria-hidden="true">📈</span>
+          <h3>Видно, где вы сейчас</h3>
+          <p>Пробные экзамены с таймером и прогресс по каждому номеру. Преподаватель видит, кто что решал и где ошибся.</p>
+        </article>
+      </div>
+      <p class="landing-platform-note">Доступ к платформе получает каждый ученик студии — он входит в стоимость занятий. <a href="#/check">Попробуйте: 10 вопросов перед экзаменом →</a></p>
+    </section>
+
+    <section class="landing-about" id="teacher" aria-labelledby="teacher-title">
+      <p class="eyebrow">Команда</p>
+      <h2 id="teacher-title">${escapeHtml(STUDIO.teacherFull)}</h2>
+      <div class="landing-teacher-card">
+        <img
+          class="landing-teacher-photo"
+          src="./css/art/alekseev.jpg"
+          alt="Павел Викторович Алексеев"
+          width="160"
+          height="160"
+          decoding="async"
+        />
+        <div>
+          <p>Доктор филологических наук, профессор. Основатель, руководитель и ведущий преподаватель студии.</p>
+          <ul class="landing-teacher-facts">
+            <li>Преподаёт с 2002 года</li>
+            <li>Был членом региональной государственной экзаменационной комиссии по проведению ЕГЭ в Республике Алтай</li>
+          </ul>
+          <p>Открыл студию в 2024 году и ведёт большую часть занятий. Вместе с ним работает команда опытных филологов.</p>
+          <p><a href="${escapeHtml(STUDIO.teacherSite)}" target="_blank" rel="noopener noreferrer">Личный сайт</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-offer" id="about" aria-labelledby="offer-title">
+      <p class="eyebrow">Программы</p>
+      <h2 id="offer-title">Чему учим</h2>
+      <p class="lede">Знаем все типы заданий ВПР, ОГЭ и ЕГЭ по русскому языку, критерии проверки и ошибки, на которых чаще всего теряют баллы. Больше всего времени уделяем письменной части: изложению и сочинению.</p>
+
+      <div class="landing-programs">
+        <article class="landing-program" id="program-vpr">
+          <p class="landing-program-tag">8 класс</p>
+          <h3>ВПР по русскому языку</h3>
+          <p class="landing-program-format">Группа до 4 человек или индивидуально</p>
+          <ul>
+            <li>Все задания проверочной работы: списывание, синтаксический анализ, обособленные члены, работа с текстом</li>
+            <li>Основа для ОГЭ: грамматическая основа, причастные и деепричастные обороты, типы предложений</li>
+          </ul>
+          <p class="landing-program-focus"><strong>Упор на синтаксис и пунктуацию.</strong> Пробелы отсюда потом стоят баллов на ОГЭ — закрываем их заранее.</p>
+          <p class="landing-program-check"><a href="#/check?g=8">Проверить свои знания перед ВПР — 10 вопросов, 5–7 минут →</a></p>
+        </article>
+
+        <article class="landing-program" id="program-oge">
+          <p class="landing-program-tag">9 класс</p>
+          <h3>ОГЭ по русскому языку</h3>
+          <p class="landing-program-format">Группа до 4 человек или индивидуально</p>
+          <ul>
+            <li>Все задания экзамена: изложение, тестовая часть, сочинение</li>
+            <li>Итоговое собеседование в феврале (допуск к ОГЭ)</li>
+          </ul>
+          <p class="landing-program-focus"><strong>Упор на изложение и сочинение.</strong> Учимся выделять микротемы и сжимать текст, строить рассуждение и подбирать примеры из текста.</p>
+          <p class="landing-program-check"><a href="#/check?g=9">Проверить свои знания перед ОГЭ — 10 вопросов, 5–7 минут →</a></p>
+        </article>
+
+        <article class="landing-program" id="program-ege">
+          <p class="landing-program-tag">10–11 класс</p>
+          <h3>ЕГЭ по русскому языку</h3>
+          <p class="landing-program-format">Группа до 4 человек или индивидуально</p>
+          <ul>
+            <li>Все 27 заданий экзамена: тестовая часть 1–26 (орфография, пунктуация, нормы, работа с текстом) и сочинение, задание 27</li>
+            <li>Итоговое сочинение в декабре (допуск к ЕГЭ)</li>
+          </ul>
+          <p class="landing-program-focus"><strong>Упор на сочинение (задание 27).</strong> Формулируем проблему и позицию автора, пишем комментарий с примерами, обосновываем своё мнение. Каждую работу разбираем по критериям.</p>
+          <p class="landing-program-check"><a href="#/check?g=11">Проверить свои знания перед ЕГЭ — 10 вопросов, 5–7 минут →</a></p>
+        </article>
+
+        <article class="landing-program">
+          <p class="landing-program-tag">8–11 класс</p>
+          <h3>Литература</h3>
+          <p class="landing-program-format">Только индивидуально</p>
+          <ul>
+            <li>Чтение и разбор произведений школьной программы</li>
+            <li>Подготовка к ОГЭ и ЕГЭ по литературе</li>
+          </ul>
+          <p class="landing-program-focus"><strong>Сочинение своими словами.</strong> Учимся формулировать тезис, подбирать аргументы из текста и точно пользоваться терминами.</p>
+        </article>
+      </div>
+
+      <p class="landing-source">Задания берём из открытого банка ФИПИ. Для трудных тем делаем свои тренажёры. Занятия очно в Горно-Алтайске или онлайн.</p>
+    </section>
+
+    <section class="landing-prices" id="prices" aria-labelledby="prices-title">
+      <p class="eyebrow">Стоимость</p>
+      <h2 id="prices-title">Сколько стоят занятия</h2>
+      <div class="landing-price-grid">
+        <article class="landing-price card">
+          <p class="landing-program-tag">Индивидуально</p>
+          <p class="landing-price-sum">от 1000 ₽ <span>в час</span></p>
+          <p class="muted">Программа под ученика: свой темп и упор на слабые места.</p>
+        </article>
+        <article class="landing-price card">
+          <p class="landing-program-tag">В группе до четырёх</p>
+          <p class="landing-price-sum">от 6000 ₽ <span>за 8 часов в месяц</span></p>
+          <p class="muted"><strong>Идёт набор в группы.</strong> Подберём группу по классу и экзамену.</p>
+        </article>
+      </div>
+      <p class="actions"><a class="btn btn-lg" href="#apply">Записаться</a> <a class="btn btn-lg secondary" href="#/check">Проверить себя перед экзаменом</a></p>
+    </section>
+
+    <section class="landing-reviews" id="reviews" aria-labelledby="reviews-title">
+      <p class="eyebrow">Отзывы</p>
+      <h2 id="reviews-title">Что говорят родители</h2>
+      <a class="landing-rating card" href="https://2gis.ru/gornoaltaysk/firm/70000001093540016/tab/reviews" target="_blank" rel="noopener noreferrer">
+        <span class="landing-rating-score">5,0 <span aria-hidden="true">★★★★★</span></span>
+        <span><strong>Оценка студии на 2ГИС</strong><span class="muted">7 оценок · 5 отзывов родителей</span></span>
+        <span class="landing-rating-go">Читать отзывы →</span>
+      </a>
+    </section>
+
+    <section class="landing-learn" id="learn" aria-labelledby="learn-title">
+      <p class="eyebrow">На сайте</p>
+      <h2 id="learn-title">Материалы для занятий</h2>
+      <p class="lede">Правила, тренажёры и задания ВПР, ОГЭ и ЕГЭ — работаем с ними на уроках, заниматься можно и дома.</p>
+      ${continueHtml(true)}
+
+      <div class="landing-learn-subjects">
+        <article class="landing-learn-subject">
+          <header class="landing-learn-subject-head">
+            <p class="landing-learn-label">Русский язык</p>
+            <p class="landing-learn-subject-note">ВПР, ОГЭ и ЕГЭ</p>
+          </header>
+          <div class="landing-learn-links landing-learn-links-ru">
+            <a href="#/ege"><strong>ЕГЭ</strong><span>Задания 1–27</span></a>
+            <a href="#/oge"><strong>ОГЭ</strong><span>Задания 1–13 · ${ogeTrainers} тренажёра</span></a>
+            <a href="#/vpr"><strong>ВПР, 8 класс</strong><span>Задания 1–12</span></a>
+            <a href="#/rules"><strong>Правила</strong><span>${ruleCount} ${ruleWord(ruleCount)}</span></a>
+          </div>
+        </article>
+        <article class="landing-learn-subject">
+          <header class="landing-learn-subject-head">
+            <p class="landing-learn-label">Литература</p>
+            <p class="landing-learn-subject-note">ЕГЭ</p>
+          </header>
+          <div class="landing-learn-links landing-learn-links-lit">
+            <a href="#/literature"><strong>Задания 1–11</strong><span>Фрагменты, ответы, пояснения</span></a>
+            <a href="#/literature/terms"><strong>Словарь терминов</strong><span>Поиск и тренажёр</span></a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="landing-faq" id="faq" aria-labelledby="faq-title">
+      <p class="eyebrow">Вопросы</p>
+      <h2 id="faq-title">Частые вопросы</h2>
+      <div class="landing-faq-list">
+        <details class="landing-faq-item" open>
+          <summary>Сколько стоят занятия?</summary>
+          <p>Индивидуально — от 1000 ₽ в час. В группе до четырёх человек — от 6000 ₽ за 8 часов в месяц. Точная стоимость зависит от формата и программы. Доступ к <a href="#platform">учебной платформе студии</a> входит в стоимость.</p>
+        </details>
+        <details class="landing-faq-item">
+          <summary>Как проходят занятия онлайн?</summary>
+          <p>По видеосвязи в согласованное время, с теми же заданиями и проверкой работ, что и очно. Ссылку присылаем после записи. Задания, разборы и проверка идут через платформу студии: ученик решает прямо на сайте, а преподаватель сразу видит его ошибки. Сочинение можно набрать на сайте или прислать фото тетради — проверенная работа с пометками вернётся в личный кабинет.</p>
+        </details>
+        <details class="landing-faq-item">
+          <summary>Когда лучше начинать готовиться?</summary>
+          <p>Спокойнее всего — с начала учебного года: хватит времени и на правила, и на письменную часть. Если до экзамена осталось меньше, составим план под оставшееся время.</p>
+        </details>
+        <details class="landing-faq-item">
+          <summary>Как узнать о прогрессе ребёнка?</summary>
+          <p>У каждого ученика есть личный кабинет на сайте: задания от преподавателя, тренировки, прогресс по каждому номеру экзамена, результаты пробных экзаменов и проверенные работы с пометками. Родитель может посмотреть всё это вместе с ребёнком, а о результатах всегда можно спросить преподавателя.</p>
+        </details>
+        <details class="landing-faq-item">
+          <summary>Нужно ли что-то устанавливать?</summary>
+          <p>Нет. Платформа работает в браузере на компьютере, планшете и телефоне. Напоминания о заданиях можно получать в Telegram — по желанию.</p>
+        </details>
+        <details class="landing-faq-item">
+          <summary>Сколько действует доступ к платформе?</summary>
+          <p>Весь учебный год, до 31 августа, пока ученик занимается в студии. Доступ входит в стоимость занятий.</p>
+        </details>
+        <details class="landing-faq-item">
+          <summary>Можно ли пользоваться платформой без занятий?</summary>
+          <p>Нет: платформа сделана для учеников студии и работает в паре с уроками — преподаватель задаёт работу, проверяет сочинения и разбирает ошибки. Самостоятельно можно пройти бесплатную <a href="#/check">проверку из 10 вопросов перед экзаменом</a>.</p>
+        </details>
+        <details class="landing-faq-item">
+          <summary>С чего начать?</summary>
+          <p>Пройдите короткий тест <a href="#/check">«Проверь себя перед экзаменом»</a> и оставьте заявку — перезвоним в течение дня и договоримся о времени и формате.</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="landing-apply" id="apply" aria-labelledby="apply-title">
+      <div class="landing-apply-intro">
+        <p class="eyebrow">Запись</p>
+        <h2 id="apply-title">Записаться</h2>
+        <p class="lede">Оставьте заявку — перезвоним в течение дня и договоримся о времени и формате.</p>
+        ${contactsLine()}
+      </div>
+      <form class="apply-form" id="apply-form" novalidate>
         <div class="apply-row">
           <label class="apply-field">
             <span>Имя ученика или родителя</span>
@@ -268,6 +555,7 @@ export function applyFormHtml() {
             <input class="search apply-input" name="phone" type="tel" required autocomplete="tel" placeholder="+7 …" />
           </label>
         </div>
+
         <div class="apply-row">
           <label class="apply-field">
             <span>Класс</span>
@@ -276,6 +564,18 @@ export function applyFormHtml() {
               <option>8</option><option>9</option><option>10</option><option>11</option>
             </select>
           </label>
+          <label class="apply-field">
+            <span>Предмет</span>
+            <select class="search apply-input" name="subject" required>
+              <option value="">Выберите</option>
+              <option>Русский язык</option>
+              <option>Литература</option>
+              <option>Русский язык и литература</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="apply-row">
           <label class="apply-field">
             <span>Цель</span>
             <select class="search apply-input" name="goal" required>
@@ -287,231 +587,58 @@ export function applyFormHtml() {
               <option>Другое</option>
             </select>
           </label>
+          <fieldset class="apply-field apply-fieldset">
+            <legend>Где удобнее</legend>
+            <label class="apply-check"><input type="radio" name="place" value="Очно в студии" required /> Очно</label>
+            <label class="apply-check"><input type="radio" name="place" value="Онлайн" /> Онлайн</label>
+            <label class="apply-check"><input type="radio" name="place" value="Пока не знаю" /> Пока не знаю</label>
+          </fieldset>
         </div>
-        <details class="lx-more">
-          <summary>Добавить подробности <span class="muted">(необязательно)</span></summary>
-          <div class="apply-row">
-            <label class="apply-field">
-              <span>Предмет</span>
-              <select class="search apply-input" name="subject">
-                <option value="">Выберите</option>
-                <option>Русский язык</option>
-                <option>Литература</option>
-                <option>Русский язык и литература</option>
-              </select>
-            </label>
-            <label class="apply-field">
-              <span>Где удобнее</span>
-              <select class="search apply-input" name="place">
-                <option value="">Выберите</option>
-                <option>Очно в студии</option>
-                <option>Онлайн</option>
-                <option>Пока не знаю</option>
-              </select>
-            </label>
-          </div>
-          <label class="apply-field">
-            <span>С кем заниматься</span>
-            <select class="search apply-input" name="mode">
-              <option value="">Выберите</option>
-              <option value="Индивидуально">Один на один</option>
-              <option value="В группе до 4 человек">В группе (до 4)</option>
-              <option value="Посоветуйте">Посоветуйте</option>
-            </select>
-          </label>
-          <label class="apply-field">
-            <span>Комментарий</span>
-            <textarea class="search apply-input apply-textarea" name="note" rows="3" placeholder="Например, удобные дни и время"></textarea>
-          </label>
-        </details>
+
+        <fieldset class="apply-field apply-fieldset">
+          <legend>С кем заниматься</legend>
+          <label class="apply-check"><input type="radio" name="mode" value="Индивидуально" required /> Один на один</label>
+          <label class="apply-check"><input type="radio" name="mode" value="В группе до 4 человек" /> В группе (до 4)</label>
+          <label class="apply-check"><input type="radio" name="mode" value="Посоветуйте" /> Посоветуйте</label>
+        </fieldset>
+
+        <label class="apply-field">
+          <span>Комментарий <span class="muted">(необязательно)</span></span>
+          <textarea class="search apply-input apply-textarea" name="note" rows="3" placeholder="Например, удобные дни и время"></textarea>
+        </label>
+
         <label class="apply-consent">
           <input type="checkbox" name="consent" required />
           <span>Даю <a href="#/consent" target="_blank" rel="noopener">согласие на обработку персональных данных</a>. Если ученику нет 14 лет, согласие даёт родитель. <a href="#/privacy" target="_blank" rel="noopener">Политика конфиденциальности</a></span>
         </label>
+
         <div class="apply-send" role="group" aria-label="Отправить заявку">
-          <div class="apply-actions apply-channel-grid">
+          <p class="apply-send-label">Отправить заявку</p>
+          <div class="landing-cta home-actions apply-actions apply-channel-grid">
             <button type="submit" class="btn btn-lg msg-btn" name="channel" value="telegram">${iconTelegram()} Отправить в Telegram</button>
             <button type="submit" class="btn btn-lg secondary msg-btn" name="channel" value="whatsapp">${iconWhatsApp()} Отправить в WhatsApp</button>
           </div>
-          <p class="muted apply-hint">Откроется чат с готовой заявкой — останется нажать «Отправить».</p>
+          <p class="muted apply-hint">Откроется чат с уже заполненной заявкой — останется нажать «Отправить» в мессенджере.</p>
         </div>
         <p class="apply-status" id="apply-status" role="status" hidden></p>
-      </form>`;
-}
+      </form>
+    </section>
 
-/** Главная: дополнительных обработчиков пока нет (программы показаны все сразу). */
-export function bindHome() {}
-
-export function homePage() {
-  const G = "https://2gis.ru/gornoaltaysk/firm/70000001093540016/tab/reviews";
-  return `
-  <div class="bk">
-    <section class="bk-hero" aria-label="Студия Лексикон">
-      <figure class="bk-plate">
-        <picture>
-          <source media="(max-width: 720px)" srcset="./css/art/sarbinaz-hero-sm.jpg" />
-          <img src="./css/art/sarbinaz-hero.jpg" alt="Рисунок Сарбиназ Алексеевой: манулы в горах" width="1500" height="2000" decoding="async" fetchpriority="high" />
-        </picture>
-        <figcaption>Сарбиназ Алексеева. Манулы</figcaption>
-      </figure>
-      <div class="bk-hero-grid">
-        <div class="bk-hero-main">
-          <p class="bk-exams"><a href="#program-vpr">ВПР</a> · <a href="#program-oge">ОГЭ</a> · <a href="#program-ege">ЕГЭ</a> · <a href="#program-lit">литература</a></p>
-          <h1>Русский язык<br />и литература</h1>
-          <p class="bk-sub">Подготовка к ВПР, ОГЭ и ЕГЭ, 8–11 класс. Горно-Алтайск и онлайн.</p>
-        </div>
-        <div class="bk-hero-side">${bkHeroSide()}</div>
+    <section class="landing-contact" id="contact" aria-labelledby="contact-title">
+      <div>
+        <p class="eyebrow">Контакты</p>
+        <h2 id="contact-title">${escapeHtml(STUDIO.city)}</h2>
+        <p class="lede">${escapeHtml(STUDIO.address)} · ${escapeHtml(STUDIO.addressHint)}</p>
+        ${contactsBlock("", { mail: false })}
+        <p class="muted landing-contact-mail">
+          <a href="mailto:${escapeHtml(STUDIO.applyEmail)}">${escapeHtml(STUDIO.applyEmail)}</a>
+        </p>
+        <p class="landing-contact-map">
+          <a href="${escapeHtml(STUDIO.mapUrl)}" target="_blank" rel="noopener noreferrer">Как добраться (2ГИС)</a>
+        </p>
       </div>
     </section>
-
-    <section class="bk-sec" id="teacher" aria-labelledby="teacher-title">
-      <h2 id="teacher-title">Преподаватель</h2>
-      <div class="bk-body bk-teacher">
-        <img class="bk-portrait" src="./css/art/alekseev.jpg" alt="Павел Викторович Алексеев" width="640" height="640" loading="lazy" decoding="async" />
-        <div>
-          <p class="bk-lead"><strong>Павел Викторович Алексеев</strong> — доктор филологических наук, профессор. Преподаёт с 2002 года, входил в региональную экзаменационную комиссию ЕГЭ в Республике Алтай.</p>
-          <p>Открыл студию в 2024 году и ведёт занятия сам: индивидуально или в группе до 4 человек, очно в Горно-Алтайске и онлайн.</p>
-          <p class="bk-margin"><a href="${escapeHtml(STUDIO.teacherSite)}" target="_blank" rel="noopener noreferrer">Личный сайт</a></p>
-        </div>
-      </div>
-    </section>
-
-    <section class="bk-sec" id="about" aria-labelledby="offer-title">
-      <h2 id="offer-title">Чему учим</h2>
-      <div class="bk-body">
-        <p class="bk-lead">Разбираем все типы заданий ВПР, ОГЭ и ЕГЭ, критерии проверки и ошибки, на которых чаще всего теряют баллы. Больше всего времени — письменной части: изложению и сочинению.</p>
-        <div class="bk-toc">
-          <article id="program-vpr">
-            <h3>ВПР <span>— 8 класс</span></h3>
-            <p>Все задания проверочной работы: списывание, синтаксический анализ, обособленные члены, работа с текстом. Заодно — основа для ОГЭ.</p>
-            <p class="bk-remark">Упор на синтаксис и пунктуацию: пробелы отсюда потом стоят баллов на ОГЭ.</p>
-            <p class="bk-more"><a href="#/check?g=8">Проверить себя перед ВПР</a></p>
-          </article>
-          <article id="program-oge">
-            <h3>ОГЭ <span>— 9 класс</span></h3>
-            <p>Изложение, тестовая часть и сочинение. Итоговое собеседование в феврале — допуск к экзамену.</p>
-            <p class="bk-remark">Упор на изложение и сочинение: микротемы, сжатие текста, рассуждение с примерами.</p>
-            <p class="bk-more"><a href="#/check?g=9">Проверить себя перед ОГЭ</a></p>
-          </article>
-          <article id="program-ege">
-            <h3>ЕГЭ <span>— 10–11 класс</span></h3>
-            <p>Тестовая часть, задания 1–26: орфография, пунктуация, нормы, работа с текстом. Сочинение, задание 27. Итоговое сочинение в декабре — допуск к ЕГЭ.</p>
-            <p class="bk-remark">Упор на сочинение: позиция автора, комментарий с примерами, своё мнение. Каждую работу разбираем по критериям.</p>
-            <p class="bk-more"><a href="#/check?g=11">Проверить себя перед ЕГЭ</a></p>
-          </article>
-          <article id="program-lit">
-            <h3>Литература <span>— 8–11 класс, индивидуально</span></h3>
-            <p>Чтение и разбор произведений школьной программы, подготовка к ОГЭ и ЕГЭ по литературе.</p>
-            <p class="bk-remark">Учимся формулировать тезис, подбирать аргументы из текста и точно пользоваться терминами.</p>
-          </article>
-        </div>
-        <p class="bk-footnote">Задания — из открытого банка ФИПИ. Для трудных тем делаем свои тренажёры.</p>
-      </div>
-    </section>
-
-    <section class="bk-sec" id="platform" aria-labelledby="platform-title">
-      <h2 id="platform-title">Учебная платформа</h2>
-      <div class="bk-body">
-        <p class="bk-lead">У студии своя платформа. Ученик получает в ней задания к занятию и решает их дома, преподаватель видит ответы и ошибки и разбирает их на уроке. Поэтому онлайн-занятия устроены так же, как очные.</p>
-        <figure class="bk-proof" aria-label="Образец проверки сочинения">
-          <div class="bk-proof-row"><p>Автор размышляет о том, какую роль играет книга в жизни человека.</p><span class="bk-note">проблема названа верно</span></div>
-          <div class="bk-proof-row"><p>Рассказывая о детстве героя<ins>,</ins> писатель показывает, как чтение открыло мальчику новый мир <del>для себя</del>.</p><span class="bk-note">запятая при обороте; «для себя» — лишнее</span></div>
-          <div class="bk-proof-row"><p>Во втором примере речь идёт о взрослом человеке, который давно не открывал книг и вдруг почувствовал одиночество.</p><span class="bk-note">К2: как связаны два примера?</span></div>
-          <div class="bk-proof-row"><p>Позиция автора ясна: книга помогает понять себя и других.</p><span class="bk-note">К1 — верно</span></div>
-          <figcaption><span>Итог: 17 из 22 баллов по критериям ЕГЭ</span><span>Образец проверки. Пометки ученик видит в своём кабинете.</span></figcaption>
-        </figure>
-        <dl class="bk-defs">
-          <div><dt>Задания к занятиям</dt><dd>что сделать и к какому сроку; по желанию — напоминания в Telegram</dd></div>
-          <div><dt>Банк заданий</dt><dd>более 7&nbsp;000 по русскому языку и 3&nbsp;000 по литературе, ответ проверяется сразу</dd></div>
-          <div><dt>Тренировка дня</dt><dd>10 заданий: прошлые ошибки, слабые и новые номера</dd></div>
-          <div><dt>Теория</dt><dd>к каждому номеру экзамена: устройство задания, порядок решения, типичные ошибки</dd></div>
-          <div><dt>Пробные экзамены</dt><dd>с таймером; прогресс по номерам видят ученик и преподаватель</dd></div>
-        </dl>
-        <p class="bk-footnote">Доступ к платформе входит в стоимость занятий.</p>
-      </div>
-    </section>
-
-    <section class="bk-sec" id="reviews" aria-labelledby="reviews-title">
-      <h2 id="reviews-title">Отзывы</h2>
-      <div class="bk-body">
-        <blockquote class="bk-quote bk-quote-main"><p>«Результат, который я получила, лучше того, на что я рассчитывала».</p><footer>Тамара, март 2025</footer></blockquote>
-        <div class="bk-quotes">
-          <blockquote class="bk-quote"><p>«Знания значительно улучшились. Учителем сын очень доволен, ходит на занятие с удовольствием».</p><footer>Родитель ученика, март 2025</footer></blockquote>
-          <blockquote class="bk-quote"><p>«Значительно улучшились школьные оценки, у ребёнка появилась уверенность в своих знаниях».</p><footer>София, ноябрь 2024</footer></blockquote>
-        </div>
-        <p class="bk-footnote">Оценка 5,0 на 2ГИС, 7 оценок. <a href="${G}" target="_blank" rel="noopener noreferrer">Все отзывы</a></p>
-      </div>
-    </section>
-
-    <section class="bk-sec" id="prices" aria-labelledby="prices-title">
-      <h2 id="prices-title">Стоимость</h2>
-      <div class="bk-body">
-        <div class="bk-price"><span>Индивидуально</span><i aria-hidden="true"></i><span>от 1000 ₽ в час</span></div>
-        <div class="bk-price"><span>В группе до 4 человек</span><i aria-hidden="true"></i><span>от 6000 ₽ в месяц</span></div>
-        <p class="bk-footnote">В группе — 8 занятий по часу в месяц, около 750 ₽ за час. Точная стоимость зависит от формата и программы. Доступ к платформе входит в стоимость. Идёт набор в группы.</p>
-      </div>
-    </section>
-
-    <section class="bk-sec" id="faq" aria-labelledby="faq-title">
-      <h2 id="faq-title">Вопросы</h2>
-      <div class="bk-body bk-faq"><details class="bk-faq-item">
-          <summary>Как проходят занятия онлайн?</summary>
-          <p>По видеосвязи в согласованное время, с теми же заданиями и проверкой работ, что и очно. Ссылку присылаем после записи. Задания, разборы и проверка идут через платформу студии: ученик решает прямо на сайте, а преподаватель сразу видит его ошибки. Сочинение можно набрать на сайте или прислать фото тетради — проверенная работа с пометками вернётся в личный кабинет.</p>
-        </details>
-        <details class="bk-faq-item">
-          <summary>Когда лучше начинать готовиться?</summary>
-          <p>Спокойнее всего — с начала учебного года: хватит времени и на правила, и на письменную часть. Если до экзамена осталось меньше, составим план под оставшееся время.</p>
-        </details>
-        <details class="bk-faq-item">
-          <summary>Как узнать о прогрессе ребёнка?</summary>
-          <p>У каждого ученика есть личный кабинет на сайте: задания от преподавателя, тренировки, прогресс по каждому номеру экзамена, результаты пробных экзаменов и проверенные работы с пометками. Родитель может посмотреть всё это вместе с ребёнком, а о результатах всегда можно спросить преподавателя.</p>
-        </details>
-        <details class="bk-faq-item">
-          <summary>Нужно ли что-то устанавливать?</summary>
-          <p>Нет. Платформа работает в браузере на компьютере, планшете и телефоне. Напоминания о заданиях можно получать в Telegram — по желанию.</p>
-        </details>
-        <details class="bk-faq-item">
-          <summary>Сколько действует доступ к платформе?</summary>
-          <p>Весь учебный год, до 31 августа, пока ученик занимается в студии. Доступ входит в стоимость занятий.</p>
-        </details>
-        <details class="bk-faq-item">
-          <summary>Можно ли пользоваться платформой без занятий?</summary>
-          <p>Нет: платформа сделана для учеников студии и работает в паре с уроками — преподаватель задаёт работу, проверяет сочинения и разбирает ошибки. Самостоятельно можно пройти бесплатную <a href="#/check">проверку из 10 вопросов перед экзаменом</a>.</p>
-        </details>
-        <details class="bk-faq-item">
-          <summary>С чего начать?</summary>
-          <p>Пройдите короткий тест <a href="#/check">«Проверить себя — 10 вопросов»</a> и оставьте заявку. Ответим в течение дня — в мессенджере или по телефону — и договоримся о времени и формате.</p>
-        </details></div>
-    </section>
-
-    <section class="bk-sec bk-final" aria-labelledby="final-title">
-      <h2 id="final-title">Запись</h2>
-      <div class="bk-body">
-        <p class="bk-lead">Оставьте заявку. Ответим в течение дня — в мессенджере или по телефону — и договоримся о времени и формате.</p>
-        <p class="bk-actions"><a class="btn btn-lg" href="#apply">Записаться</a> <a href="#/check">Проверить себя — 10 вопросов</a></p>
-        <p class="bk-footnote"><a href="https://go.2gis.com/lknNX" target="_blank" rel="noopener noreferrer">${escapeHtml(STUDIO.address)}</a>, ${escapeHtml(STUDIO.addressHint)}</p>
-        ${contactsLine()}
-      </div>
-    </section>
-
-    <figure class="bk-endpaper" aria-hidden="true"><img src="./css/art/sarbinaz-hero.jpg" alt="" loading="lazy" decoding="async" /></figure>
-  </div>`;
-}
-
-/** Правая колонка первого экрана: для гостя — запись, для вошедших — путь в кабинет. */
-function bkHeroSide() {
-  const state = accessState();
-  const p = currentProfile();
-  const full = String(p?.full_name || "").trim();
-  const first = String(p?.email || "").endsWith("@students.lexicon.local") ? full : full.split(/\s+/)[0];
-  if (state === "teacher") return `<p>Вы вошли как преподаватель.</p><p class="bk-actions"><a class="btn btn-lg" href="#/cabinet/today">В кабинет преподавателя</a></p>`;
-  if (state === "student" || state === "expired" || state === "paused")
-    return `<p>С возвращением${first ? `, ${escapeHtml(first)}` : ""}. Задания, тренировка дня и прогресс — в кабинете.</p><p class="bk-actions"><a class="btn btn-lg" href="#/me">Продолжить в кабинете</a></p>`;
-  if (state === "pending")
-    return `<p>Регистрация прошла — ждём подтверждения преподавателя. Пока можно решать демо-задания и читать правила.</p><p class="bk-actions"><a class="btn btn-lg" href="#/me">Мой кабинет</a></p>`;
-  return `<p>Ведёт Павел Викторович Алексеев, доктор филологических наук. Индивидуально или в группе до 4 человек.</p>
-    <p class="bk-actions"><a class="btn btn-lg" href="#apply">Записаться</a> <a href="#/check">Проверить себя — 10 вопросов</a></p>
-    <p class="bk-note-line">Идёт набор в группы. Уже занимаетесь? <a href="#/login">Войти</a></p>`;
+  `;
 }
 
 export function thanksPage() {
