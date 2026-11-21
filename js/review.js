@@ -8,7 +8,7 @@
  * Координаты на фото — доли ширины/высоты (0…1), чтобы не зависеть от размера экрана.
  */
 import { escapeHtml } from "./ui.js";
-import { MARKS, RUBRICS, applyRules, countWords, rubricFor } from "./rubrics.js?v=land174";
+import { MARKS, RUBRICS, applyRules, countWords, rubricFor } from "./rubrics.js?v=land176";
 
 /* ------------------------------------------------------------------ */
 /* Текст с пометками                                                    */
@@ -714,23 +714,31 @@ export function criteriaFormHtml(rubricId, saved = {}, ctx = {}) {
       const val = saved[c.code];
       const n = (c.errors || []).reduce((a, t) => a + (counts[t] || 0), 0);
       const hint = c.fromCount && (c.errors || []).length
-        ? `<button type="button" class="linklike rv-hint" data-code="${c.code}" data-val="${c.fromCount(n)}">по пометкам: ${n} ош. → ${c.fromCount(n)}</button>`
+        ? `<button type="button" class="rv-hint" data-code="${c.code}" data-val="${c.fromCount(n)}" title="Поставить балл по числу пометок в тексте">по пометкам: ${n} ош. → <b>${c.fromCount(n)}</b></button>`
         : "";
+      const levels = [...c.levels].sort((x, y) => x[0] - y[0]);
+      const max = Math.max(...levels.map((l) => l[0]));
       return `
-        <fieldset class="rv-crit" data-code="${c.code}">
-          <legend><b>${escapeHtml(c.code)}</b> ${escapeHtml(c.name)} ${hint}</legend>
-          ${c.levels
-            .map(
-              ([score, text]) =>
-                `<label class="rv-level"><input type="radio" name="crit-${c.code}" value="${score}" ${Number(val) === score ? "checked" : ""}/> <b>${score}</b> — ${escapeHtml(text)}</label>`
-            )
-            .join("")}
-        </fieldset>`;
+        <div class="rv-crit" data-code="${c.code}">
+          <div class="rv-crit-head"><span class="rv-code">${escapeHtml(c.code)}</span><span class="rv-name">${escapeHtml(c.name)}</span>${hint}</div>
+          <div class="rv-seg" role="radiogroup" aria-label="${escapeHtml(`${c.code} ${c.name}`)}">
+            ${levels
+              .map(
+                ([score, text]) =>
+                  `<label title="${escapeHtml(`${score} — ${text}`)}"><input type="radio" name="crit-${c.code}" value="${score}" ${Number(val) === score ? "checked" : ""} /><span>${score}</span></label>`
+              )
+              .join("")}
+            <span class="rv-max">из ${max}</span>
+          </div>
+          <p class="rv-desc">${levels.map(([score, text]) => `<span class="rv-d rv-d-${String(score).replace(".", "_")}">${escapeHtml(text)}</span>`).join("")}<span class="rv-d rv-d-none">Выберите балл</span></p>
+        </div>`;
     })
     .join("");
   return `
-    <label>Критерии<select name="rubric" id="rv-rubric">${options}</select></label>
-    ${r.minWords ? `<p class="muted">Слов в работе: <b>${ctx.words ?? 0}</b> (минимум ${r.minWords}). Слова в фото не считаются — проверьте объём сами.</p>` : ctx.words != null ? `<p class="muted">Слов в работе: ${ctx.words}</p>` : ""}
+    <div class="rv-crit-top">
+      <label class="rv-rubric">Критерии<select name="rubric" id="rv-rubric">${options}</select></label>
+      ${r.minWords ? `<p class="muted rv-words">${ctx.words ? `Слов: <b>${ctx.words}</b> · минимум ${r.minWords}${ctx.words < r.minWords ? " — меньше минимума" : ""}.` : `Работа на фото — объём проверьте сами (минимум ${r.minWords} слов).`}</p>` : ctx.words ? `<p class="muted rv-words">Слов: ${ctx.words}</p>` : ""}
+    </div>
     <div class="rv-crits">${rows}</div>
     <p class="rv-fired" id="rv-fired"></p>
     <p class="rv-total" id="rv-total"></p>`;

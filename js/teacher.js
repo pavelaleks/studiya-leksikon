@@ -1,19 +1,19 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land174";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land176";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land174";
+import { taskHref } from "./account.js?v=land176";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land174";
-import { readingView } from "./teacher-reading.js?v=land174";
-import { optionsOf } from "./practice.js?v=land174";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land174";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land174";
-import { overdueWorks, scheduleTodayMount, todayTopMount, weekView } from "./calendar.js?v=land174";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land174";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land176";
+import { readingView } from "./teacher-reading.js?v=land176";
+import { optionsOf } from "./practice.js?v=land176";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land176";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land176";
+import { overdueWorks, scheduleTodayMount, todayTopMount, weekView } from "./calendar.js?v=land176";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land176";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land174";
+} from "./review.js?v=land176";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -295,7 +295,7 @@ export async function mountTeacher(root, parts) {
     if (tab === "students") return await studentsView(host, render);
     if (tab === "student" && arg === "report") {
       render(`<div id="t-report"></div>`);
-      const pg = await import("./progress-charts.js?v=land174");
+      const pg = await import("./progress-charts.js?v=land176");
       return await pg.mountReport(host.querySelector("#t-report"), sub, { back: `#/cabinet/student/${sub}`, base: `#/cabinet/student/${sub}/report` });
     }
     if (tab === "student") return await studentView(host, render, sub);

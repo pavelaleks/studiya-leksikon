@@ -255,8 +255,10 @@ export function applyRules(rubricId, raw, ctx) {
   const r = RUBRICS[rubricId] || RUBRICS.free;
   const scores = { ...raw };
   const fired = [];
+  // работа только на фото: слов в тексте нет, объём преподаватель проверяет сам — правила «меньше N слов» не срабатывают
+  const c2 = ctx && ctx.words ? ctx : { ...(ctx || {}), words: Infinity };
   for (const rule of r.rules) {
-    if (rule.when(scores, ctx)) {
+    if (rule.when(scores, c2)) {
       fired.push(rule.note);
       const codes = rule.zero === "all" ? r.criteria.map((c) => c.code) : rule.zero;
       codes.forEach((c) => (scores[c] = 0));
