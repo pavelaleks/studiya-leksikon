@@ -99,8 +99,8 @@ export async function readingView(host, render, sub) {
     .then((r) => r.json())
     .then((d) => new Map(d.poems.map((p) => [p.id, `${p.author.split(" ").pop()}. ${p.title}`])))
     .catch(() => new Map());
-  const rl = await import("./reading-list.js?v=land179");
-  const { examsOf } = await import("./reading-canon.js?v=land179");
+  const rl = await import("./reading-list.js?v=land180");
+  const { examsOf } = await import("./reading-canon.js?v=land180");
   const [students, results, learned, quizzes, marks] = await Promise.all([
     supa.from("profiles").select("id, full_name, email, status, courses, exam_target").neq("role", "teacher").eq("status", "active").order("full_name"),
     supa.from("reading_results").select("student_id, quiz_id, passed, created_at"),
@@ -114,7 +114,7 @@ export async function readingView(host, render, sub) {
     return ex
       .map((e) => {
         const n = marks.counts.get(p.id + ":" + e) || 0;
-        return `<a href="#/cabinet/student/${p.id}/reading/${e}"><strong>${n}</strong>/${marks.totals[e]} ${e === "oge" ? "ОГЭ" : "ЕГЭ"}</a>`;
+        return `<a href="#/cabinet/student/${p.id}/reading/${e}"><strong>${n}</strong>/${marks.totals[e]} ${{ oge: "ОГЭ", ege: "ЕГЭ", vpr: "ВПР" }[e]}</a>`;
       })
       .join("<br>");
   };

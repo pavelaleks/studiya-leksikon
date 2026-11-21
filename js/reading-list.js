@@ -8,7 +8,7 @@
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
 import { currentProfile, currentUser, supa } from "./supa.js";
-import { CANON, ERAS, EXAMS, examsOf, isRequired, yearsAhead } from "./reading-canon.js?v=land179";
+import { CANON, ERAS, EXAMS, examsOf, isRequired, yearsAhead } from "./reading-canon.js?v=land180";
 
 const DATA = new URL("js/library-data/", new URL(BASE, location.href));
 const cache = {};
@@ -42,6 +42,7 @@ const surnames = (a) =>
 /* ------------------------------------------------------------------ */
 
 const DEFAULT_DATES = Object.fromEntries(Object.entries(EXAMS).map(([k, e]) => [k, e.fallback]));
+const fallbackDates = () => Object.fromEntries(Object.entries(DEFAULT_DATES).map(([k, date]) => [k, { date, exact: false }]));
 
 /** Даты экзаменов: из настроек преподавателя, иначе — ориентировочные. */
 export async function examDates() {
@@ -69,6 +70,10 @@ export function dateFor(info, ahead = 0) {
   return { date: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`, exact, ahead };
 }
 
+/** В какой «экзамен» пишутся отметки: ВПР делит отметки с ОГЭ. */
+const storeOf = (exam) => EXAMS[exam]?.store || exam;
+const untilOf = (exam) => (exam === "vpr" ? "до ВПР" : "до экзамена");
+
 export async function saveExamDate(exam, value) {
   const key = EXAMS[exam].dateKey;
   if (!value) return supa.from("app_settings").delete().eq("key", key);
@@ -78,7 +83,7 @@ export async function saveExamDate(exam, value) {
 /** Отметки и работы ученика по одному экзамену. */
 export async function loadReading(studentId, exam) {
   const [marks, works, attempts, learned, wt, poems, quizzes, results] = await Promise.all([
-    supa.from("reading_marks").select("code, note, read_at").eq("student_id", studentId).eq("exam", exam),
+    supa.from("reading_marks").select("code, note, read_at").eq("student_id", studentId).eq("exam", storeOf(exam)),
     supa
       .from("written_works")
       .select("id, status, task_id, tasks(answer_mode, topic, list_item, work:data->>work, author:data->>author), lesson_items(lessons(title))")
@@ -144,7 +149,7 @@ export async function loadReading(studentId, exam) {
 }
 
 /** Сводка: сколько обязательного прочитано, сколько дней осталось, нужный темп. */
-export function summarize(items, dateInfo) {
+export function summarize(items, dateInfo, exam = "") {
   const req = items.filter(isRequired);
   const done = req.filter((i) => i.read).length;
   const left = req.length - done;
@@ -155,7 +160,7 @@ export function summarize(items, dateInfo) {
   const worksDone = items.reduce((s, i) => s + i.small + i.big, 0);
   const essays = items.reduce((s, i) => s + i.big, 0);
   const extra = items.filter((i) => !isRequired(i) && i.read).length;
-  return { total: req.length, done, left, days, perWeek, level, worksDone, essays, extra, date: dateInfo.date, exact: dateInfo.exact };
+  return { total: req.length, done, left, days, perWeek, level, worksDone, essays, extra, date: dateInfo.date, exact: dateInfo.exact, until: untilOf(exam) };
 }
 
 function paceText(s) {
@@ -163,7 +168,7 @@ function paceText(s) {
   if (!s.days) return `Осталось ${s.left} ${ru(s.left, "произведение", "произведения", "произведений")}.`;
   const per = s.perWeek < 1 ? "меньше одного" : `≈ ${Math.ceil(s.perWeek)}`;
   const tone = s.level === "ok" ? "Успеваешь спокойно" : s.level === "warn" ? "Нужно поднажать" : "Отстаёшь — пора читать каждый день";
-  return `${tone}: ${per} в неделю, чтобы прочитать оставшиеся ${s.left} до экзамена.`;
+  return `${tone}: ${per} в неделю, чтобы прочитать оставшиеся ${s.left} ${s.until || "до экзамена"}.`;
 }
 
 const fmtDate = (d) => new Date(d + "T12:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
@@ -188,18 +193,18 @@ export async function mountHomeCard(host, profile) {
   const exams = examsOf(profile);
   if (!host || !exams.length) return;
   const uid = currentUser()?.id;
-  const dates = await examDates().catch(() => ({ oge: { date: DEFAULT_DATES.oge }, ege: { date: DEFAULT_DATES.ege } }));
+  const dates = await examDates().catch(() => fallbackDates());
   const blocks = await Promise.all(
     exams.map(async (exam) => {
       const { items } = await loadReading(uid, exam);
-      const s = summarize(items, dateFor(dates[exam], yearsAhead(profile, exam)));
+      const s = summarize(items, dateFor(dates[exam], yearsAhead(profile, exam)), exam);
       const next = items.filter((i) => isRequired(i) && !i.read && i.k !== "lyric").slice(0, 3);
       return `
         <a class="rl-home card rl-${s.level}" href="#/me/reading/${exam}">
           ${ringSvg(s.done, s.total)}
           <span class="rl-home-body">
             <strong>Список чтения · ${EXAMS[exam].short}</strong>
-            <span class="rl-home-days">${s.days ? `до экзамена ${s.days} ${ru(s.days, "день", "дня", "дней")}` : "экзамен сегодня"} <span class="muted">(${new Date(s.date + "T12:00:00").toLocaleDateString("ru-RU", { month: "long", year: "numeric" })}${s.exact ? "" : ", примерно"})</span></span>
+            <span class="rl-home-days">${s.days ? `${s.until} ${s.days} ${ru(s.days, "день", "дня", "дней")}` : exam === "vpr" ? "ВПР в эти дни" : "экзамен сегодня"} <span class="muted">(${new Date(s.date + "T12:00:00").toLocaleDateString("ru-RU", { month: "long", year: "numeric" })}${s.exact ? "" : ", примерно"})</span></span>
             <span class="rl-home-pace">${escapeHtml(paceText(s))}</span>
             ${s.worksDone ? `<span class="muted">Работ по прочитанному: ${s.worksDone}${s.essays ? `, из них сочинений: ${s.essays}` : ""}</span>` : ""}
             ${next.length ? `<span class="rl-home-next">Дальше: ${next.map((i) => escapeHtml(i.t)).join(", ")}</span>` : ""}
@@ -330,7 +335,7 @@ export async function mountReadingList(host, { studentId = null, exam = null, ba
   }
   if (!exams.length) exams = ["oge", "ege"];
   const cur = exams.includes(exam) ? exam : exams[0];
-  const [dates, data] = await Promise.all([examDates().catch(() => ({ oge: { date: DEFAULT_DATES.oge }, ege: { date: DEFAULT_DATES.ege } })), loadReading(sid, cur)]);
+  const [dates, data] = await Promise.all([examDates().catch(() => fallbackDates()), loadReading(sid, cur)]);
   let filter = "all";
   // Открытое предложение: после новой отметки — у этого пункта; «Не сейчас» прячет его.
   let openOffer = null;
@@ -345,12 +350,12 @@ export async function mountReadingList(host, { studentId = null, exam = null, ba
     }).join("") || `<p class="empty">Здесь пусто.</p>`;
 
   const head = () => {
-    const st = summarize(data.items, dateFor(dates[cur], yearsAhead(prof, cur)));
+    const st = summarize(data.items, dateFor(dates[cur], yearsAhead(prof, cur)), cur);
     return `
       <div class="rl-head card rl-${st.level}">
         ${ringSvg(st.done, st.total)}
         <div>
-          <p class="rl-head-big"><strong>${st.days ? `${st.days} ${ru(st.days, "день", "дня", "дней")}` : "—"}</strong> до экзамена <span class="muted">(${fmtDate(st.date)}${st.exact ? "" : ", примерно"})</span></p>
+          <p class="rl-head-big"><strong>${st.days ? `${st.days} ${ru(st.days, "день", "дня", "дней")}` : "—"}</strong> ${st.until} <span class="muted">(${fmtDate(st.date)}${st.exact ? "" : ", примерно"})</span></p>
           <p>${escapeHtml(paceText(st))}</p>
           <p class="muted">Работ по произведениям: ${st.worksDone}${st.essays ? ` · сочинений: ${st.essays}` : ""}${st.extra ? ` · по желанию прочитано: ${st.extra}` : ""}</p>
         </div>
@@ -362,7 +367,7 @@ export async function mountReadingList(host, { studentId = null, exam = null, ba
     <header class="rl-top">
       <p class="eyebrow">${readOnly ? escapeHtml(name) : "Литература"}</p>
       <h1>Список чтения · ${EXAMS[cur].title}</h1>
-      <p class="lede">${readOnly ? "Что ученик отметил прочитанным и какие работы писал по каждому произведению." : "Всё, что нужно прочитать по кодификатору ФИПИ 2027 года. Отмечай прочитанное — работы по произведению (малые сочинения, сочинения, задания по тексту) отмечаются сами."}</p>
+      <p class="lede">${readOnly ? "Что ученик отметил прочитанным и какие работы писал по каждому произведению." : `${cur === "vpr" ? "Произведения 5–8 классов из кодификатора ФИПИ 2027 — по ним строится ВПР. Всё прочитанное сейчас засчитается и к ОГЭ в 9 классе." : "Всё, что нужно прочитать по кодификатору ФИПИ 2027 года."} Отмечай прочитанное — работы по произведению (малые сочинения, сочинения, задания по тексту) отмечаются сами.`}</p>
     </header>
     ${exams.length > 1 ? `<nav class="filter-bar">${exams.map((e) => `<a class="pill ${e === cur ? "active" : ""}" href="${base}/${e}">${EXAMS[e].short}</a>`).join("")}</nav>` : ""}
     <div id="rl-head">${head()}</div>
@@ -395,8 +400,8 @@ export async function mountReadingList(host, { studentId = null, exam = null, ba
     const it = itemOf(box);
     box.disabled = true;
     const res = box.checked
-      ? await supa.from("reading_marks").upsert({ student_id: sid, exam: cur, code: it.c, note: it.read?.note || null }).select("code, note, read_at").single()
-      : await supa.from("reading_marks").delete().eq("student_id", sid).eq("exam", cur).eq("code", it.c);
+      ? await supa.from("reading_marks").upsert({ student_id: sid, exam: storeOf(cur), code: it.c, note: it.read?.note || null }).select("code, note, read_at").single()
+      : await supa.from("reading_marks").delete().eq("student_id", sid).eq("exam", storeOf(cur)).eq("code", it.c);
     box.disabled = false;
     if (res.error) {
       box.checked = !box.checked;
@@ -429,7 +434,7 @@ export async function mountReadingList(host, { studentId = null, exam = null, ba
     clearTimeout(t);
     t = setTimeout(async () => {
       const note = inp.value.trim() || null;
-      const { error } = await supa.from("reading_marks").upsert({ student_id: sid, exam: cur, code: it.c, note, read_at: it.read?.read_at || new Date().toISOString() });
+      const { error } = await supa.from("reading_marks").upsert({ student_id: sid, exam: storeOf(cur), code: it.c, note, read_at: it.read?.read_at || new Date().toISOString() });
       if (!error && it.read) it.read.note = note;
       inp.classList.toggle("is-saved", !error);
     }, 600);
@@ -441,10 +446,12 @@ export async function readCounts() {
   const { data } = await supa.from("reading_marks").select("student_id, exam, code");
   const out = new Map();
   (data || []).forEach((r) => {
-    const it = CANON[r.exam]?.find((i) => i.c === r.code);
-    if (!it || !isRequired(it)) return;
-    const k = r.student_id + ":" + r.exam;
-    out.set(k, (out.get(k) || 0) + 1);
+    for (const exam of Object.keys(CANON).filter((e) => storeOf(e) === r.exam)) {
+      const it = CANON[exam].find((i) => i.c === r.code);
+      if (!it || !isRequired(it)) continue;
+      const k = r.student_id + ":" + exam;
+      out.set(k, (out.get(k) || 0) + 1);
+    }
   });
   const totals = Object.fromEntries(Object.keys(CANON).map((e) => [e, CANON[e].filter(isRequired).length]));
   return { counts: out, totals };

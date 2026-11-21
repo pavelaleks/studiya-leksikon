@@ -1,19 +1,19 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land179";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land180";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land179";
+import { taskHref } from "./account.js?v=land180";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land179";
-import { readingView } from "./teacher-reading.js?v=land179";
-import { optionsOf } from "./practice.js?v=land179";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land179";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land179";
-import { overdueWorks, scheduleTodayMount, todayTopMount, weekView } from "./calendar.js?v=land179";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land179";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land180";
+import { readingView } from "./teacher-reading.js?v=land180";
+import { optionsOf } from "./practice.js?v=land180";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land180";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land180";
+import { overdueWorks, scheduleTodayMount, todayTopMount, weekView } from "./calendar.js?v=land180";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land180";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land179";
+} from "./review.js?v=land180";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -301,12 +301,12 @@ export async function mountTeacher(root, parts) {
     if (tab === "students") return await studentsView(host, render);
     if (tab === "student" && arg === "report") {
       render(`<div id="t-report"></div>`);
-      const pg = await import("./progress-charts.js?v=land179");
+      const pg = await import("./progress-charts.js?v=land180");
       return await pg.mountReport(host.querySelector("#t-report"), sub, { back: `#/cabinet/student/${sub}`, base: `#/cabinet/student/${sub}/report` });
     }
     if (tab === "student" && arg === "reading") {
       render(`<div id="t-reading-list"></div>`);
-      const rl = await import("./reading-list.js?v=land179");
+      const rl = await import("./reading-list.js?v=land180");
       return await rl.mountReadingList(host.querySelector("#t-reading-list"), {
         studentId: sub,
         exam: parts[3] || null,
@@ -325,12 +325,13 @@ export async function mountTeacher(root, parts) {
         <section class="me-section" id="t-exam-dates"><h2>Даты экзаменов по литературе</h2><p class="muted">Загружаем…</p></section>
         <section class="me-section"><h2>Оформление</h2>${themeSwitchHtml()}</section>`);
       mountTg(host, "teacher");
-      const rl = await import("./reading-list.js?v=land179");
+      const rl = await import("./reading-list.js?v=land180");
       const box = host.querySelector("#t-exam-dates");
       const dates = await rl.examDates();
       box.innerHTML = `<h2>Даты экзаменов по литературе</h2>
         <p class="muted">По ним ученики видят на главной, сколько дней осталось и сколько читать в неделю. Пока даты не заданы, считается примерно.</p>
         <form class="t-filter" id="t-exam-form">
+          <label>ВПР (8 кл.)<input type="date" name="vpr" value="${dates.vpr.exact ? dates.vpr.date : ""}" /></label>
           <label>ОГЭ<input type="date" name="oge" value="${dates.oge.exact ? dates.oge.date : ""}" /></label>
           <label>ЕГЭ<input type="date" name="ege" value="${dates.ege.exact ? dates.ege.date : ""}" /></label>
           <button class="btn secondary" type="submit">Сохранить</button>
@@ -339,7 +340,7 @@ export async function mountTeacher(root, parts) {
       box.querySelector("#t-exam-form").addEventListener("submit", async (e) => {
         e.preventDefault();
         const f = new FormData(e.target);
-        const res = await Promise.all(["oge", "ege"].map((k) => rl.saveExamDate(k, f.get(k))));
+        const res = await Promise.all(["vpr", "oge", "ege"].map((k) => rl.saveExamDate(k, f.get(k))));
         const err = res.find((r) => r.error)?.error;
         box.querySelector("#t-exam-status").textContent = err ? "Ошибка: " + err.message : "Сохранено";
       });
@@ -1194,7 +1195,7 @@ async function studentView(host, render, id) {
   render(`
     <p class="crumbs"><a href="#/cabinet/students">← Ученики</a></p>
     <h1>${escapeHtml(p.full_name || p.email)}</h1>
-    <p class="actions"><a class="btn secondary" href="#/cabinet/student/${p.id}/report?p=month">Прогресс и отчёт для родителей</a>${(p.courses || []).some((c) => /^lit:(9|10|11)$/.test(c)) ? ` <a class="btn secondary" href="#/cabinet/student/${p.id}/reading">Список чтения</a>` : ""}</p>
+    <p class="actions"><a class="btn secondary" href="#/cabinet/student/${p.id}/report?p=month">Прогресс и отчёт для родителей</a>${(p.courses || []).some((c) => /^lit:(8|9|10|11)$/.test(c)) ? ` <a class="btn secondary" href="#/cabinet/student/${p.id}/reading">Список чтения</a>` : ""}</p>
     <p class="t-xp">Очки: <b>${xpTotal}</b> · за неделю: <b>+${xpWeek}</b> · дней с занятиями: <b>${activeDays}</b> · закреплено глав правил: <b>${(mastered || []).length}</b></p>
     <p class="lede">${isPseudoEmail(p.email) ? `логин <b>${escapeHtml(loginOf(p.email))}</b>` : escapeHtml(p.email || "")} · ${STATUS_TEXT[p.status]}${p.grade ? ` · ${p.grade} класс` : ""}${p.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""} · ${p.tg_chat_id ? "Telegram подключён" : "Telegram не подключён"}</p>
     ${accountBlockHtml(p)}

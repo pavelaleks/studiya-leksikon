@@ -10,6 +10,9 @@
 export const EXAMS = {
   oge: { title: "ОГЭ по литературе", short: "ОГЭ", dateKey: "exam_date_oge_lit", fallback: "2027-05-27" },
   ege: { title: "ЕГЭ по литературе", short: "ЕГЭ", dateKey: "exam_date_ege_lit", fallback: "2027-06-01" },
+  // ВПР (8 класс): произведения 5–8 классов из кодификатора ОГЭ; отметки общие с ОГЭ (store),
+  // чтобы прочитанное в 8 классе засчиталось и в 9-м.
+  vpr: { title: "ВПР по литературе", short: "ВПР", dateKey: "exam_date_vpr_lit", fallback: "2027-04-20", store: "oge" },
 };
 
 export const ERAS = [
@@ -149,15 +152,21 @@ export const CANON = {
   ],
 };
 
+/** Класс изучения раньше 9-го: «5–9», «8», «5, 7» — да; «9» — нет. */
+const before9 = (g) => Math.min(...String(g || "9").match(/\d+/g).map(Number)) < 9;
+CANON.vpr = CANON.oge.filter((it) => before9(it.g));
+
 /** Входит ли пункт в обязательный счёт (списки авторов и углублённый уровень — по желанию). */
 export const isRequired = (it) => it.k !== "list" && !it.uu;
 
-/** Экзамены ученика по его курсам: lit:8/9 — ОГЭ, lit:10/11 — ЕГЭ (8 и 10 класс готовятся заранее). */
+/** Экзамены ученика по его курсам: lit:8 — ВПР в этом году и ОГЭ через год (спокойная подготовка),
+ *  lit:9 — ОГЭ, lit:10/11 — ЕГЭ (10 класс готовится заранее). */
 export function examsOf(profile) {
   const g = litGrades(profile);
   const out = [];
-  if (g.some((n) => n === 8 || n === 9)) out.push("oge");
-  if (g.some((n) => n === 10 || n === 11)) out.push("ege");
+  if (g.includes(8)) out.push("vpr");
+  if (g.includes(8) || g.includes(9)) out.push("oge");
+  if (g.includes(10) || g.includes(11)) out.push("ege");
   return out;
 }
 
@@ -165,9 +174,10 @@ function litGrades(profile) {
   return (profile?.courses || []).filter((x) => x.startsWith("lit:")).map((x) => Number(x.split(":")[1]));
 }
 
-/** Через сколько лет экзамен: ОГЭ — в 9 классе, ЕГЭ — в 11-м. 8 и 10 класс — через год. */
+/** Через сколько лет экзамен: ОГЭ — в 9 классе (у 8-го через год), ЕГЭ — в 11-м (у 10-го через год). ВПР — в этом году. */
 export function yearsAhead(profile, exam) {
-  const last = exam === "oge" ? 9 : 11;
-  const g = litGrades(profile).filter((n) => (exam === "oge" ? n === 8 || n === 9 : n === 10 || n === 11));
-  return g.length ? last - Math.max(...g) : 0;
+  if (exam === "vpr") return 0;
+  const [lo, hi] = exam === "oge" ? [8, 9] : [10, 11];
+  const g = litGrades(profile).filter((n) => n === lo || n === hi);
+  return g.length ? hi - Math.max(...g) : 0;
 }
