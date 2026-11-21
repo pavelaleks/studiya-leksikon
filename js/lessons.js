@@ -5,14 +5,14 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land176";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land176";
-import { SOURCES, bankFiles } from "./teacher.js?v=land176";
+import { taskHref } from "./account.js?v=land177";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land177";
+import { SOURCES, bankFiles } from "./teacher.js?v=land177";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
-import { nextLessonFor } from "./calendar.js?v=land176";
+import { nextLessonFor } from "./calendar.js?v=land177";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land176";
+} from "./exams.js?v=land177";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -327,7 +327,7 @@ async function insertItems(lessonId, tasks, opts, startPos = 0) {
     task_id: t.id,
     position: ++pos,
     kind: opts.kind,
-    reveal: opts.kind === "test" ? "after_due" : TEACHER_CHECKED.has(t.answer_mode) && opts.reveal === "after_correct" ? "after_review" : opts.reveal,
+    reveal: TEACHER_CHECKED.has(t.answer_mode) ? "after_review" : opts.kind === "test" ? "after_due" : opts.reveal,
     attempts_limit: opts.kind === "test" || TEACHER_CHECKED.has(t.answer_mode) ? null : opts.attempts,
     due_at: opts.due || null,
     hidden: Boolean(opts.hidden),

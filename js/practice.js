@@ -5,7 +5,7 @@
  *  - письменная работа: черновик, фото, сдача на проверку, оценка.
  */
 import { escapeHtml } from "./ui.js";
-import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land176";
+import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land177";
 import {
   accessState,
   currentUser,
@@ -332,7 +332,11 @@ export function bindWritten(
   const loadSolution = async () => {
     try {
       const res = await showSolution(problem._tid, item?.id || null);
-      solution.innerHTML = solutionHtml(sanitize, res, solutionTitle);
+      solution.innerHTML = res?.locked
+        ? accessState() === "teacher" || work?.status === "graded"
+          ? ""
+          : `<p class="muted pr-key-wait">${escapeHtml(solutionTitle)} откроется после проверки преподавателем.</p>`
+        : solutionHtml(sanitize, res, solutionTitle);
     } catch {
       /* разбор не обязателен */
     }
