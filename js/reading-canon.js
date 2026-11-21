@@ -152,11 +152,22 @@ export const CANON = {
 /** Входит ли пункт в обязательный счёт (списки авторов и углублённый уровень — по желанию). */
 export const isRequired = (it) => it.k !== "list" && !it.uu;
 
-/** Экзамены ученика по его курсам: lit:9 — ОГЭ, lit:10/11 — ЕГЭ. */
+/** Экзамены ученика по его курсам: lit:8/9 — ОГЭ, lit:10/11 — ЕГЭ (8 и 10 класс готовятся заранее). */
 export function examsOf(profile) {
-  const c = profile?.courses || [];
+  const g = litGrades(profile);
   const out = [];
-  if (c.some((x) => x === "lit:9")) out.push("oge");
-  if (c.some((x) => /^lit:1[01]$/.test(x))) out.push("ege");
+  if (g.some((n) => n === 8 || n === 9)) out.push("oge");
+  if (g.some((n) => n === 10 || n === 11)) out.push("ege");
   return out;
+}
+
+function litGrades(profile) {
+  return (profile?.courses || []).filter((x) => x.startsWith("lit:")).map((x) => Number(x.split(":")[1]));
+}
+
+/** Через сколько лет экзамен: ОГЭ — в 9 классе, ЕГЭ — в 11-м. 8 и 10 класс — через год. */
+export function yearsAhead(profile, exam) {
+  const last = exam === "oge" ? 9 : 11;
+  const g = litGrades(profile).filter((n) => (exam === "oge" ? n === 8 || n === 9 : n === 10 || n === 11));
+  return g.length ? last - Math.max(...g) : 0;
 }

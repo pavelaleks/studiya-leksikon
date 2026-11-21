@@ -8,7 +8,7 @@
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
 import { currentProfile, currentUser, supa } from "./supa.js";
-import { CANON, ERAS, EXAMS, examsOf, isRequired } from "./reading-canon.js?v=land178";
+import { CANON, ERAS, EXAMS, examsOf, isRequired, yearsAhead } from "./reading-canon.js?v=land179";
 
 const DATA = new URL("js/library-data/", new URL(BASE, location.href));
 const cache = {};
@@ -52,6 +52,21 @@ export async function examDates() {
     out[k] = { date: v || e.fallback, exact: Boolean(v) };
   }
   return out;
+}
+
+const pad2 = (n) => String(n).padStart(2, "0");
+
+/** Дата экзамена для ученика: 8 и 10 класс сдают через год. Если дата уже прошла
+ *  (лето, курс ещё не переведён на следующий класс) — берём следующий год. */
+export function dateFor(info, ahead = 0) {
+  const d = new Date(info.date + "T12:00:00");
+  d.setFullYear(d.getFullYear() + ahead);
+  let exact = Boolean(info.exact) && !ahead;
+  while (d.getTime() < Date.now() - DAY) {
+    d.setFullYear(d.getFullYear() + 1);
+    exact = false;
+  }
+  return { date: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`, exact, ahead };
 }
 
 export async function saveExamDate(exam, value) {
@@ -151,7 +166,7 @@ function paceText(s) {
   return `${tone}: ${per} в неделю, чтобы прочитать оставшиеся ${s.left} до экзамена.`;
 }
 
-const fmtDate = (d) => new Date(d + "T12:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+const fmtDate = (d) => new Date(d + "T12:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
 
 function ringSvg(done, total) {
   const r = 34,
@@ -177,14 +192,14 @@ export async function mountHomeCard(host, profile) {
   const blocks = await Promise.all(
     exams.map(async (exam) => {
       const { items } = await loadReading(uid, exam);
-      const s = summarize(items, dates[exam]);
+      const s = summarize(items, dateFor(dates[exam], yearsAhead(profile, exam)));
       const next = items.filter((i) => isRequired(i) && !i.read && i.k !== "lyric").slice(0, 3);
       return `
         <a class="rl-home card rl-${s.level}" href="#/me/reading/${exam}">
           ${ringSvg(s.done, s.total)}
           <span class="rl-home-body">
             <strong>Список чтения · ${EXAMS[exam].short}</strong>
-            <span class="rl-home-days">${s.days ? `до экзамена ${s.days} ${ru(s.days, "день", "дня", "дней")}` : "экзамен уже прошёл"}${s.exact ? "" : " (примерно)"}</span>
+            <span class="rl-home-days">${s.days ? `до экзамена ${s.days} ${ru(s.days, "день", "дня", "дней")}` : "экзамен сегодня"} <span class="muted">(${new Date(s.date + "T12:00:00").toLocaleDateString("ru-RU", { month: "long", year: "numeric" })}${s.exact ? "" : ", примерно"})</span></span>
             <span class="rl-home-pace">${escapeHtml(paceText(s))}</span>
             ${s.worksDone ? `<span class="muted">Работ по прочитанному: ${s.worksDone}${s.essays ? `, из них сочинений: ${s.essays}` : ""}</span>` : ""}
             ${next.length ? `<span class="rl-home-next">Дальше: ${next.map((i) => escapeHtml(i.t)).join(", ")}</span>` : ""}
@@ -305,9 +320,11 @@ export async function mountReadingList(host, { studentId = null, exam = null, ba
     return;
   }
   host.innerHTML = `<p class="muted">Загружаем список…</p>`;
-  let exams = studentId ? null : examsOf(currentProfile());
+  let prof = studentId ? null : currentProfile();
+  let exams = studentId ? null : examsOf(prof);
   if (studentId) {
     const { data: p } = await supa.from("profiles").select("courses, full_name, email").eq("id", studentId).maybeSingle();
+    prof = p;
     exams = examsOf(p);
     name = name || p?.full_name || p?.email || "";
   }
@@ -328,7 +345,7 @@ export async function mountReadingList(host, { studentId = null, exam = null, ba
     }).join("") || `<p class="empty">Здесь пусто.</p>`;
 
   const head = () => {
-    const st = summarize(data.items, dates[cur]);
+    const st = summarize(data.items, dateFor(dates[cur], yearsAhead(prof, cur)));
     return `
       <div class="rl-head card rl-${st.level}">
         ${ringSvg(st.done, st.total)}

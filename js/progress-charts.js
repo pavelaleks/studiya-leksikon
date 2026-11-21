@@ -4,7 +4,7 @@
  */
 import { escapeHtml } from "./ui.js";
 import { currentProfile, currentUser, supa } from "./supa.js";
-import { RUBRICS } from "./rubrics.js?v=land178";
+import { RUBRICS } from "./rubrics.js?v=land179";
 
 const SRC = { "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Литература", "oge-lit": "ОГЭ · лит." };
 const SRC_LONG = { "ege-rus": "ЕГЭ по русскому", "oge-rus": "ОГЭ по русскому", "vpr-rus": "ВПР по русскому", "ege-lit": "ЕГЭ по литературе", "oge-lit": "ОГЭ по литературе" };
