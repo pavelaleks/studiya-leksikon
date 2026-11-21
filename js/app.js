@@ -15,7 +15,7 @@ import { mountTrainer } from "./trainers.js?v=land171";
 import { parseRoute } from "./route.js?v=land171";
 import { accessState, currentProfile, currentUser, hasAccess, initAuth, mySolved, onAuthChange, supa } from "./supa.js";
 import { routeSubject, subjectsOf } from "./track.js?v=land171";
-import { markEgeDone, markOgeDone } from "./progress.js";
+import { markEgeDone, markOgeDone } from "./progress.js?v=land171";
 import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land171";
 import { mountTeacher, teacherPage } from "./teacher.js?v=land171";
 import "./session.js?v=land171";

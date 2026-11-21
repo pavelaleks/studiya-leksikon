@@ -1,5 +1,5 @@
 import { BASE } from "./config.js";
-import { doneIds, markEgeDone, pickEgeVariant, readProgress, touchEge } from "./progress.js";
+import { doneIds, markEgeDone, pickEgeVariant, readProgress, touchEge } from "./progress.js?v=land171";
 import { escapeHtml } from "./ui.js";
 import { accessState, bankList, bankProblem, clearBankCache } from "./supa.js";
 import { theoryTasks, theoryBody, theoryArticleHtml, theoryClosedHtml, clearTheoryCache } from "./theory.js?v=land171";
