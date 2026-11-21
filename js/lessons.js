@@ -5,14 +5,14 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land168";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land168";
-import { SOURCES, bankFiles } from "./teacher.js?v=land168";
+import { taskHref } from "./account.js?v=land169";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land169";
+import { SOURCES, bankFiles } from "./teacher.js?v=land169";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
-import { nextLessonFor } from "./calendar.js?v=land168";
+import { nextLessonFor } from "./calendar.js?v=land169";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land168";
+} from "./exams.js?v=land169";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -793,6 +793,8 @@ export async function lessonsListView(host, render) {
         cb.dispatchEvent(new Event("change"));
       }
     }
+    const preTitle = params.get("title");
+    if (preTitle && form.querySelector('[name="title"]')) form.querySelector('[name="title"]').value = preTitle;
     if (wantNew === "written") {
       kindSel.value = "written";
       sync();

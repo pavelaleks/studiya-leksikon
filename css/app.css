@@ -2332,3 +2332,39 @@ a.me-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
 @media (max-width: 600px) { .me-hello-side { margin-top: 0; } .me-summary { font-size: 0.95rem; } }
 .me-row .chip, .me-count { font-family: var(--sans); }
 .me-row .chip.is-hot { background: color-mix(in srgb, var(--gold) 16%, transparent); color: var(--gold); }
+
+/* ---------- «Сегодня» преподавателя: текущий урок, лента дня ---------- */
+#tt-now:empty, #tt-day:empty { display: none; }
+.tt-now { display: grid; gap: 8px; margin: 4px 0 6px; padding: 16px 18px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
+.tt-now.is-live { border: 2px solid var(--accent); }
+.tt-now-head { margin: 0; font-size: 0.86rem; font-weight: 700; color: var(--ink-soft); display: flex; align-items: center; gap: 8px; }
+.tt-now.is-live .tt-now-head { color: var(--accent); }
+.tt-now-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: me-pulse 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .tt-now-dot { animation: none; } }
+.tt-now-title { margin: 0; font-size: 1.15rem; font-weight: 700; line-height: 1.3; }
+.tt-now-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 4px 0; }
+.tt-now-stats div { display: grid; gap: 0; }
+.tt-now-stats strong { font-size: 1.1rem; }
+.tt-now-stats span { font-size: 0.78rem; color: var(--ink-soft); }
+.tt-now-idle { margin: 0; font-size: 0.86rem; }
+.tt-now .actions { margin: 4px 0 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+@media (max-width: 520px) { .tt-now-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .tt-now .actions .btn { flex: 1 1 100%; text-align: center; } }
+.tt-ribbon { display: flex; flex-wrap: wrap; gap: 8px; }
+.tt-rib { padding: 6px 12px; border-radius: 999px; background: var(--paper-deep); color: var(--ink); font-size: 0.86rem; font-weight: 600; }
+.tt-rib.is-past { color: var(--ink-soft); text-decoration: line-through; background: transparent; border: 1px solid var(--line); }
+.tt-rib.is-live { background: var(--accent-fill); color: var(--on-accent); }
+.tt-rib-warn { font-weight: 700; color: var(--bad); }
+.tt-live { margin-bottom: 6px; }
+.tt-row-static { cursor: default; }
+.tt-row-static:hover { background: none; }
+.tt-mini { flex: none; min-height: 36px; padding: 6px 14px; font-size: 0.86rem; }
+.tt-nudge-status:empty { display: none; }
+.tt-idle { margin-top: 12px; }
+.tt-idle summary, .tt-sched-more summary { cursor: pointer; font-weight: 700; color: var(--ink-soft); padding: 8px 0; }
+.tt-sched-more { margin-top: 26px; }
+.tt-list:empty { display: none; }
+@media (max-width: 600px) {
+  .tt-head { margin-bottom: 10px; }
+  .tt-head .actions { display: flex; gap: 8px; width: 100%; margin: 0; }
+  .tt-head .actions .btn { flex: 1; min-height: 40px; padding: 8px 10px; font-size: 0.9rem; text-align: center; }
+}

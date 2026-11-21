@@ -132,8 +132,9 @@ async function loadWorks(from, to) {
       ...(la || []).filter((a) => a.lesson_id === l.id).map((a) => `s:${a.student_id}`),
     ];
     const due = items.map((i) => i.due_at).sort()[0];
-    const ok = [...roster].filter((sid) => items.every((it) => done.get(it.id)?.has(sid))).length;
-    return { l, items, due, roster, targets, ok };
+    const missing = [...roster].filter((sid) => !items.every((it) => done.get(it.id)?.has(sid)));
+    const ok = roster.size - missing.length;
+    return { l, items, due, roster, targets, ok, missing };
   });
   // «откроется» — только то, что ещё не открыто ученикам
   return { works, opening: (opening || []).filter((l) => Date.parse(l.starts_at) > Date.now()) };
@@ -436,6 +437,155 @@ export async function weekView(host, render, offset = 0) {
     reload();
   });
   bindDays(host, ctx, reload);
+}
+
+/** Домашние работы, срок которых прошёл за последние 2 недели, и кто их не сдал. */
+export async function overdueWorks() {
+  const now = new Date();
+  const { works } = await loadWorks(new Date(now.getTime() - 14 * DAY), now);
+  return works.filter((w) => w.missing.length && ["lesson", "written"].includes(w.l.kind) && w.l.status === "live").sort((a, b) => b.due.localeCompare(a.due));
+}
+
+const untilText = (ms) => {
+  const m = Math.max(1, Math.round(ms / 60000));
+  return m < 60 ? `${m} мин` : `${Math.floor(m / 60)} ч${m % 60 ? ` ${m % 60} мин` : ""}`;
+};
+
+/** Занятие на платформе, которое относится к уроку из календаря: тот же адресат, сегодня. */
+async function platformLessonFor(key, dayStart) {
+  if (!key || key === "-") return null;
+  const dayEnd = new Date(dayStart.getTime() + DAY).toISOString();
+  const sel = "id, title, status, kind, group_id, student_id, starts_at, created_at, lesson_items(id, kind, tasks(source, task_no))";
+  const [{ data: a }, { data: b }] = await Promise.all([
+    supa.from("lessons").select(sel).eq("self_made", false).neq("status", "done").gte("starts_at", dayStart.toISOString()).lt("starts_at", dayEnd),
+    supa.from("lessons").select(sel).eq("self_made", false).neq("status", "done").is("starts_at", null).gte("created_at", dayStart.toISOString()),
+  ]);
+  const list = [...(a || []), ...(b || [])];
+  if (!list.length) return null;
+  const { data: la } = await supa.from("lesson_assignees").select("lesson_id, student_id").in("lesson_id", list.map((l) => l.id));
+  const mine = list.filter(
+    (l) =>
+      (key.startsWith("g:") && l.group_id === key.slice(2)) ||
+      (key.startsWith("s:") && (l.student_id === key.slice(2) || (la || []).some((x) => x.lesson_id === l.id && x.student_id === key.slice(2))))
+  );
+  mine.sort((x, y) => (y.lesson_items || []).filter((i) => i.kind === "classwork").length - (x.lesson_items || []).filter((i) => i.kind === "classwork").length);
+  return mine[0] || null;
+}
+
+/** Цифры по занятию: кто решает, сколько верно, где больше ошибок, кто не начал. */
+async function liveStats(lesson, key, since) {
+  const roster = key.startsWith("s:")
+    ? [key.slice(2)]
+    : ((await supa.from("group_members").select("student_id").eq("group_id", key.slice(2))).data || []).map((m) => m.student_id);
+  const items = lesson.lesson_items || [];
+  const ids = items.map((i) => i.id);
+  const { data: att } = ids.length
+    ? await supa.from("attempts").select("student_id, item_id, is_correct").in("item_id", ids).gte("created_at", since.toISOString()).limit(5000)
+    : { data: [] };
+  const rows = (att || []).filter((a) => roster.includes(a.student_id));
+  const solving = new Set(rows.map((a) => a.student_id));
+  const wrong = new Map();
+  rows.filter((a) => !a.is_correct).forEach((a) => wrong.set(a.item_id, (wrong.get(a.item_id) || 0) + 1));
+  const worstId = [...wrong.entries()].sort((x, y) => y[1] - x[1])[0]?.[0];
+  const worstIdx = items.findIndex((i) => i.id === worstId);
+  return {
+    roster,
+    solving: solving.size,
+    pct: rows.length ? Math.round((100 * rows.filter((a) => a.is_correct).length) / rows.length) : null,
+    worst: worstIdx >= 0 ? `№ ${worstIdx + 1}` : "—",
+    idle: roster.filter((id) => !solving.has(id)),
+  };
+}
+
+/** «Сегодня» у преподавателя: карточка текущего (или следующего) урока и лента дня. */
+export async function todayTopMount(host) {
+  const nowBox = host.querySelector("#tt-now");
+  const dayBox = host.querySelector("#tt-day");
+  if (!nowBox) return;
+  let cfg;
+  try {
+    cfg = await calConfig();
+  } catch {
+    return;
+  }
+  if (!cfg.ics_url) return;
+  const dayStart = new Date();
+  dayStart.setHours(0, 0, 0, 0);
+  const ctx = await buildCtx(dayStart, new Date(dayStart.getTime() + DAY));
+  const now = Date.now();
+  const evs = ctx.events.filter((e) => !e.allDay && ctx.cfg.map[e.uid] !== "-").sort((a, b) => a.start.localeCompare(b.start));
+  const current = evs.find((e) => Date.parse(e.start) <= now && Date.parse(e.end) > now);
+  const next = evs.find((e) => Date.parse(e.start) > now);
+  const who = (e) => ctx.names.get(ctx.cfg.map[e.uid]) || e.title;
+  // «подготовлено»: на платформе есть занятие этому адресату сегодня или к уроку есть срок сдачи
+  const prepared = new Map();
+  await Promise.all(
+    evs.map(async (e) => {
+      const key = ctx.cfg.map[e.uid];
+      const l = await platformLessonFor(key, dayStart).catch(() => null);
+      const due = key ? ctx.worksOn(e).some((w) => w.targets.includes(key)) : false;
+      prepared.set(e.uid + e.start, { l, ok: Boolean(l || due), key });
+    })
+  );
+
+  const card = async (e, live) => {
+    const { l, key } = prepared.get(e.uid + e.start);
+    const s = Date.parse(e.start);
+    const en = Date.parse(e.end);
+    const when = `${hm(new Date(s))}–${hm(new Date(en))}`;
+    const head = live
+      ? `<span class="tt-now-dot"></span> Идёт сейчас · ${when} · осталось ${untilText(en - now)}`
+      : `Следующее занятие · ${when} · через ${untilText(s - now)}`;
+    const pct = live ? Math.min(100, Math.round((100 * (now - s)) / (en - s))) : 0;
+    let stats = "";
+    if (l && key && key !== "-") {
+      const st = await liveStats(l, key, new Date(s - 3600000)).catch(() => null);
+      if (st && live) {
+        const names = st.idle.map((id) => ctx.names.get(`s:${id}`)).filter(Boolean);
+        stats = `<div class="tt-now-stats">
+          <div><strong>${st.solving} из ${st.roster.length}</strong><span>решают</span></div>
+          <div><strong>${st.pct == null ? "—" : st.pct + "%"}</strong><span>верно</span></div>
+          <div><strong>${escapeHtml(st.worst)}</strong><span>больше ошибок</span></div>
+          <div title="${escapeHtml(names.join(", "))}"><strong>${st.idle.length}</strong><span>не начали</span></div>
+        </div>${names.length && names.length <= 4 ? `<p class="muted tt-now-idle">Не начали: ${escapeHtml(names.join(", "))}</p>` : ""}`;
+      }
+    }
+    let nextDue = null;
+    if (key && key !== "-") {
+      try {
+        nextDue = await nextLessonFor([key], new Date(en + 60000));
+      } catch {}
+    }
+    const to = key && key !== "-" ? `&to=${encodeURIComponent(key)}` : "";
+    const hwHref = `#/cabinet/lessons?new=written${to}${nextDue ? `&due=${encodeURIComponent(nextDue.start)}` : ""}`;
+    const btns = l
+      ? `<a class="btn" href="#/cabinet/lesson/${l.id}">${live ? "Доска занятия" : "Открыть занятие"}</a>
+         ${l.status === "draft" ? '<span class="chip is-hot">черновик — ученики не видят</span>' : ""}`
+      : `<a class="btn" href="#/cabinet/lessons?new=1${to}">Подготовить занятие</a>`;
+    return `<div class="tt-now${live ? " is-live" : ""}">
+      <p class="tt-now-head">${head}</p>
+      <p class="tt-now-title">${escapeHtml(who(e))}${l ? ` · ${escapeHtml(l.title)}` : ""}</p>
+      ${live ? `<span class="today-bar"><span style="width:${pct}%"></span></span>` : ""}
+      ${stats}
+      ${!key ? `<p class="muted">Урок не сопоставлен с группой или учеником — укажите это в расписании ниже.</p>` : ""}
+      <p class="actions">${btns}
+        ${key && key !== "-" ? `<a class="btn secondary" href="${hwHref}">Задать письменную${nextDue ? ` к ${escapeHtml(shortWhen(nextDue.start))}` : ""}</a>` : ""}</p>
+    </div>`;
+  };
+  const shown = current || next;
+  nowBox.innerHTML = shown ? await card(shown, Boolean(current)) : "";
+  if (dayBox && evs.length) {
+    dayBox.innerHTML = `<h2 class="me-label">День</h2><div class="tt-ribbon">${evs
+      .map((e) => {
+        const s = Date.parse(e.start);
+        const en = Date.parse(e.end);
+        const st = en <= now ? "is-past" : s <= now ? "is-live" : "";
+        const pr = prepared.get(e.uid + e.start);
+        const flag = st === "" && pr.key && pr.key !== "-" && !pr.ok ? ' <span class="tt-rib-warn">не подготовлено</span>' : "";
+        return `<span class="tt-rib ${st}">${hm(new Date(s))} ${escapeHtml(who(e))}${st === "is-live" ? " · идёт" : ""}${flag}</span>`;
+      })
+      .join("")}</div>`;
+  }
 }
 
 /** «Сегодня»: расписание дня (заполняется после основной страницы, чтобы не задерживать её). */

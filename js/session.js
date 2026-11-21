@@ -2,7 +2,7 @@
 // следующий шаг тренировки дня и финальный экран после тренировки и занятия.
 import { escapeHtml } from "./ui.js";
 import { accessState, currentUser, supa } from "./supa.js";
-import { DAILY_GOAL, barnaulDate, dailyKey, loadDashboard } from "./dashboard.js?v=land168";
+import { DAILY_GOAL, barnaulDate, dailyKey, loadDashboard } from "./dashboard.js?v=land169";
 
 const store = {
   get(k) {

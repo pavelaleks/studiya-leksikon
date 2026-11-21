@@ -1,12 +1,12 @@
 /** Вход, регистрация и личный кабинет ученика (#/login, #/me). */
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land168";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land168";
-import { myNextLessons } from "./calendar.js?v=land168";
-import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land168";
+import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land169";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land169";
+import { myNextLessons } from "./calendar.js?v=land169";
+import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land169";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, selfExamHtml,
-} from "./dashboard.js?v=land168";
+} from "./dashboard.js?v=land169";
 import {
   accessState,
   currentProfile,
@@ -408,7 +408,7 @@ export async function mountMe(root) {
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land168")
+    import("./lessons.js?v=land169")
       .then((m) => (isProfile ? m.myLessonsHtml() : m.myHomeData().then((d) => ({ ...d, fmtDue: m.fmtDue }))))
       .catch(() => (isProfile ? "" : null)),
     isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },

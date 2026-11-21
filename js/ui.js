@@ -1,6 +1,6 @@
 import { accessState, currentProfile } from "./supa.js";
 import { studioTelegram, studioWhatsApp } from "./config.js";
-import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land168";
+import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land169";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -28,10 +28,10 @@ function tasksHref() {
 
 /** Нижнее меню на телефоне: у гостя, ученика и преподавателя — свои разделы. */
 /** Сколько домашнего не сдано — запоминает главная ученика. */
-function hwBadge() {
+function hwBadge(prefix = "lx-hw-open") {
   let n = 0;
   try {
-    n = Number(localStorage.getItem(`lx-hw-open-${currentProfile()?.id}`)) || 0;
+    n = Number(localStorage.getItem(`${prefix}-${currentProfile()?.id}`)) || 0;
   } catch {}
   return n ? `<span class="tab-badge" aria-label="не сдано: ${n}">${n}</span>` : "";
 }
@@ -47,7 +47,7 @@ function tabbar(active) {
       ["#/cabinet/lessons", "calendar", "Занятия", active === "teacher" && (sub === "lessons" || sub === "lesson")],
       ["#/cabinet/students", "users", "Ученики", active === "teacher" && (sub === "students" || sub === "student")],
       ["#/cabinet/works", "check", "Работы", active === "teacher" && sub === "works"],
-      ["more", "dots", "Ещё", (active === "teacher" && ["bank", "groups", "reading", "week"].includes(sub)) || active === "literature" || active === "rules"],
+      ["more", "dots", "Ещё", (active === "teacher" && ["bank", "groups", "reading", "week", "settings"].includes(sub)) || active === "literature" || active === "rules"],
     ];
   } else if (state === "guest") {
     // гость — чаще родитель: программы, цены, тест и запись; материалы — в разделе «Материалы» на главной
@@ -73,7 +73,7 @@ function tabbar(active) {
     .map(([href, ic, label, on]) =>
       href === "more"
         ? `<button type="button" class="tab ${on ? "is-on" : ""}" data-more aria-haspopup="true">${icon(ic)}<span>${label}</span></button>`
-        : `<a class="tab ${on ? "is-on" : ""}" href="${href}" ${on ? 'aria-current="page"' : ""}>${icon(ic)}<span>${label}</span>${href === "#/me" ? hwBadge() : ""}</a>`
+        : `<a class="tab ${on ? "is-on" : ""}" href="${href}" ${on ? 'aria-current="page"' : ""}>${icon(ic)}<span>${label}</span>${href === "#/me" ? hwBadge() : href === "#/cabinet/works" ? hwBadge("lx-works-open") : ""}</a>`
     )
     .join("");
   const more =
@@ -86,6 +86,7 @@ function tabbar(active) {
             <a role="menuitem" href="#/cabinet/bank">Банк заданий</a>
             <a role="menuitem" href="#/cabinet/groups">Группы</a>
             <a role="menuitem" href="#/cabinet/reading">Чтение и стихи</a>
+            <a role="menuitem" href="#/cabinet/settings">Настройки и Telegram</a>
             <a role="menuitem" href="#/library">Библиотека</a>
             <a role="menuitem" href="#/rules">Правила</a>
             <a role="menuitem" href="#/ege">ЕГЭ</a>

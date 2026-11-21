@@ -1,19 +1,19 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land168";
-import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land168";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land169";
+import { escapeHtml, themeSwitchHtml } from "./ui.js";
+import { taskHref } from "./account.js?v=land169";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land168";
-import { readingView } from "./teacher-reading.js?v=land168";
-import { optionsOf } from "./practice.js?v=land168";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land168";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land168";
-import { scheduleTodayMount, weekView } from "./calendar.js?v=land168";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land168";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land169";
+import { readingView } from "./teacher-reading.js?v=land169";
+import { optionsOf } from "./practice.js?v=land169";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land169";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land169";
+import { overdueWorks, scheduleTodayMount, todayTopMount, weekView } from "./calendar.js?v=land169";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land169";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land168";
+} from "./review.js?v=land169";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -234,6 +234,7 @@ const TABS = [
   ["bank", "Банк заданий"],
   ["groups", "Группы"],
   ["reading", "Чтение"],
+  ["settings", "Настройки"],
 ];
 
 export function teacherPage() {
@@ -260,6 +261,17 @@ async function badges() {
   return { students: p.count || 0, works: w.count || 0 };
 }
 
+/** Цифра на вкладке «Работы» внизу на телефоне. */
+function setWorksBadge(n) {
+  try {
+    localStorage.setItem(`lx-works-open-${currentUser()?.id}`, String(n));
+  } catch {}
+  document.querySelectorAll('.tabbar a[href="#/cabinet/works"]').forEach((a) => {
+    a.querySelector(".tab-badge")?.remove();
+    if (n) a.insertAdjacentHTML("beforeend", `<span class="tab-badge" aria-label="ждут проверки: ${n}">${n}</span>`);
+  });
+}
+
 export async function mountTeacher(root, parts) {
   const host = root.querySelector("#teacher-root");
   if (!currentUser()) {
@@ -272,6 +284,7 @@ export async function mountTeacher(root, parts) {
   }
   const [tab = "today", sub, arg] = parts;
   const b = await badges().catch(() => ({}));
+  setWorksBadge(b.works || 0);
   const active = tab === "student" ? "students" : tab === "lesson" ? "lessons" : tab;
   const render = (body) => (host.innerHTML = shell(active, body, b));
   try {
@@ -284,6 +297,13 @@ export async function mountTeacher(root, parts) {
     if (tab === "works") return await worksView(host, render, sub);
     if (tab === "groups") return await groupsView(host, render);
     if (tab === "reading") return await readingView(host, render, sub);
+    if (tab === "settings") {
+      render(`<header class="tt-head"><div><p class="eyebrow">Кабинет</p><h1>Настройки</h1></div></header>${tgSlotHtml()}
+        <section class="me-section"><h2>Расписание</h2><p><a href="#/cabinet/week">Google Календарь и сопоставление уроков — в разделе «Неделя» →</a></p></section>
+        <section class="me-section"><h2>Оформление</h2>${themeSwitchHtml()}</section>`);
+      mountTg(host, "teacher");
+      return;
+    }
     if (tab === "bank") {
       if (sub === "new" || sub === "edit") return await taskFormView(host, render, arg);
       if (sub === "batch") return await batchView(host, render);
@@ -365,9 +385,10 @@ async function todayView(host, render) {
     supa.from("course_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supa.from("lessons").select("id, title, starts_at").eq("status", "draft").eq("self_made", false).gte("created_at", new Date(Date.now() - 30 * 86400000).toISOString()).order("created_at", { ascending: false }),
   ]);
-  const [{ data: actToday }, { data: worksToday }] = await Promise.all([
+  const [{ data: actToday }, { data: worksToday }, { data: weekAtt }] = await Promise.all([
     supa.from("activity_log").select("student_id, section, at").gte("at", dayStart.toISOString()).limit(5000),
     supa.from("written_works").select("id, student_id, status, submitted_at, tasks(source, task_no)").gte("submitted_at", dayStart.toISOString()).limit(500),
+    supa.from("attempts").select("student_id, is_correct, tasks(source, task_no)").gte("created_at", new Date(Date.now() - 7 * 86400000).toISOString()).limit(20000),
   ]);
   const now = Date.now();
   const liveRows = (live.data || [])
@@ -385,27 +406,23 @@ async function todayView(host, render) {
   const solvers = new Set(att.map((a) => a.student_id)).size;
   const q = queue.data || [];
   const name = (p) => escapeHtml(p?.full_name || p?.email || "ученик");
+  const shortSrc = (src) => ({ "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Лит." }[src] || "");
   const row = (href, title, sub, extra = "") => `
     <a class="tt-row" href="${href}">
       <span class="tt-body"><strong>${title}</strong><span class="muted">${sub}</span></span>
       ${extra}<span class="tt-go" aria-hidden="true">›</span>
     </a>`;
   const blocks = [];
-  if (liveRows.length)
-    blocks.push(
-      liveRows
+  const liveHtml = liveRows
+      
         .map(({ l, going, done, started }) =>
           row(`#/cabinet/lesson/${l.id}`, `<span class="chip is-hot">идёт сейчас</span> ${escapeHtml(l.title)}`, `пишут ${going} · сдали ${done} · начали ${started}`)
         )
-        .join("")
+        .join("");
+  if (q.length)
+    blocks.push(
+      row(`#/cabinet/works/${q[0].id}`, `Проверить работы <span class="tt-count">${q.length}</span>`, `самая давняя — ${name(q[0].profiles)}, ${agoText(q[0].submitted_at)}`)
     );
-  blocks.push(
-    row(
-      q.length ? `#/cabinet/works/${q[0].id}` : "#/cabinet/works",
-      q.length ? `Проверить работы <span class="tt-count">${q.length}</span>` : "Работы проверены",
-      q.length ? `самая давняя — ${name(q[0].profiles)}, ${agoText(q[0].submitted_at)}` : "новых работ нет"
-    )
-  );
   if ((pending.data || []).length)
     blocks.push(
       row(
@@ -424,19 +441,46 @@ async function todayView(host, render) {
     );
   if (creqs.count)
     blocks.push(row("#/cabinet/students", `Запросы на курсы <span class="tt-count">${creqs.count}</span>`, "ученики просят добавить предмет или класс"));
-  (todayLessons.data || []).forEach((l) =>
-    blocks.push(
+  const todayRows = (todayLessons.data || []).map((l) =>
       row(
         `#/cabinet/lesson/${l.id}`,
         escapeHtml(l.title),
         `сегодня в ${new Date(l.starts_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}${l.status === "draft" ? " · черновик — откройте ученикам" : ""}`
       )
-    )
   );
+  // Общие ошибки за неделю: номера, где ошибаются несколько учеников сразу
+  const byNum = new Map();
+  (weekAtt || [])
+    .filter((a) => studentIds.has(a.student_id) && a.tasks?.task_no != null)
+    .forEach((a) => {
+      const k = `${a.tasks.source}|${a.tasks.task_no}`;
+      const v = byNum.get(k) || { src: a.tasks.source, no: a.tasks.task_no, n: 0, ok: 0, who: new Set(), bad: new Set() };
+      v.n += 1;
+      v.who.add(a.student_id);
+      if (a.is_correct) v.ok += 1;
+      else v.bad.add(a.student_id);
+      byNum.set(k, v);
+    });
+  const common = [...byNum.values()]
+    .filter((v) => v.bad.size >= 2 && v.ok / v.n < 0.6)
+    .sort((a, b) => b.bad.size - a.bad.size || a.ok / a.n - b.ok / b.n)
+    .slice(0, 4);
+  const commonHtml = common.length
+    ? `<section class="me-section me-block">
+        <h2 class="me-label">Общие ошибки за неделю</h2>
+        <div class="me-rows">${common
+          .map((v) => {
+            const label = `${shortSrc(v.src)} № ${v.no}`;
+            const title = encodeURIComponent(`Разбор: ${label}`);
+            return `<div class="me-row"><span class="me-row-main"><strong>${escapeHtml(label)}</strong><span class="muted">ошибаются ${v.bad.size} ${v.bad.size < 5 ? "ученика" : "учеников"} · ${Math.round((100 * v.ok) / v.n)}% верно</span></span>
+              <a class="btn secondary tt-mini" href="#/cabinet/lessons?new=1&title=${title}">Собрать занятие</a></div>`;
+          })
+          .join("")}</div>
+      </section>`
+    : "";
   // Кто занимался сегодня: ответы, верные, ошибки по номерам, разделы, сданные работы
   const people = new Map((students.data || []).map((p) => [p.id, p]));
   const whoIds = new Set([...att.map((a) => a.student_id), ...(actToday || []).map((a) => a.student_id), ...(worksToday || []).map((w) => w.student_id)]);
-  const shortSrc = (src) => ({ "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Лит." }[src] || "");
   const todayPeople = [...whoIds]
     .filter((id) => people.has(id))
     .map((id) => {
@@ -491,33 +535,82 @@ async function todayView(host, render) {
       </div>
       <span class="actions"><a class="btn secondary" href="#/cabinet/lessons?new=written">+ Письменная работа</a><a class="btn" href="#/cabinet/lessons?new=1">+ Новое занятие</a></span>
     </header>
-    <div class="tt-list">${blocks.join("")}</div>
-    <section class="me-section" id="tt-schedule"><p class="muted">Загружаем расписание…</p></section>
-    <section class="me-section">
-      <h2>Ученики сегодня</h2>
+    <div id="tt-now"></div>
+    ${liveHtml ? `<div class="tt-list tt-live">${liveHtml}</div>` : ""}
+    <section class="me-section me-block" id="tt-day"></section>
+    <section class="me-section me-block">
+      <h2 class="me-label">Нужно сделать</h2>
+      <div class="tt-list" id="tt-todo">${blocks.join("")}</div>
+      <p class="muted me-empty" id="tt-todo-empty" ${blocks.length ? "hidden" : ""}>Всё сделано: работ на проверку, заявок и черновиков нет.</p>
+    </section>
+    ${todayRows.length ? `<section class="me-section me-block" id="tt-today-lessons"><h2 class="me-label">Занятия сегодня</h2><div class="tt-list">${todayRows.join("")}</div></section>` : ""}
+    ${commonHtml}
+    <section class="me-section me-block">
+      <h2 class="me-label">Ученики сегодня</h2>
       <div class="tt-stats">
         <div><strong>${todayPeople.length}</strong><span>заходили</span></div>
         <div><strong>${solvers}</strong><span>решали</span></div>
         <div><strong>${att.length}</strong><span>ответов</span></div>
         <div><strong>${att.length ? Math.round((100 * att.filter((a) => a.is_correct).length) / att.length) : 0}%</strong><span>верных</span></div>
       </div>
-      <p class="muted">Нажмите на ученика — что решал, где ошибался, какие разделы открывал.</p>
       ${todayPeopleHtml}
+      ${
+        idle.length
+          ? `<details class="tt-idle"><summary>Не занимались 5+ дней · ${idle.length}</summary><div class="tt-list">${idle
+              .map((p) => row(`#/cabinet/student/${p.id}`, name(p), "ни заданий, ни работ за 5 дней"))
+              .join("")}</div></details>`
+          : ""
+      }
     </section>
-    ${
-      idle.length
-        ? `<section class="me-section">
-        <h2>Не занимались 5+ дней <span class="muted">${idle.length}</span></h2>
-        <div class="tt-list">${idle
-          .slice(0, 8)
-          .map((p) => row(`#/cabinet/student/${p.id}`, name(p), "ни заданий, ни работ за 5 дней"))
-          .join("")}</div>
-      </section>`
-        : ""
-    }
-    ${tgSlotHtml()}`);
-  mountTg(host, "teacher");
+    <details class="tt-sched-more"><summary>Расписание дня подробно</summary><section class="me-section" id="tt-schedule"><p class="muted">Загружаем расписание…</p></section></details>`);
   scheduleTodayMount(host);
+  todayTopMount(host)
+    .then(() => {
+      if (host.querySelector("#tt-day .tt-ribbon")) host.querySelector("#tt-today-lessons")?.remove();
+    })
+    .catch((err) => console.warn(err));
+  mountOverdue(host, people, name).catch((err) => console.warn(err));
+}
+
+/** «Не сдали в срок»: строки в «Нужно сделать» с кнопкой «напомнить» (в Telegram). */
+async function mountOverdue(host, people, name) {
+  const list = await overdueWorks();
+  const box = host.querySelector("#tt-todo");
+  if (!box || !list.length) return;
+  const html = list
+    .slice(0, 5)
+    .map((w) => {
+      const who = w.missing.map((id) => people.get(id)).filter(Boolean);
+      if (!who.length) return "";
+      const when = new Date(w.due).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+      return `<div class="tt-row tt-row-static">
+        <span class="tt-body"><strong>Не сдали в срок <span class="tt-count">${who.length}</span></strong>
+          <span class="muted"><a href="#/cabinet/lesson/${w.l.id}">«${escapeHtml(w.l.title)}»</a>, срок ${escapeHtml(when)} — ${who.slice(0, 4).map(name).join(", ")}${who.length > 4 ? "…" : ""}</span>
+          <span class="muted tt-nudge-status" aria-live="polite"></span></span>
+        <button type="button" class="btn secondary tt-mini" data-nudge="${w.l.id}" data-who="${w.missing.join(",")}">Напомнить</button>
+      </div>`;
+    })
+    .join("");
+  if (!html.trim()) return;
+  box.insertAdjacentHTML("beforeend", html);
+  host.querySelector("#tt-todo-empty")?.setAttribute("hidden", "");
+  box.querySelectorAll("[data-nudge]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      const st = b.closest(".tt-row").querySelector(".tt-nudge-status");
+      const ids = b.dataset.who.split(",").filter(Boolean);
+      b.disabled = true;
+      const { data, error } = await supa.rpc("teacher_nudge", { p_lesson: b.dataset.nudge, p_students: ids });
+      if (error) {
+        b.disabled = false;
+        st.textContent = humanError(error).message;
+        return;
+      }
+      st.textContent = data
+        ? `Напоминание ушло в Telegram: ${data} из ${ids.length}${data < ids.length ? " (у остальных Telegram не подключён)" : ""}.`
+        : "Ни у кого из них не подключён Telegram — напомните на занятии или в мессенджере.";
+      b.textContent = "Напомнили";
+    })
+  );
 }
 
 /** Отдельная страница входа для преподавателя (ссылка внизу сайта). Регистрации здесь нет. */
