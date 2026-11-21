@@ -5,14 +5,14 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land167";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land167";
-import { SOURCES, bankFiles } from "./teacher.js?v=land167";
+import { taskHref } from "./account.js?v=land168";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land168";
+import { SOURCES, bankFiles } from "./teacher.js?v=land168";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
-import { nextLessonFor } from "./calendar.js?v=land167";
+import { nextLessonFor } from "./calendar.js?v=land168";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land167";
+} from "./exams.js?v=land168";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -1635,6 +1635,70 @@ export async function myLessonsHtml({ today = false } = {}) {
     .join("");
   return `<section class="me-section"><h2>Мои занятия и работы</h2><div class="lit-list">${rows}</div></section>`;
 }
+
+/**
+ * Главная ученика: разложить незавершённые работы на «сейчас на занятии» и «домашнее».
+ * Сейчас — идёт работа на время, или сегодняшнее занятие с заданиями «в классе»,
+ * или контрольная, которую надо начать сегодня. Остальное — домашнее, по сроку.
+ */
+export async function myHomeData() {
+  const { data: lessons } = await supa
+    .from("lessons")
+    .select("id, title, status, kind, duration_minutes, starts_at, closes_at, lesson_items(id, due_at, kind)")
+    .order("starts_at", { ascending: false, nullsFirst: true })
+    .limit(60);
+  if (!lessons?.length) return { now: [], hw: [] };
+  const ids = lessons.flatMap((l) => (l.lesson_items || []).map((i) => i.id));
+  const uid = currentUser()?.id;
+  const [{ data: att }, { data: works }, { data: sessions }] = await Promise.all([
+    ids.length ? supa.from("attempts").select("item_id").eq("student_id", uid).in("item_id", ids) : { data: [] },
+    ids.length ? supa.from("written_works").select("item_id, status").eq("student_id", uid).in("item_id", ids) : { data: [] },
+    supa.from("exam_sessions").select("lesson_id, started_at, finished_at").eq("student_id", uid),
+  ]);
+  const doneSet = new Set([...(att || []).map((a) => a.item_id), ...(works || []).filter((w) => w.status !== "draft").map((w) => w.item_id)]);
+  const now = Date.now();
+  const dayKey = (d) => new Date(d).toDateString();
+  const today = new Date().toDateString();
+  const out = { now: [], hw: [] };
+  for (const l of lessons) {
+    const its = l.lesson_items || [];
+    if (!its.length || l.status === "done") continue;
+    const s = (sessions || []).find((x) => x.lesson_id === l.id);
+    const base = { id: l.id, title: l.title, kind: l.kind, minutes: l.duration_minutes || 0 };
+    if (l.duration_minutes) {
+      const ends = s ? Date.parse(s.started_at) + l.duration_minutes * 60000 : 0;
+      if (s && (s.finished_at || now > ends)) continue;
+      if (!s && l.closes_at && Date.parse(l.closes_at) < now) continue;
+      const item = { ...base, timed: true, live: !!s, total: its.length, done: 0, due: l.closes_at || null, startsToday: l.starts_at && dayKey(l.starts_at) === today };
+      if (s || item.startsToday || (l.closes_at && dayKey(l.closes_at) === today)) out.now.push(item);
+      else out.hw.push(item);
+      continue;
+    }
+    const left = its.filter((i) => !doneSet.has(i.id));
+    if (!left.length) continue;
+    const cls = left.filter((i) => i.kind === "classwork");
+    const home = left.filter((i) => i.kind !== "classwork");
+    const isToday = l.starts_at ? dayKey(l.starts_at) === today : false;
+    if (cls.length && (isToday || !l.starts_at)) {
+      const all = its.filter((i) => i.kind === "classwork");
+      out.now.push({ ...base, total: all.length, done: all.length - cls.length });
+    } else if (cls.length && Date.now() - Date.parse(l.starts_at) < 7 * 86400000) {
+      // задания с прошедшего занятия, которые не успели решить в классе
+      const all = its.filter((i) => i.kind === "classwork");
+      out.hw.push({ ...base, total: all.length, done: all.length - cls.length, due: null, from: l.starts_at });
+    }
+    if (home.length) {
+      const all = its.filter((i) => i.kind !== "classwork");
+      const due = home.map((i) => i.due_at).filter(Boolean).sort()[0] || null;
+      out.hw.push({ ...base, total: all.length, done: all.length - home.length, due });
+    }
+  }
+  out.now.sort((a, b) => b.live - a.live);
+  out.hw.sort((a, b) => (a.due ? Date.parse(a.due) : Infinity) - (b.due ? Date.parse(b.due) : Infinity));
+  return out;
+}
+
+export { fmtDue };
 
 /** «сегодня до 18:00», «завтра до 9:30», «до 17 нояб., 18:00». */
 function fmtDue(d) {

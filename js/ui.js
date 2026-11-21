@@ -1,6 +1,6 @@
 import { accessState, currentProfile } from "./supa.js";
 import { studioTelegram, studioWhatsApp } from "./config.js";
-import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land167";
+import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land168";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -27,6 +27,15 @@ function tasksHref() {
 }
 
 /** Нижнее меню на телефоне: у гостя, ученика и преподавателя — свои разделы. */
+/** Сколько домашнего не сдано — запоминает главная ученика. */
+function hwBadge() {
+  let n = 0;
+  try {
+    n = Number(localStorage.getItem(`lx-hw-open-${currentProfile()?.id}`)) || 0;
+  } catch {}
+  return n ? `<span class="tab-badge" aria-label="не сдано: ${n}">${n}</span>` : "";
+}
+
 function tabbar(active) {
   const state = accessState();
   const hash = location.hash || "#/";
@@ -64,7 +73,7 @@ function tabbar(active) {
     .map(([href, ic, label, on]) =>
       href === "more"
         ? `<button type="button" class="tab ${on ? "is-on" : ""}" data-more aria-haspopup="true">${icon(ic)}<span>${label}</span></button>`
-        : `<a class="tab ${on ? "is-on" : ""}" href="${href}" ${on ? 'aria-current="page"' : ""}>${icon(ic)}<span>${label}</span></a>`
+        : `<a class="tab ${on ? "is-on" : ""}" href="${href}" ${on ? 'aria-current="page"' : ""}>${icon(ic)}<span>${label}</span>${href === "#/me" ? hwBadge() : ""}</a>`
     )
     .join("");
   const more =

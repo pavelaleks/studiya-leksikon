@@ -476,6 +476,15 @@ async function myLessonsCached() {
   return lessons;
 }
 
+/** Ближайшие занятия ученика из расписания: [{start, end, label}]. Пусто, если расписание не подключено. */
+export async function myNextLessons(n = 3) {
+  try {
+    return (await myLessonsCached()).filter((l) => Date.parse(l.end) > Date.now()).slice(0, n);
+  } catch {
+    return [];
+  }
+}
+
 /** Главная ученика: «Твоя группа», ближайшие занятия и что к каждому сделать. */
 export async function studentScheduleMount(host, groupNames = []) {
   const box = host.querySelector("#me-schedule");
