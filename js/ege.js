@@ -1,6 +1,6 @@
 import { escapeHtml } from "./ui.js";
 import { mark } from "./markup.js";
-import { markEgeDone } from "./progress.js?v=land173";
+import { markEgeDone } from "./progress.js?v=land174";
 
 const VOWELS = "аеёиоуыэюя";
 

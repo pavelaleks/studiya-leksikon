@@ -2447,3 +2447,25 @@ a.me-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
   .pg-head .me-hello-side .btn { min-height: 38px; padding: 6px 12px; font-size: 0.88rem; }
 }
 @media print { .lh-btn { display: none !important; } }
+
+/* ---------- Редактор пометок на фото ---------- */
+.rv-toolbar { align-items: center; gap: 8px; padding: 8px 10px calc(8px + env(safe-area-inset-top, 0px) * 0); }
+.rv-group { display: inline-flex; gap: 4px; flex-wrap: wrap; padding-right: 8px; border-right: 1px solid #4a4239; }
+.rv-group:last-of-type { border-right: 0; }
+.rv-toolbar button { min-height: 40px; min-width: 40px; padding: 6px 11px; }
+.rv-toolbar button.is-on { background: #d0021b; border-color: #d0021b; }
+.rv-opts [data-thin].is-on { background: #fff; color: #1e1914; border-color: #fff; }
+.rv-sw { display: inline-grid; place-items: center; padding: 6px !important; }
+.rv-sw i { width: 20px; height: 20px; border-radius: 50%; display: block; box-shadow: 0 0 0 2px #2b241d; }
+.rv-toolbar .rv-sw.is-on { background: #2b241d; border-color: #fff; }
+.rv-marks { flex-basis: 100%; display: flex; gap: 6px; flex-wrap: wrap; padding-top: 4px; }
+.rv-marks[hidden] { display: none; }
+.rv-marks button { display: inline-grid; justify-items: center; gap: 0; padding: 4px 10px; min-width: 64px; }
+.rv-marks b { font-size: 1.15rem; line-height: 1.1; }
+.rv-marks small { font-size: 0.7rem; font-weight: 600; opacity: 0.8; }
+.rv-stage { text-align: center; -webkit-overflow-scrolling: touch; }
+.rv-sheet { position: relative; display: inline-block; vertical-align: top; max-width: none; }
+.rv-sheet canvas { display: block; width: 100%; max-width: none; height: auto; touch-action: none; }
+.rv-sheet .rv-live { position: absolute; inset: 0; height: 100%; background: transparent; cursor: crosshair; }
+.rv-textin { position: absolute; z-index: 2; min-width: 160px; margin: 0; padding: 2px 4px; border: 1.5px dashed currentColor; border-radius: 4px; background: rgba(255, 255, 255, 0.85); font-family: Manrope, Arial, sans-serif; font-weight: 600; line-height: 1.2; resize: none; overflow: hidden; outline: none; text-align: left; }
+@media (max-width: 700px) { .rv-group { border-right: 0; padding-right: 0; } .rv-toolbar button { min-height: 38px; padding: 6px 9px; font-size: 0.88rem; } }
