@@ -1,19 +1,19 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land169";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land170";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land169";
+import { taskHref } from "./account.js?v=land170";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land169";
-import { readingView } from "./teacher-reading.js?v=land169";
-import { optionsOf } from "./practice.js?v=land169";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land169";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land169";
-import { overdueWorks, scheduleTodayMount, todayTopMount, weekView } from "./calendar.js?v=land169";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land169";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land170";
+import { readingView } from "./teacher-reading.js?v=land170";
+import { optionsOf } from "./practice.js?v=land170";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land170";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land170";
+import { overdueWorks, scheduleTodayMount, todayTopMount, weekView } from "./calendar.js?v=land170";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land170";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land169";
+} from "./review.js?v=land170";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -293,6 +293,11 @@ export async function mountTeacher(root, parts) {
     if (tab === "lessons") return await lessonsListView(host, render);
     if (tab === "lesson") return await lessonEditView(host, render, sub);
     if (tab === "students") return await studentsView(host, render);
+    if (tab === "student" && arg === "report") {
+      render(`<div id="t-report"></div>`);
+      const pg = await import("./progress.js?v=land170");
+      return await pg.mountReport(host.querySelector("#t-report"), sub, { back: `#/cabinet/student/${sub}`, base: `#/cabinet/student/${sub}/report` });
+    }
     if (tab === "student") return await studentView(host, render, sub);
     if (tab === "works") return await worksView(host, render, sub);
     if (tab === "groups") return await groupsView(host, render);
@@ -1153,6 +1158,7 @@ async function studentView(host, render, id) {
   render(`
     <p class="crumbs"><a href="#/cabinet/students">← Ученики</a></p>
     <h1>${escapeHtml(p.full_name || p.email)}</h1>
+    <p class="actions"><a class="btn secondary" href="#/cabinet/student/${p.id}/report?p=month">Прогресс и отчёт для родителей</a></p>
     <p class="t-xp">Очки: <b>${xpTotal}</b> · за неделю: <b>+${xpWeek}</b> · дней с занятиями: <b>${activeDays}</b> · закреплено глав правил: <b>${(mastered || []).length}</b></p>
     <p class="lede">${isPseudoEmail(p.email) ? `логин <b>${escapeHtml(loginOf(p.email))}</b>` : escapeHtml(p.email || "")} · ${STATUS_TEXT[p.status]}${p.grade ? ` · ${p.grade} класс` : ""}${p.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""} · ${p.tg_chat_id ? "Telegram подключён" : "Telegram не подключён"}</p>
     ${accountBlockHtml(p)}

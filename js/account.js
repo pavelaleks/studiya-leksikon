@@ -1,12 +1,12 @@
 /** Вход, регистрация и личный кабинет ученика (#/login, #/me). */
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land169";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land169";
-import { myNextLessons } from "./calendar.js?v=land169";
-import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land169";
+import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land170";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land170";
+import { myNextLessons } from "./calendar.js?v=land170";
+import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land170";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, selfExamHtml,
-} from "./dashboard.js?v=land169";
+} from "./dashboard.js?v=land170";
 import {
   accessState,
   currentProfile,
@@ -105,7 +105,7 @@ function guideHtml() {
         <li><b>Домашнее задание</b> — всё, что нужно сдать, ближайший срок сверху.</li>
         <li><b>Заниматься самому</b> — тренировка дня, ошибки и пробный экзамен. Это по желанию.</li>
       </ol>
-      <p class="muted">Все задания по номерам — во вкладке «Задания», прогресс и настройки — во вкладке «Я».</p>
+      <p class="muted">Все задания по номерам — во вкладке «Задания», графики, отчёт для родителей и настройки — во вкладке «Прогресс».</p>
       <button type="button" class="btn secondary" data-guide-close>Понятно</button>
     </aside>`;
 }
@@ -408,7 +408,7 @@ export async function mountMe(root) {
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land169")
+    import("./lessons.js?v=land170")
       .then((m) => (isProfile ? m.myLessonsHtml() : m.myHomeData().then((d) => ({ ...d, fmtDue: m.fmtDue }))))
       .catch(() => (isProfile ? "" : null)),
     isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },
@@ -463,7 +463,7 @@ export async function mountMe(root) {
           <p class="me-summary" id="me-summary">${escapeHtml(summaryText(home, []))}</p>
         </div>
         <span class="me-hello-side">
-          <a class="me-profile-link btn secondary" href="#/me/profile">Прогресс и профиль</a>
+          <a class="me-profile-link btn secondary" href="#/me/progress">Мой прогресс</a>
           ${dash ? `<a class="me-streak" href="#/me/profile" title="Дней подряд с решёнными заданиями" aria-label="Дней подряд: ${dash.streak}">🔥 ${dash.streak}</a>` : ""}
         </span>
       </header>

@@ -1,6 +1,6 @@
 import { accessState, currentProfile } from "./supa.js";
 import { studioTelegram, studioWhatsApp } from "./config.js";
-import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land169";
+import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land170";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -8,6 +8,7 @@ const ICON = {
   pencil: '<path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4"/><path d="M13.5 6.5l4 4"/>',
   rules: '<path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0"/><path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0"/><path d="M3 6l0 13"/><path d="M12 6l0 13"/><path d="M21 6l0 13"/>',
   books: '<path d="M5 4m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z"/><path d="M9 4m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z"/><path d="M5 8h4"/><path d="M9 16h4"/><path d="M13.803 4.56l2.184 -.53c.562 -.135 1.133 .19 1.282 .732l3.695 13.418a1.02 1.02 0 0 1 -.634 1.219l-.133 .041l-2.184 .53c-.562 .135 -1.133 -.19 -1.282 -.732l-3.695 -13.418a1.02 1.02 0 0 1 .634 -1.219l.133 -.041z"/>',
+  chart: '<path d="M4 19h16"/><path d="M4 15l4 -6l4 2l4 -5l4 4"/>',
   user: '<path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>',
   login: '<path d="M15 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"/><path d="M21 12h-13l3 -3"/><path d="M11 15l-3 -3"/>',
   calendar: '<path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/>',
@@ -62,11 +63,11 @@ function tabbar(active) {
     const tasks = tasksHref();
     const subj = subjectsOf(currentProfile());
     items = [
-      ["#/me", "home", "Главная", active === "me" && !hash.startsWith("#/me/password") && !hash.startsWith("#/me/profile")],
+      ["#/me", "home", "Главная", active === "me" && !/^#\/me\/(progress|report|profile|password)/.test(hash)],
       [tasks, "pencil", "Задания", ["ege", "oge", "vpr"].includes(active) || (active === "literature" && hash.startsWith("#/literature"))],
       subj.rus && ["#/rules", "rules", "Правила", active === "rules" || active === "practice"],
       subj.lit && ["#/library", "books", "Читать", active === "literature" && hash.startsWith("#/library")],
-      ["#/me/profile", "user", "Я", active === "me" && (hash.startsWith("#/me/profile") || hash.startsWith("#/me/password"))],
+      ["#/me/progress", "chart", "Прогресс", active === "me" && /^#\/me\/(progress|report|profile|password)/.test(hash)],
     ].filter(Boolean);
   }
   const links = items
