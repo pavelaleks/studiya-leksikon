@@ -4,8 +4,8 @@
  * Очки начисляет сервер (таблица xp_events), здесь — только показ и подсказки.
  */
 import { escapeHtml } from "./ui.js";
-import { currentTrack } from "./track.js?v=land177";
-import { EXAMS, autoNumbers, composeVariant, durationText } from "./exams.js?v=land177";
+import { currentTrack } from "./track.js?v=land178";
+import { EXAMS, autoNumbers, composeVariant, durationText } from "./exams.js?v=land178";
 import { currentUser, humanError, supa } from "./supa.js";
 
 const LEVELS = [
@@ -27,7 +27,7 @@ const EGE_RULE_QUERY = {
 // Тренажёры студии к номерам ОГЭ
 const OGE_TRAINER = { 2: "trenazher-osnova-leksikon", 3: "trenazher-oborotov-leksikon", 5: "trenazher-n-nn-leksikon" };
 
-const SECTION = { "ege-rus": "ege", "oge-rus": "oge", "vpr-rus": "vpr", "ege-lit": "literature" };
+const SECTION = { "ege-rus": "ege", "oge-rus": "oge", "vpr-rus": "vpr", "ege-lit": "literature", "oge-lit": "literature/oge" };
 
 export function examCodeOf(profile) {
   return currentTrack(profile);
@@ -158,7 +158,7 @@ export function recommendations(d, code) {
   }
   const readDone = d.events.filter((e) => e.kind === "reading").length;
   const poemsDone = d.events.filter((e) => e.kind === "poem").length;
-  if (code === "ege-lit") {
+  if (code === "ege-lit" || code === "oge-lit") {
     out.push({
       icon: "📖",
       title: readDone ? `Статьи «Полки»: пройдено ${readDone}` : "Прочитай статью о книге и ответь на вопросы",
@@ -322,6 +322,10 @@ export function bindSelfExam(root) {
   const timeText = () => {
     const code = codeSel.value;
     const ex = EXAMS[code];
+    // ОГЭ по литературе — только письменные задания: без письменной части варианта нет
+    const allWritten = ex.numbers.every((n) => ex.written.includes(n));
+    if (allWritten) wr.checked = true;
+    wr.disabled = allWritten;
     form.querySelector("#dash-self-time").textContent = wr.checked
       ? `Время: ${durationText(ex.minutes)} (${ex.note}), задания ${ex.numbers[0]}–${ex.numbers.at(-1)}.`
       : `Время: ${durationText(selfMinutes(code, false))} — только задания с автопроверкой, без ${ex.written.length > 1 ? `заданий ${ex.written.join(", ")}` : `задания ${ex.written[0]}`}.`;
@@ -451,7 +455,7 @@ export async function mountDaily(root, d, profile) {
   const solvedToday = (id) => (att || []).some((a) => a.task_id === id && a.is_correct && barnaulDate(new Date(a.created_at)) === today);
   const doneN = list.filter((t) => solvedToday(t.id)).length;
   const href = (t) =>
-    t.source === "ege-rus" ? `#/ege/${t.task_no}/${t.source_ref}` : t.source === "oge-rus" ? `#/oge/${t.task_no}/${t.source_ref}` : t.source === "vpr-rus" ? `#/vpr/${t.task_no}/${t.source_ref}` : `#/literature/${t.task_no}/${t.source_ref}`;
+    t.source === "ege-rus" ? `#/ege/${t.task_no}/${t.source_ref}` : t.source === "oge-rus" ? `#/oge/${t.task_no}/${t.source_ref}` : t.source === "vpr-rus" ? `#/vpr/${t.task_no}/${t.source_ref}` : t.source === "oge-lit" ? `#/literature/oge/${t.task_no}/${t.source_ref}` : `#/literature/${t.task_no}/${t.source_ref}`;
   host.innerHTML = `
     <p class="crumbs"><a href="#/me">← Главная</a></p>
     <p class="eyebrow">Тренировка дня · ${escapeHtml(EXAMS[code].title)}</p>
@@ -472,7 +476,7 @@ export async function mountDaily(root, d, profile) {
   try {
     localStorage.setItem(`daily-done-${currentUser()?.id}-${today}`, JSON.stringify(list.filter((t) => solvedToday(t.id)).map((t) => t.id)));
   } catch {}
-  import("./session.js?v=land177").then((m) => m.maybeCelebrateDaily(doneN, list.length)).catch(() => {});
+  import("./session.js?v=land178").then((m) => m.maybeCelebrateDaily(doneN, list.length)).catch(() => {});
   host.querySelector("#daily-new").addEventListener("click", () => {
     try {
       localStorage.removeItem(dailyKey());

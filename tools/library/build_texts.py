@@ -76,7 +76,9 @@ def text_len(el):
 
 def clean_node(node, notes, noteids):
     """Оставляет простую разметку; сноски Викитеки → <sup class="fn">."""
-    for bad in node.select("style, script, link, meta, #headertemplate, .ws-noexport, .noprint, .navbox, .mw-cite-backlink, img, figure"):
+    # номера строк стихов (.linenumright) и плашки Викитеки («Источник текста не указан» — table.mbox…)
+    for bad in node.select("style, script, link, meta, #headertemplate, .ws-noexport, .noprint, .navbox, .mw-cite-backlink, img, figure, "
+                           "[class*=linenum], table[class*=mbox]"):
         bad.decompose()
     for sup in node.select("sup.mw-ref, sup.reference"):
         a = sup.find("a")
@@ -172,6 +174,7 @@ def tidy(h):
         h = re.sub(r"<p>(\s|<br/>)*</p>", "", h)
         h = re.sub(r"^(\s|<br/>)+", "", h)
         h = re.sub(r"(<br/>\s*){3,}", "<br/><br/>", h)
+        h = re.sub(r'(<p class="c">)\d{1,4}\. (?=[А-ЯЁ])', r"\1", h)  # номер в собрании сочинений: «451. ПЕСНЯ…»
     return h.strip()
 
 

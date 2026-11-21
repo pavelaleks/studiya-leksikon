@@ -56,6 +56,17 @@ export const EXAMS = {
     minutesNoWriting: 60,
     bank: (n) => `ege-${String(n).padStart(2, "0")}`,
   },
+  "oge-lit": {
+    title: "ОГЭ по литературе",
+    minutes: 235,
+    note: "как на экзамене — 3 ч 55 мин",
+    numbers: range(1, 5),
+    // 1–2 — по одному произведению (эпос/драма), 3–4 — по стихотворению
+    groups: [[1, 2], [3, 4]],
+    written: [1, 2, 3, 4, 5],
+    writtenDefault: true,
+    bank: (n) => `oge-${String(n).padStart(2, "0")}`,
+  },
 };
 
 /** Номера с автопроверкой — по ним строится самостоятельный трек (письменные — отдельно, по желанию). */

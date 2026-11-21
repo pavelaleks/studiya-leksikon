@@ -4,11 +4,11 @@
  */
 import { escapeHtml } from "./ui.js";
 import { currentProfile, currentUser, supa } from "./supa.js";
-import { RUBRICS } from "./rubrics.js?v=land177";
+import { RUBRICS } from "./rubrics.js?v=land178";
 
-const SRC = { "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Литература" };
-const SRC_LONG = { "ege-rus": "ЕГЭ по русскому", "oge-rus": "ОГЭ по русскому", "vpr-rus": "ВПР по русскому", "ege-lit": "ЕГЭ по литературе" };
-const SRC_HREF = { "ege-rus": "#/ege", "oge-rus": "#/oge", "vpr-rus": "#/vpr", "ege-lit": "#/literature" };
+const SRC = { "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Литература", "oge-lit": "ОГЭ · лит." };
+const SRC_LONG = { "ege-rus": "ЕГЭ по русскому", "oge-rus": "ОГЭ по русскому", "vpr-rus": "ВПР по русскому", "ege-lit": "ЕГЭ по литературе", "oge-lit": "ОГЭ по литературе" };
+const SRC_HREF = { "ege-rus": "#/ege", "oge-rus": "#/oge", "vpr-rus": "#/vpr", "ege-lit": "#/literature", "oge-lit": "#/literature/oge" };
 const PERIODS = { week: ["Неделя", 7], month: ["Месяц", 30], all: ["Всё время", 0] };
 const DAY = 86400000;
 

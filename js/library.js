@@ -136,6 +136,7 @@ function tabs(active) {
     ["works", "#/library", "Произведения"],
     ["poems", "#/library/poems", "Стихи наизусть"],
     ["read", "#/library/read", "Читать и отвечать"],
+    ...(currentUser() && accessState() !== "teacher" ? [["list", "#/me/reading", "Мой список к экзамену"]] : []),
   ];
   return `<nav class="filter-bar lib-tabs">${t
     .map(([id, href, title]) => `<a class="pill ${active === id ? "active" : ""}" href="${href}">${title}</a>`)

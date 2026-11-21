@@ -1,7 +1,7 @@
 import { escapeHtml } from "./ui.js";
 import { legend, mark } from "./markup.js";
-import { EGE_TITLES } from "./ege.js?v=land177";
-import { readProgress } from "./progress.js?v=land177";
+import { EGE_TITLES } from "./ege.js?v=land178";
+import { readProgress } from "./progress.js?v=land178";
 import { STUDIO, studioTelegram, studioWhatsApp } from "./config.js";
 import { iconTelegram, iconWhatsApp } from "./icons.js";
 import { accessState, currentProfile } from "./supa.js";
@@ -488,11 +488,12 @@ export function homePage(content) {
         <article class="landing-learn-subject">
           <header class="landing-learn-subject-head">
             <p class="landing-learn-label">Литература</p>
-            <p class="landing-learn-subject-note">ЕГЭ</p>
+            <p class="landing-learn-subject-note">ЕГЭ и ОГЭ</p>
           </header>
           <div class="landing-learn-links landing-learn-links-lit">
             <a href="#/literature"><strong>Задания 1–11</strong><span>Фрагменты, ответы, пояснения</span></a>
             <a href="#/literature/terms"><strong>Словарь терминов</strong><span>Поиск и тренажёр</span></a>
+            <a href="#/literature/oge"><strong>ОГЭ</strong><span>Задания 1–5 с проверкой преподавателя</span></a>
           </div>
         </article>
       </div>

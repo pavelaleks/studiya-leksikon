@@ -2508,3 +2508,55 @@ a.me-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
 }
 .rv-seg label { position: relative; }
 .rv-seg label input[type="radio"] { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; opacity: 0 !important; pointer-events: none; }
+
+/* ---------- Список чтения к экзамену (reading-list.js) ---------- */
+.rl-ring { width: 76px; height: 76px; flex: none; }
+.rl-ring-bg { fill: none; stroke: var(--line); stroke-width: 8; }
+.rl-ring-fg { fill: none; stroke: var(--forest); stroke-width: 8; stroke-linecap: round; transition: stroke-dasharray .4s; }
+.rl-warn .rl-ring-fg { stroke: var(--gold); }
+.rl-bad .rl-ring-fg { stroke: var(--accent); }
+.rl-ring-n { font: 700 20px/1 inherit; fill: var(--ink); }
+.rl-ring-of { font-size: 10px; fill: var(--ink-soft); }
+.rl-home { display: flex; align-items: center; gap: 14px; padding: 14px 16px; color: var(--ink); text-decoration: none; margin-bottom: 10px; }
+.rl-home-body { display: grid; gap: 3px; flex: 1; min-width: 0; }
+.rl-home-days { font-weight: 600; }
+.rl-home-pace { color: var(--ink-soft); }
+.rl-home-next { font-size: .92em; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rl-head { display: flex; align-items: center; gap: 18px; padding: 16px 18px; margin: 14px 0; }
+.rl-head p { margin: 2px 0; }
+.rl-head-big strong { font-size: 1.5em; }
+.rl-filter { margin: 8px 0 4px; }
+.rl-era h2 { font-size: 1.1rem; margin: 22px 0 8px; }
+.rl-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.rl-row { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: start; padding: 12px 14px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); }
+.rl-row.is-read { background: color-mix(in srgb, var(--card) 88%, var(--forest) 12%); }
+.rl-row.is-extra:not(.is-read) { opacity: .82; }
+.rl-check { width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--forest); cursor: pointer; }
+.rl-main { display: grid; gap: 5px; min-width: 0; }
+.rl-main label { cursor: pointer; display: grid; gap: 1px; }
+.rl-author { font-size: .85em; color: var(--ink-soft); }
+.rl-title { font-weight: 600; }
+.rl-row.is-read .rl-title { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--ink) 35%, transparent); }
+.rl-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.rl-chip { font-size: .78em; padding: 2px 8px; border-radius: 999px; background: var(--ok-bg); color: var(--ok); }
+.rl-chip.is-big { font-weight: 700; }
+.rl-note { width: 100%; max-width: 460px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: inherit; font-size: .92em; }
+.rl-note.is-saved { border-color: var(--forest); }
+.rl-when { font-size: .8em; }
+.rl-links { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; font-size: .9em; white-space: nowrap; }
+.rl-offer { margin-top: 6px; padding: 12px; border-radius: 10px; background: var(--paper-deep); border: 1px dashed color-mix(in srgb, var(--forest) 60%, transparent); }
+.rl-offer-h { margin: 0 0 8px; }
+.rl-acts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.rl-act { display: grid; gap: 1px; padding: 9px 11px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); color: var(--ink); text-decoration: none; }
+.rl-act:hover { border-color: var(--forest); }
+.rl-act span { font-size: .82em; color: var(--ink-soft); }
+.rl-act.is-big { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.rl-offer-close { margin-top: 8px; font-size: .9em; }
+.rl-offer-open { justify-self: start; font-size: .9em; color: var(--forest); }
+.rl-foot { margin-top: 20px; }
+@media (max-width: 560px) {
+  .rl-row { grid-template-columns: 24px 1fr; }
+  .rl-links { grid-column: 2; flex-direction: row; gap: 14px; align-items: center; }
+  .rl-head { gap: 12px; padding: 14px; }
+  .rl-home-next { white-space: normal; }
+}

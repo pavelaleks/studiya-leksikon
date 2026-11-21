@@ -5,14 +5,14 @@
  */
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land177";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land177";
-import { SOURCES, bankFiles } from "./teacher.js?v=land177";
+import { taskHref } from "./account.js?v=land178";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land178";
+import { SOURCES, bankFiles } from "./teacher.js?v=land178";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
-import { nextLessonFor } from "./calendar.js?v=land177";
+import { nextLessonFor } from "./calendar.js?v=land178";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land177";
+} from "./exams.js?v=land178";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -42,7 +42,7 @@ const toLocalInput = (d) => {
   return new Date(x.getTime() - x.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 };
 const fromLocalInput = (v) => (v ? new Date(v).toISOString() : null);
-const shortSource = (s) => ({ "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Лит." }[s] || s);
+const shortSource = (s) => ({ "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Лит.", "oge-lit": "ОГЭ лит." }[s] || s);
 
 function snippet(task, n = 110) {
   const t = String(task?.list_item?.questionText || task?.data?.questionText || "").replace(/\s+/g, " ").trim();
@@ -123,6 +123,11 @@ export const WRITTEN_TYPES = {
   "ege-lit-9": { source: "ege-lit", no: 9, title: "Литература, задание 9: развёрнутый ответ по лирике", group: "Литература · ЕГЭ" },
   "ege-lit-10": { source: "ege-lit", no: 10, title: "Литература, задание 10: сопоставление стихотворений", group: "Литература · ЕГЭ" },
   "ege-lit-11": { source: "ege-lit", no: 11, title: "Сочинение по литературе (задание 11)", group: "Литература · ЕГЭ" },
+  "oge-lit-1": { source: "oge-lit", no: 1, title: "Литература ОГЭ, задание 1: ответ по фрагменту", group: "Литература · ОГЭ" },
+  "oge-lit-2": { source: "oge-lit", no: 2, title: "Литература ОГЭ, задание 2: анализ другого фрагмента", group: "Литература · ОГЭ" },
+  "oge-lit-3": { source: "oge-lit", no: 3, title: "Литература ОГЭ, задание 3: ответ по стихотворению", group: "Литература · ОГЭ" },
+  "oge-lit-4": { source: "oge-lit", no: 4, title: "Литература ОГЭ, задание 4: сопоставление", group: "Литература · ОГЭ" },
+  "oge-lit-5": { source: "oge-lit", no: 5, title: "Сочинение по литературе ОГЭ (задание 5)", group: "Литература · ОГЭ" },
 };
 
 function writtenTypeOptions() {

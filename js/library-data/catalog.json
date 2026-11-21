@@ -1158,14 +1158,15 @@
    "period": "xix2",
    "code": "9",
    "kind": "prose",
-   "note": "«Повесть о том, как один мужик…», «Премудрый пискарь», «Медведь на воеводстве», «Карась-идеалист», «Пропала совесть», «Коняга»",
+   "note": "«Повесть о том, как один мужик…», «Премудрый пискарь», «Медведь на воеводстве», «Карась-идеалист», «Пропала совесть», «Коняга», «Дикий помещик»",
    "src": [
     "https://ru.wikisource.org/wiki/%D0%9F%D0%BE%D0%B2%D0%B5%D1%81%D1%82%D1%8C_%D0%BE_%D1%82%D0%BE%D0%BC%2C_%D0%BA%D0%B0%D0%BA_%D0%BE%D0%B4%D0%B8%D0%BD_%D0%BC%D1%83%D0%B6%D0%B8%D0%BA_%D0%B4%D0%B2%D1%83%D1%85_%D0%B3%D0%B5%D0%BD%D0%B5%D1%80%D0%B0%D0%BB%D0%BE%D0%B2_%D0%BF%D1%80%D0%BE%D0%BA%D0%BE%D1%80%D0%BC%D0%B8%D0%BB_%28%D0%A1%D0%B0%D0%BB%D1%82%D1%8B%D0%BA%D0%BE%D0%B2-%D0%A9%D0%B5%D0%B4%D1%80%D0%B8%D0%BD%29",
     "https://ru.wikisource.org/wiki/%D0%9F%D1%80%D0%B5%D0%BC%D1%83%D0%B4%D1%80%D1%8B%D0%B9_%D0%BF%D0%B8%D1%81%D0%BA%D0%B0%D1%80%D1%8C_%28%D0%A1%D0%B0%D0%BB%D1%82%D1%8B%D0%BA%D0%BE%D0%B2-%D0%A9%D0%B5%D0%B4%D1%80%D0%B8%D0%BD%29",
     "https://ru.wikisource.org/wiki/%D0%9C%D0%B5%D0%B4%D0%B2%D0%B5%D0%B4%D1%8C_%D0%BD%D0%B0_%D0%B2%D0%BE%D0%B5%D0%B2%D0%BE%D0%B4%D1%81%D1%82%D0%B2%D0%B5_%28%D0%A1%D0%B0%D0%BB%D1%82%D1%8B%D0%BA%D0%BE%D0%B2-%D0%A9%D0%B5%D0%B4%D1%80%D0%B8%D0%BD%29",
     "https://ru.wikisource.org/wiki/%D0%9A%D0%B0%D1%80%D0%B0%D1%81%D1%8C-%D0%B8%D0%B4%D0%B5%D0%B0%D0%BB%D0%B8%D1%81%D1%82_%28%D0%A1%D0%B0%D0%BB%D1%82%D1%8B%D0%BA%D0%BE%D0%B2-%D0%A9%D0%B5%D0%B4%D1%80%D0%B8%D0%BD%29",
     "https://ru.wikisource.org/wiki/%D0%9F%D1%80%D0%BE%D0%BF%D0%B0%D0%BB%D0%B0_%D1%81%D0%BE%D0%B2%D0%B5%D1%81%D1%82%D1%8C_%28%D0%A1%D0%B0%D0%BB%D1%82%D1%8B%D0%BA%D0%BE%D0%B2-%D0%A9%D0%B5%D0%B4%D1%80%D0%B8%D0%BD%29",
-    "https://ru.wikisource.org/wiki/%D0%9A%D0%BE%D0%BD%D1%8F%D0%B3%D0%B0_%28%D0%A1%D0%B0%D0%BB%D1%82%D1%8B%D0%BA%D0%BE%D0%B2-%D0%A9%D0%B5%D0%B4%D1%80%D0%B8%D0%BD%29"
+    "https://ru.wikisource.org/wiki/%D0%9A%D0%BE%D0%BD%D1%8F%D0%B3%D0%B0_%28%D0%A1%D0%B0%D0%BB%D1%82%D1%8B%D0%BA%D0%BE%D0%B2-%D0%A9%D0%B5%D0%B4%D1%80%D0%B8%D0%BD%29",
+    "https://ru.wikisource.org/wiki/%D0%94%D0%B8%D0%BA%D0%B8%D0%B9_%D0%BF%D0%BE%D0%BC%D0%B5%D1%89%D0%B8%D0%BA_%28%D0%A1%D0%B0%D0%BB%D1%82%D1%8B%D0%BA%D0%BE%D0%B2-%D0%A9%D0%B5%D0%B4%D1%80%D0%B8%D0%BD%29"
    ],
    "toc": [
     {
@@ -1197,9 +1198,14 @@
      "t": "Коняга",
      "p": 1,
      "i": 5
+    },
+    {
+     "t": "Дикий помещик",
+     "p": 1,
+     "i": 6
     }
    ],
-   "chars": 98056
+   "chars": 112045
   },
   {
    "id": "prestuplenie",
@@ -4879,6 +4885,556 @@
    "code": "52",
    "polka": 532,
    "wiki": "Колымские рассказы",
+   "kind": "prose"
+  },
+  {
+   "id": "liza",
+   "author": "Н. М. Карамзин",
+   "title": "Бедная Лиза",
+   "period": "drev",
+   "code": "ОГЭ 5",
+   "wiki": "Бедная Лиза",
+   "kind": "prose",
+   "src": [
+    "https://ru.wikisource.org/wiki/%D0%91%D0%B5%D0%B4%D0%BD%D0%B0%D1%8F_%D0%9B%D0%B8%D0%B7%D0%B0_%28%D0%9A%D0%B0%D1%80%D0%B0%D0%BC%D0%B7%D0%B8%D0%BD%29"
+   ],
+   "toc": [
+    {
+     "t": "Бедная Лиза",
+     "p": 1,
+     "i": 0
+    }
+   ],
+   "chars": 31606
+  },
+  {
+   "id": "krylov",
+   "author": "И. А. Крылов",
+   "title": "Басни",
+   "period": "drev",
+   "code": "ОГЭ 6",
+   "wiki": "Крылов, Иван Андреевич",
+   "kind": "poem",
+   "note": "«Ворона и Лисица», «Волк и Ягнёнок», «Волк на псарне», «Квартет», «Лебедь, Щука и Рак», «Свинья под Дубом», «Демьянова уха», «Слон и Моська», «Стрекоза и Муравей», «Тришкин кафтан»",
+   "src": [
+    "https://ru.wikisource.org/wiki/%D0%92%D0%BE%D1%80%D0%BE%D0%BD%D0%B0_%D0%B8_%D0%9B%D0%B8%D1%81%D0%B8%D1%86%D0%B0_%28%D0%9A%D1%80%D1%8B%D0%BB%D0%BE%D0%B2%29",
+    "https://ru.wikisource.org/wiki/%D0%92%D0%BE%D0%BB%D0%BA_%D0%B8_%D0%AF%D0%B3%D0%BD%D1%91%D0%BD%D0%BE%D0%BA_%28%D0%9A%D1%80%D1%8B%D0%BB%D0%BE%D0%B2%29",
+    "https://ru.wikisource.org/wiki/%D0%92%D0%BE%D0%BB%D0%BA_%D0%BD%D0%B0_%D0%BF%D1%81%D0%B0%D1%80%D0%BD%D0%B5_%28%D0%9A%D1%80%D1%8B%D0%BB%D0%BE%D0%B2%29",
+    "https://ru.wikisource.org/wiki/%D0%9A%D0%B2%D0%B0%D1%80%D1%82%D0%B5%D1%82_%28%D0%9A%D1%80%D1%8B%D0%BB%D0%BE%D0%B2%29",
+    "https://ru.wikisource.org/wiki/%D0%9B%D0%B5%D0%B1%D0%B5%D0%B4%D1%8C%2C_%D0%A9%D1%83%D0%BA%D0%B0_%D0%B8_%D0%A0%D0%B0%D0%BA_%28%D0%9A%D1%80%D1%8B%D0%BB%D0%BE%D0%B2%29",
+    "https://ru.wikisource.org/wiki/%D0%A1%D0%B2%D0%B8%D0%BD%D1%8C%D1%8F_%D0%BF%D0%BE%D0%B4_%D0%94%D1%83%D0%B1%D0%BE%D0%BC_%28%D0%9A%D1%80%D1%8B%D0%BB%D0%BE%D0%B2%29",
+    "https://ru.wikisource.org/wiki/%D0%94%D0%B5%D0%BC%D1%8C%D1%8F%D0%BD%D0%BE%D0%B2%D0%B0_%D1%83%D1%85%D0%B0_%28%D0%9A%D1%80%D1%8B%D0%BB%D0%BE%D0%B2%29",
+    "https://ru.wikisource.org/wiki/%D0%A1%D0%BB%D0%BE%D0%BD_%D0%B8_%D0%9C%D0%BE%D1%81%D1%8C%D0%BA%D0%B0_%28%D0%9A%D1%80%D1%8B%D0%BB%D0%BE%D0%B2%29",
+    "https://ru.wikisource.org/wiki/%D0%A1%D1%82%D1%80%D0%B5%D0%BA%D0%BE%D0%B7%D0%B0_%D0%B8_%D0%9C%D1%83%D1%80%D0%B0%D0%B2%D0%B5%D0%B9_%28%D0%9A%D1%80%D1%8B%D0%BB%D0%BE%D0%B2%29",
+    "https://ru.wikisource.org/wiki/%D0%A2%D1%80%D0%B8%D1%88%D0%BA%D0%B8%D0%BD_%D0%BA%D0%B0%D1%84%D1%82%D0%B0%D0%BD_%28%D0%9A%D1%80%D1%8B%D0%BB%D0%BE%D0%B2%29"
+   ],
+   "toc": [
+    {
+     "t": "Ворона и Лисица",
+     "p": 1,
+     "i": 0
+    },
+    {
+     "t": "Волк и Ягнёнок",
+     "p": 1,
+     "i": 1
+    },
+    {
+     "t": "Волк на псарне",
+     "p": 1,
+     "i": 2
+    },
+    {
+     "t": "Квартет",
+     "p": 1,
+     "i": 3
+    },
+    {
+     "t": "Лебедь, Щука и Рак",
+     "p": 1,
+     "i": 4
+    },
+    {
+     "t": "Свинья под Дубом",
+     "p": 1,
+     "i": 5
+    },
+    {
+     "t": "Демьянова уха",
+     "p": 1,
+     "i": 6
+    },
+    {
+     "t": "Слон и Моська",
+     "p": 1,
+     "i": 7
+    },
+    {
+     "t": "Стрекоза и Муравей",
+     "p": 1,
+     "i": 8
+    },
+    {
+     "t": "Тришкин кафтан",
+     "p": 1,
+     "i": 9
+    }
+   ],
+   "chars": 15788
+  },
+  {
+   "id": "zhukovsky",
+   "author": "В. А. Жуковский",
+   "title": "Баллады",
+   "period": "xix1",
+   "code": "ОГЭ 7",
+   "wiki": "Светлана (баллада)",
+   "kind": "poem",
+   "note": "«Светлана», «Людмила», «Лесной царь»",
+   "src": [
+    "https://ru.wikisource.org/wiki/%D0%A1%D0%B2%D0%B5%D1%82%D0%BB%D0%B0%D0%BD%D0%B0_%28%D0%96%D1%83%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%B8%D0%B9%29",
+    "https://ru.wikisource.org/wiki/%D0%9B%D1%8E%D0%B4%D0%BC%D0%B8%D0%BB%D0%B0_%28%D0%96%D1%83%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%B8%D0%B9%29",
+    "https://ru.wikisource.org/wiki/%D0%9B%D0%B5%D1%81%D0%BD%D0%BE%D0%B9_%D1%86%D0%B0%D1%80%D1%8C_%28%D0%93%D1%91%D1%82%D0%B5%3B_%D0%96%D1%83%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%B8%D0%B9%29"
+   ],
+   "toc": [
+    {
+     "t": "Светлана",
+     "p": 1,
+     "i": 0
+    },
+    {
+     "t": "Людмила",
+     "p": 1,
+     "i": 1
+    },
+    {
+     "t": "Лесной царь",
+     "p": 1,
+     "i": 2
+    }
+   ],
+   "chars": 15815
+  },
+  {
+   "id": "belkin",
+   "author": "А. С. Пушкин",
+   "title": "Повести Белкина",
+   "period": "xix1",
+   "code": "ОГЭ 11",
+   "wiki": "Повести Белкина",
+   "kind": "prose",
+   "note": "«Выстрел», «Метель», «Гробовщик», «Станционный смотритель», «Барышня-крестьянка»",
+   "src": [
+    "https://ru.wikisource.org/wiki/%D0%9F%D0%BE%D0%B2%D0%B5%D1%81%D1%82%D0%B8_%D0%BF%D0%BE%D0%BA%D0%BE%D0%B9%D0%BD%D0%BE%D0%B3%D0%BE_%D0%98%D0%B2%D0%B0%D0%BD%D0%B0_%D0%9F%D0%B5%D1%82%D1%80%D0%BE%D0%B2%D0%B8%D1%87%D0%B0_%D0%91%D0%B5%D0%BB%D0%BA%D0%B8%D0%BD%D0%B0_%28%D0%9F%D1%83%D1%88%D0%BA%D0%B8%D0%BD%29"
+   ],
+   "toc": [
+    {
+     "t": "От издателя",
+     "p": 1,
+     "i": 0
+    },
+    {
+     "t": "Выстрел",
+     "p": 1,
+     "i": 1
+    },
+    {
+     "t": "Метель",
+     "p": 1,
+     "i": 2
+    },
+    {
+     "t": "Гробовщик",
+     "p": 1,
+     "i": 3
+    },
+    {
+     "t": "Станционный смотритель",
+     "p": 1,
+     "i": 4
+    },
+    {
+     "t": "Барышня-крестьянка",
+     "p": 1,
+     "i": 5
+    }
+   ],
+   "chars": 122493
+  },
+  {
+   "id": "vsadnik",
+   "author": "А. С. Пушкин",
+   "title": "Медный всадник",
+   "period": "xix1",
+   "code": "ОГЭ 12",
+   "wiki": "Медный всадник (поэма)",
+   "kind": "poem",
+   "src": [
+    "https://ru.wikisource.org/wiki/%D0%9C%D0%B5%D0%B4%D0%BD%D1%8B%D0%B9_%D0%B2%D1%81%D0%B0%D0%B4%D0%BD%D0%B8%D0%BA_%28%D0%9F%D1%83%D1%88%D0%BA%D0%B8%D0%BD%29"
+   ],
+   "toc": [
+    {
+     "t": "Медный всадник",
+     "p": 1,
+     "i": 0
+    }
+   ],
+   "chars": 13596
+  },
+  {
+   "id": "kalashnikov",
+   "author": "М. Ю. Лермонтов",
+   "title": "Песня про царя Ивана Васильевича, молодого опричника и удалого купца Калашникова",
+   "period": "xix1",
+   "code": "ОГЭ 15",
+   "wiki": "Песня о купце Калашникове",
+   "kind": "poem",
+   "src": [
+    "https://ru.wikisource.org/wiki/%D0%9F%D0%B5%D1%81%D0%BD%D1%8F_%D0%BF%D1%80%D0%BE_%D1%86%D0%B0%D1%80%D1%8F_%D0%98%D0%B2%D0%B0%D0%BD%D0%B0_%D0%92%D0%B0%D1%81%D0%B8%D0%BB%D1%8C%D0%B5%D0%B2%D0%B8%D1%87%D0%B0%2C_%D0%BC%D0%BE%D0%BB%D0%BE%D0%B4%D0%BE%D0%B3%D0%BE_%D0%BE%D0%BF%D1%80%D0%B8%D1%87%D0%BD%D0%B8%D0%BA%D0%B0_%D0%B8_%D1%83%D0%B4%D0%B0%D0%BB%D0%BE%D0%B3%D0%BE_%D0%BA%D1%83%D0%BF%D1%86%D0%B0_%D0%9A%D0%B0%D0%BB%D0%B0%D1%88%D0%BD%D0%B8%D0%BA%D0%BE%D0%B2%D0%B0_%28%D0%9B%D0%B5%D1%80%D0%BC%D0%BE%D0%BD%D1%82%D0%BE%D0%B2%29/%D0%9F%D0%A1%D0%A1_1989_%28%D0%A1%D0%9E%29"
+   ],
+   "toc": [
+    {
+     "t": "Песня про царя Ивана Васильевича, молодого опричника и удалого купца Калашникова",
+     "p": 1,
+     "i": 0
+    }
+   ],
+   "chars": 16432
+  },
+  {
+   "id": "mtsyri",
+   "author": "М. Ю. Лермонтов",
+   "title": "Мцыри",
+   "period": "xix1",
+   "code": "ОГЭ 16",
+   "wiki": "Мцыри",
+   "kind": "poem",
+   "src": [
+    "https://ru.wikisource.org/wiki/%D0%9C%D1%86%D1%8B%D1%80%D0%B8_%28%D0%9B%D0%B5%D1%80%D0%BC%D0%BE%D0%BD%D1%82%D0%BE%D0%B2%29"
+   ],
+   "toc": [
+    {
+     "t": "Мцыри",
+     "p": 1,
+     "i": 0
+    }
+   ],
+   "chars": 19537
+  },
+  {
+   "id": "shinel",
+   "author": "Н. В. Гоголь",
+   "title": "Шинель",
+   "period": "xix1",
+   "code": "ОГЭ 19",
+   "wiki": "Шинель (повесть)",
+   "kind": "prose",
+   "src": [
+    "https://ru.wikisource.org/wiki/%D0%A8%D0%B8%D0%BD%D0%B5%D0%BB%D1%8C_%28%D0%93%D0%BE%D0%B3%D0%BE%D0%BB%D1%8C%29/%D0%A1%D0%A1_1967_%28%D0%A1%D0%9E%29"
+   ],
+   "toc": [
+    {
+     "t": "Шинель",
+     "p": 1,
+     "i": 0
+    }
+   ],
+   "chars": 65544
+  },
+  {
+   "id": "turgenev-povesti",
+   "author": "И. С. Тургенев",
+   "title": "Повести и рассказы",
+   "period": "xix2",
+   "code": "ОГЭ 22",
+   "wiki": "Муму",
+   "kind": "prose",
+   "note": "«Муму», «Бежин луг», «Ася» — на выбор",
+   "src": [
+    "https://ru.wikisource.org/wiki/%D0%9C%D1%83%D0%BC%D1%83_%28%D0%A2%D1%83%D1%80%D0%B3%D0%B5%D0%BD%D0%B5%D0%B2%29",
+    "https://ru.wikisource.org/wiki/%D0%91%D0%B5%D0%B6%D0%B8%D0%BD_%D0%BB%D1%83%D0%B3_%28%D0%A2%D1%83%D1%80%D0%B3%D0%B5%D0%BD%D0%B5%D0%B2%29",
+    "https://ru.wikisource.org/wiki/%D0%90%D1%81%D1%8F_%28%D0%A2%D1%83%D1%80%D0%B3%D0%B5%D0%BD%D0%B5%D0%B2%29"
+   ],
+   "toc": [
+    {
+     "t": "Муму",
+     "p": 1,
+     "i": 0
+    },
+    {
+     "t": "Бежин луг",
+     "p": 1,
+     "i": 1
+    },
+    {
+     "t": "Ася · I",
+     "p": 1,
+     "i": 2
+    },
+    {
+     "t": "Ася · II",
+     "p": 1,
+     "i": 3
+    },
+    {
+     "t": "Ася · III",
+     "p": 1,
+     "i": 4
+    },
+    {
+     "t": "Ася · IV",
+     "p": 1,
+     "i": 5
+    },
+    {
+     "t": "Ася · V",
+     "p": 1,
+     "i": 6
+    },
+    {
+     "t": "Ася · VI",
+     "p": 1,
+     "i": 7
+    },
+    {
+     "t": "Ася · VII",
+     "p": 1,
+     "i": 8
+    },
+    {
+     "t": "Ася · VIII",
+     "p": 2,
+     "i": 0
+    },
+    {
+     "t": "Ася · IX",
+     "p": 2,
+     "i": 1
+    },
+    {
+     "t": "Ася · X",
+     "p": 2,
+     "i": 2
+    },
+    {
+     "t": "Ася · XI",
+     "p": 2,
+     "i": 3
+    },
+    {
+     "t": "Ася · XII",
+     "p": 2,
+     "i": 4
+    },
+    {
+     "t": "Ася · XIII",
+     "p": 2,
+     "i": 5
+    },
+    {
+     "t": "Ася · XIV",
+     "p": 2,
+     "i": 6
+    },
+    {
+     "t": "Ася · XV",
+     "p": 2,
+     "i": 7
+    },
+    {
+     "t": "Ася · XVI",
+     "p": 2,
+     "i": 8
+    },
+    {
+     "t": "Ася · XVII",
+     "p": 2,
+     "i": 9
+    },
+    {
+     "t": "Ася · XVIII",
+     "p": 2,
+     "i": 10
+    },
+    {
+     "t": "Ася · XIX",
+     "p": 2,
+     "i": 11
+    },
+    {
+     "t": "Ася · XX",
+     "p": 2,
+     "i": 12
+    },
+    {
+     "t": "Ася · XXI",
+     "p": 2,
+     "i": 13
+    },
+    {
+     "t": "Ася · XXII",
+     "p": 2,
+     "i": 14
+    }
+   ],
+   "chars": 176080
+  },
+  {
+   "id": "belye-nochi",
+   "author": "Ф. М. Достоевский",
+   "title": "Белые ночи",
+   "period": "xix2",
+   "code": "ОГЭ 28",
+   "wiki": "Белые ночи (повесть)",
+   "kind": "prose",
+   "note": "«Белые ночи», «Мальчик у Христа на ёлке» — на выбор",
+   "src": [
+    "https://ru.wikisource.org/wiki/%D0%91%D0%B5%D0%BB%D1%8B%D0%B5_%D0%BD%D0%BE%D1%87%D0%B8_%28%D0%94%D0%BE%D1%81%D1%82%D0%BE%D0%B5%D0%B2%D1%81%D0%BA%D0%B8%D0%B9%29",
+    "https://ru.wikisource.org/wiki/%D0%9C%D0%B0%D0%BB%D1%8C%D1%87%D0%B8%D0%BA_%D1%83_%D0%A5%D1%80%D0%B8%D1%81%D1%82%D0%B0_%D0%BD%D0%B0_%D1%91%D0%BB%D0%BA%D0%B5_%28%D0%94%D0%BE%D1%81%D1%82%D0%BE%D0%B5%D0%B2%D1%81%D0%BA%D0%B8%D0%B9%29"
+   ],
+   "toc": [
+    {
+     "t": "Ночь первая",
+     "p": 1,
+     "i": 0
+    },
+    {
+     "t": "Ночь вторая",
+     "p": 1,
+     "i": 1
+    },
+    {
+     "t": "История Настеньки",
+     "p": 1,
+     "i": 2
+    },
+    {
+     "t": "Ночь третья",
+     "p": 1,
+     "i": 3
+    },
+    {
+     "t": "Ночь четвёртая",
+     "p": 1,
+     "i": 4
+    },
+    {
+     "t": "Утро",
+     "p": 1,
+     "i": 5
+    },
+    {
+     "t": "Мальчик у Христа на ёлке",
+     "p": 1,
+     "i": 6
+    }
+   ],
+   "chars": 112077
+  },
+  {
+   "id": "tolstoy-rasskazy",
+   "author": "Л. Н. Толстой",
+   "title": "После бала",
+   "period": "xix2",
+   "code": "ОГЭ 29",
+   "wiki": "После бала",
+   "kind": "prose",
+   "note": "«После бала» и ещё одна повесть на выбор — «Кавказский пленник»",
+   "src": [
+    "https://ru.wikisource.org/wiki/%D0%9F%D0%BE%D1%81%D0%BB%D0%B5_%D0%B1%D0%B0%D0%BB%D0%B0_%28%D0%A2%D0%BE%D0%BB%D1%81%D1%82%D0%BE%D0%B9%29",
+    "https://ru.wikisource.org/wiki/%D0%9A%D0%B0%D0%B2%D0%BA%D0%B0%D0%B7%D1%81%D0%BA%D0%B8%D0%B9_%D0%BF%D0%BB%D0%B5%D0%BD%D0%BD%D0%B8%D0%BA_%28%D0%A2%D0%BE%D0%BB%D1%81%D1%82%D0%BE%D0%B9%29"
+   ],
+   "toc": [
+    {
+     "t": "После бала",
+     "p": 1,
+     "i": 0
+    },
+    {
+     "t": "Кавказский пленник",
+     "p": 1,
+     "i": 1
+    }
+   ],
+   "chars": 59396
+  },
+  {
+   "id": "chekhov-rannie",
+   "author": "А. П. Чехов",
+   "title": "Ранние рассказы",
+   "period": "xix2",
+   "code": "ОГЭ 30",
+   "wiki": "Хамелеон (рассказ)",
+   "kind": "prose",
+   "note": "«Хамелеон», «Толстый и тонкий», «Смерть чиновника», «Тоска», «Злоумышленник», «Лошадиная фамилия»",
+   "src": [
+    "https://ru.wikisource.org/wiki/%D0%A5%D0%B0%D0%BC%D0%B5%D0%BB%D0%B5%D0%BE%D0%BD_%28%D0%A7%D0%B5%D1%85%D0%BE%D0%B2%29/%D0%92%D0%B0%D1%80%D0%B8%D0%B0%D0%BD%D1%82_%D0%9F%D0%A1%D0%A1_%D0%A7%D0%B5%D1%85%D0%BE%D0%B2%D0%B0_1974%E2%80%941982",
+    "https://ru.wikisource.org/wiki/%D0%A2%D0%BE%D0%BB%D1%81%D1%82%D1%8B%D0%B9_%D0%B8_%D1%82%D0%BE%D0%BD%D0%BA%D0%B8%D0%B9_%28%D0%A7%D0%B5%D1%85%D0%BE%D0%B2%29/%D0%9F%D0%A1%D0%A1_1975",
+    "https://ru.wikisource.org/wiki/%D0%A1%D0%BC%D0%B5%D1%80%D1%82%D1%8C_%D1%87%D0%B8%D0%BD%D0%BE%D0%B2%D0%BD%D0%B8%D0%BA%D0%B0_%28%D0%A7%D0%B5%D1%85%D0%BE%D0%B2%29",
+    "https://ru.wikisource.org/wiki/%D0%A2%D0%BE%D1%81%D0%BA%D0%B0_%28%D0%A7%D0%B5%D1%85%D0%BE%D0%B2%29",
+    "https://ru.wikisource.org/wiki/%D0%97%D0%BB%D0%BE%D1%83%D0%BC%D1%8B%D1%88%D0%BB%D0%B5%D0%BD%D0%BD%D0%B8%D0%BA_%28%D0%A7%D0%B5%D1%85%D0%BE%D0%B2%29",
+    "https://ru.wikisource.org/wiki/%D0%9B%D0%BE%D1%88%D0%B0%D0%B4%D0%B8%D0%BD%D0%B0%D1%8F_%D1%84%D0%B0%D0%BC%D0%B8%D0%BB%D0%B8%D1%8F_%28%D0%A7%D0%B5%D1%85%D0%BE%D0%B2%29"
+   ],
+   "toc": [
+    {
+     "t": "Хамелеон",
+     "p": 1,
+     "i": 0
+    },
+    {
+     "t": "Толстый и тонкий",
+     "p": 1,
+     "i": 1
+    },
+    {
+     "t": "Смерть чиновника",
+     "p": 1,
+     "i": 2
+    },
+    {
+     "t": "Тоска",
+     "p": 1,
+     "i": 3
+    },
+    {
+     "t": "Злоумышленник",
+     "p": 1,
+     "i": 4
+    },
+    {
+     "t": "Лошадиная фамилия",
+     "p": 1,
+     "i": 5
+    }
+   ],
+   "chars": 35537
+  },
+  {
+   "id": "sudba",
+   "author": "М. А. Шолохов",
+   "title": "Судьба человека",
+   "period": "xx",
+   "code": "ОГЭ 41",
+   "wiki": "Судьба человека",
+   "kind": "prose"
+  },
+  {
+   "id": "shukshin",
+   "author": "В. М. Шукшин",
+   "title": "Рассказы",
+   "period": "xx",
+   "code": "ОГЭ 43 · ЕГЭ 46",
+   "wiki": "Шукшин, Василий Макарович",
+   "kind": "prose",
+   "note": "«Чудик», «Стенька Разин», «Критики» и др."
+  },
+  {
+   "id": "matrenin",
+   "author": "А. И. Солженицын",
+   "title": "Матрёнин двор",
+   "period": "xx",
+   "code": "ОГЭ 44",
+   "wiki": "Матрёнин двор",
    "kind": "prose"
   }
  ]

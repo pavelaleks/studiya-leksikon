@@ -99,12 +99,25 @@ export async function readingView(host, render, sub) {
     .then((r) => r.json())
     .then((d) => new Map(d.poems.map((p) => [p.id, `${p.author.split(" ").pop()}. ${p.title}`])))
     .catch(() => new Map());
-  const [students, results, learned, quizzes] = await Promise.all([
+  const rl = await import("./reading-list.js?v=land178");
+  const { examsOf } = await import("./reading-canon.js?v=land178");
+  const [students, results, learned, quizzes, marks] = await Promise.all([
     supa.from("profiles").select("id, full_name, email, status, courses, exam_target").neq("role", "teacher").eq("status", "active").order("full_name"),
     supa.from("reading_results").select("student_id, quiz_id, passed, created_at"),
     supa.from("poems_learned").select("student_id, poem_id, learned_at"),
     supa.from("reading_quizzes").select("id, title, work_id, is_published, position, url").order("position"),
+    rl.readCounts().catch(() => ({ counts: new Map(), totals: {} })),
   ]);
+  const listCell = (p) => {
+    const ex = examsOf(p);
+    if (!ex.length) return "—";
+    return ex
+      .map((e) => {
+        const n = marks.counts.get(p.id + ":" + e) || 0;
+        return `<a href="#/cabinet/student/${p.id}/reading/${e}"><strong>${n}</strong>/${marks.totals[e]} ${e === "oge" ? "ОГЭ" : "ЕГЭ"}</a>`;
+      })
+      .join("<br>");
+  };
   for (const r of [students, results, learned, quizzes]) if (r.error) throw r.error;
   const passedBy = new Map();
   const triedBy = new Map();
@@ -133,6 +146,7 @@ export async function readingView(host, render, sub) {
       return `
       <tr>
         <td><a href="#/cabinet/student/${p.id}">${escapeHtml(p.full_name || p.email)}</a></td>
+        <td>${listCell(p)}</td>
         <td>${passed.length ? `<strong>${passed.length}</strong> <small class="muted">${passed.map((id) => escapeHtml(qTitle.get(id) || "")).join(", ")}</small>` : "—"}
           ${tried.length ? `<br><small class="muted">не сдано: ${tried.map((id) => escapeHtml(qTitle.get(id) || "")).join(", ")}</small>` : ""}</td>
         <td>${poems.length ? `<strong>${poems.length}</strong> <small class="muted">${poems.map((id) => `<a href="#/library/poems/${id}">${escapeHtml(poemTitles.get(id) || id)}</a>`).join(", ")}</small>` : "—"}</td>
@@ -147,8 +161,8 @@ export async function readingView(host, render, sub) {
     <section class="card">
       <h2>Ученики</h2>
       <div class="t-table-wrap"><table class="t-table">
-        <thead><tr><th>Ученик</th><th>Статьи (сдано)</th><th>Стихи наизусть</th></tr></thead>
-        <tbody>${rows || `<tr><td colspan="3" class="muted">Нет учеников с курсом литературы.</td></tr>`}</tbody>
+        <thead><tr><th>Ученик</th><th>Список чтения</th><th>Статьи (сдано)</th><th>Стихи наизусть</th></tr></thead>
+        <tbody>${rows || `<tr><td colspan="4" class="muted">Нет учеников с курсом литературы.</td></tr>`}</tbody>
       </table></div>
       <p class="muted">${showAll ? `Показаны все ученики. <a href="#/cabinet/reading">Только литература</a>` : `Показаны ученики с курсом литературы${hiddenCount ? ` · ещё ${hiddenCount} без него — <a href="#/cabinet/reading?all=1">показать всех</a>` : ""}.`}</p>
     </section>

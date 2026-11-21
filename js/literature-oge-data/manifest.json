@@ -1,0 +1,145 @@
+{
+  "schema": 1,
+  "exam": "ОГЭ",
+  "subject": "литература",
+  "fetchedAt": "2026-11-21",
+  "source": {
+    "site": "https://lit-oge.sdamgia.ru/",
+    "catalog": "https://lit-oge.sdamgia.ru/prob_catalog",
+    "name": "Решу ОГЭ",
+    "note": "Задания и пояснения собраны с lit-oge.sdamgia.ru для учебной базы студии «Лексикон». При размещении на сайте указывайте источник."
+  },
+  "howToUse": {
+    "index": "index.json — карточки всех заданий без полных текстов: фильтр по номеру, теме, автору, типу ответа.",
+    "bank": "bank/oge-01.json … oge-05.json — задания 1–5 ОГЭ (источник в базе — oge-lit).",
+    "passage": "В файле банка passages[passageId] — общий фрагмент произведения. В задании passageId ссылается на него, вопрос лежит в questionHtml.",
+    "check": "answerKind=short и match можно проверять по answerNorm (и answerAlts). open и essay — развёрнутый ответ, ориентир в solutionHtml."
+  },
+  "answerKinds": {
+    "short": "краткий словесный ответ",
+    "match": "последовательность цифр, соответствие",
+    "open": "развёрнутый ответ",
+    "essay": "сочинение"
+  },
+  "counts": {
+    "problems": 505,
+    "ege": 505,
+    "extra": 0,
+    "withSolution": 505,
+    "withAnswer": 0,
+    "withPassage": 401,
+    "duplicatesSkipped": 0,
+    "byAnswerKind": {
+      "open": 401,
+      "essay": 104
+    }
+  },
+  "files": [
+    {
+      "file": "bank/oge-01.json",
+      "id": "oge-01",
+      "kind": "ege",
+      "task": 1,
+      "title": "Ответ на вопрос по тексту",
+      "legacy": null,
+      "count": 100,
+      "topics": [
+        {
+          "id": 6,
+          "title": "Задания для подготовки",
+          "count": 94
+        },
+        {
+          "id": 9,
+          "title": "Задания на основе экзаменов прошлых лет",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "file": "bank/oge-02.json",
+      "id": "oge-02",
+      "kind": "ege",
+      "task": 2,
+      "title": "Вопрос по прозе",
+      "legacy": null,
+      "count": 96,
+      "topics": [
+        {
+          "id": 5,
+          "title": "Задания для подготовки",
+          "count": 90
+        },
+        {
+          "id": 10,
+          "title": "Задания на основе экзаменов прошлых лет",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "file": "bank/oge-03.json",
+      "id": "oge-03",
+      "kind": "ege",
+      "task": 3,
+      "title": "Ответ на вопрос по тексту",
+      "legacy": null,
+      "count": 103,
+      "topics": [
+        {
+          "id": 7,
+          "title": "Задания для подготовки",
+          "count": 94
+        },
+        {
+          "id": 11,
+          "title": "Задания на основе экзаменов прошлых лет",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "file": "bank/oge-04.json",
+      "id": "oge-04",
+      "kind": "ege",
+      "task": 4,
+      "title": "Сопоставление с художественным текстом",
+      "legacy": null,
+      "count": 102,
+      "topics": [
+        {
+          "id": 8,
+          "title": "Задания для подготовки",
+          "count": 94
+        },
+        {
+          "id": 12,
+          "title": "Задания на основе экзаменов прошлых лет",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "file": "bank/oge-05.json",
+      "id": "oge-05",
+      "kind": "ege",
+      "task": 5,
+      "title": "Сочинение",
+      "legacy": null,
+      "count": 104,
+      "topics": [
+        {
+          "id": 4,
+          "title": "Задания для подготовки",
+          "count": 94
+        },
+        {
+          "id": 13,
+          "title": "Задания на основе экзаменов прошлых лет",
+          "count": 10
+        }
+      ]
+    }
+  ],
+  "mismatches": []
+}

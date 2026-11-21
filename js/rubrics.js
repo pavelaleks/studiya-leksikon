@@ -237,6 +237,12 @@ export function rubricFor(task) {
   const file = String(task?.bank_file || "");
   if (src === "ege-rus" && n === 27) return "ege-rus-27";
   if (src === "oge-rus" && n === 13) return "oge-rus-13";
+  if (src === "oge-lit") {
+    if (n === 1 || n === 3) return "oge-lit-1-3";
+    if (n === 2) return "oge-lit-2";
+    if (n === 4) return "oge-lit-4";
+    if (n === 5) return "oge-lit-5";
+  }
   if (src === "ege-lit" && !file.startsWith("extra")) {
     if (n === 4 || n === 9) return "ege-lit-4-9";
     if (n === 5 || n === 10) return "ege-lit-5-10";

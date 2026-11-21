@@ -54,3 +54,6 @@ js/vpr-data/problems/
 js/vpr-data/passages/
 js/vpr-data/bank/
 tools/_sdamgia_cache_vpr8/
+js/literature-oge-data/bank/
+js/literature-oge-data/index.json
+tools/_sdamgia_cache_litoge/

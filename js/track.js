@@ -4,8 +4,8 @@
 
 export const SUBJECTS = { rus: "Русский язык", lit: "Литература" };
 export const GRADES = [5, 6, 7, 8, 9, 10, 11];
-export const TRACK_TITLE = { "ege-rus": "Русский · ЕГЭ", "oge-rus": "Русский · ОГЭ", "vpr-rus": "Русский · ВПР", "ege-lit": "Литература" };
-export const TRACK_HREF = { "ege-rus": "#/ege", "oge-rus": "#/oge", "vpr-rus": "#/vpr", "ege-lit": "#/literature" };
+export const TRACK_TITLE = { "ege-rus": "Русский · ЕГЭ", "oge-rus": "Русский · ОГЭ", "vpr-rus": "Русский · ВПР", "ege-lit": "Литература", "oge-lit": "Литература · ОГЭ" };
+export const TRACK_HREF = { "ege-rus": "#/ege", "oge-rus": "#/oge", "vpr-rus": "#/vpr", "ege-lit": "#/literature", "oge-lit": "#/literature/oge" };
 
 export function courseLabel(c) {
   const [s, g] = String(c).split(":");
@@ -17,8 +17,8 @@ export function courseLabel(c) {
 /** По какому банку заданий строится трек курса. */
 export function courseTrack(c) {
   const [s, g] = String(c).split(":");
-  if (s === "lit") return "ege-lit";
   const n = Number(g);
+  if (s === "lit") return n === 9 ? "oge-lit" : "ege-lit";
   return n >= 10 ? "ege-rus" : n === 9 ? "oge-rus" : "vpr-rus";
 }
 
@@ -66,6 +66,6 @@ export function routeSubject(parts) {
   if (["rules", "rule", "practice", "exercise", "trainer"].includes(a)) return "rus";
   if (["ege", "oge", "vpr"].includes(a)) return oneTask ? null : "rus";
   if (a === "library") return "lit";
-  if (a === "literature") return oneTask || b === "archive" ? null : "lit";
+  if (a === "literature") return oneTask || b === "archive" || (b === "oge" && /^\d+$/.test(c || "") && !!parts[3]) ? null : "lit";
   return null;
 }

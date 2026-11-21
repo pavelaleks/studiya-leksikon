@@ -1,7 +1,7 @@
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
 import { accessState, bankFull, bankList, clearBankCache } from "./supa.js";
-import { bindCheck, bindWritten, checkBlockHtml, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js?v=land177";
+import { bindCheck, bindWritten, checkBlockHtml, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js?v=land178";
 
 const SOURCE = "ege-lit";
 
@@ -50,7 +50,7 @@ const bankCache = new Map();
 let topicsCache = null;
 let termsCache = null;
 
-function ru(n, one, few, many) {
+export function ru(n, one, few, many) {
   const mod10 = n % 10;
   const mod100 = n % 100;
   if (mod10 === 1 && mod100 !== 11) return one;
@@ -58,7 +58,7 @@ function ru(n, one, few, many) {
   return many;
 }
 
-function norm(s) {
+export function norm(s) {
   return String(s || "")
     .toLowerCase()
     .replace(/ё/g, "е")
@@ -72,7 +72,7 @@ function answerKey(s) {
   return norm(s).replace(/^[.:;\s]+|[.:;\s]+$/g, "");
 }
 
-function clip(s, n) {
+export function clip(s, n) {
   const text = String(s || "").replace(/\s+/g, " ").trim();
   if (text.length <= n) return text;
   return `${text.slice(0, n - 1).trim()}…`;
@@ -163,7 +163,7 @@ function sourceNote() {
   return `<p class="lit-source-note muted">Задания и пояснения: <a href="https://lit-ege.sdamgia.ru/" target="_blank" rel="noopener noreferrer">Решу ЕГЭ</a></p>`;
 }
 
-function decodeEntities(value) {
+export function decodeEntities(value) {
   return String(value ?? "")
     .replace(/&nbsp;?/gi, " ")
     .replace(/&amp;/g, "&")
@@ -175,7 +175,7 @@ function decodeEntities(value) {
     .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)));
 }
 
-function workLine(problem) {
+export function workLine(problem) {
   const bits = [];
   if (problem.author) bits.push(decodeEntities(problem.author));
   if (problem.work) bits.push(`«${decodeEntities(problem.work)}»`);
@@ -186,7 +186,7 @@ function cardTitle(problem) {
   return workLine(problem) || problem.topic || "Задание";
 }
 
-function sanitizeHtml(html) {
+export function sanitizeHtml(html) {
   const doc = new DOMParser().parseFromString(`<div>${String(html || "").replace(/&nbsp;?/gi, " ")}</div>`, "text/html");
   const root = doc.body.firstElementChild;
   if (!root) return "";
@@ -251,6 +251,7 @@ function hubHtml(manifest) {
       <p class="eyebrow">Литература · ЕГЭ</p>
       <h1>Задания 1–11</h1>
       <p class="lede">Краткий ответ проверяется на сайте. Задания 4, 5, 9, 10 и 11 сдаются на проверку в личный кабинет. Полный банк с разборами открыт ученикам студии.</p>
+      <p class="lit-side-link"><a href="#/literature/oge">ОГЭ по литературе: задания 1–5 →</a></p>
     </header>
     <div class="lit-tools lit-tools-lib">
       <a class="lit-tool-card lit-tool-lib" href="#/library">
@@ -920,6 +921,11 @@ export async function mountLiterature(host, rest = []) {
   if (!host) return;
   host.innerHTML = `<p class="lede muted">Загружаем задания…</p>`;
   try {
+    if (rest[0] === "oge") {
+      const { mountLitOge } = await import("./lit-oge.js?v=land178");
+      await mountLitOge(host, rest.slice(1));
+      return;
+    }
     const view = await renderView(rest);
     host.innerHTML = view.html;
     document.title = `${view.title} — Студия Лексикон`;

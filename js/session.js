@@ -2,7 +2,7 @@
 // следующий шаг тренировки дня и финальный экран после тренировки и занятия.
 import { escapeHtml } from "./ui.js";
 import { accessState, currentUser, supa } from "./supa.js";
-import { DAILY_GOAL, barnaulDate, dailyKey, loadDashboard } from "./dashboard.js?v=land177";
+import { DAILY_GOAL, barnaulDate, dailyKey, loadDashboard } from "./dashboard.js?v=land178";
 
 const store = {
   get(k) {
@@ -53,7 +53,7 @@ function dailyList() {
 const dailyDoneKey = () => `daily-done-${currentUser()?.id}-${barnaulDate()}`;
 
 function dailyHref(t) {
-  return t.source === "ege-rus" ? `#/ege/${t.task_no}/${t.source_ref}` : t.source === "oge-rus" ? `#/oge/${t.task_no}/${t.source_ref}` : t.source === "vpr-rus" ? `#/vpr/${t.task_no}/${t.source_ref}` : `#/literature/${t.task_no}/${t.source_ref}`;
+  return t.source === "ege-rus" ? `#/ege/${t.task_no}/${t.source_ref}` : t.source === "oge-rus" ? `#/oge/${t.task_no}/${t.source_ref}` : t.source === "vpr-rus" ? `#/vpr/${t.task_no}/${t.source_ref}` : t.source === "oge-lit" ? `#/literature/oge/${t.task_no}/${t.source_ref}` : `#/literature/${t.task_no}/${t.source_ref}`;
 }
 
 function nextChip(anchor, list, done) {

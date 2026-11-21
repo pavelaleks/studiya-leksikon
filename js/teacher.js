@@ -1,19 +1,19 @@
 /** Кабинет преподавателя: #/cabinet/... */
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land177";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land178";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land177";
+import { taskHref } from "./account.js?v=land178";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land177";
-import { readingView } from "./teacher-reading.js?v=land177";
-import { optionsOf } from "./practice.js?v=land177";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land177";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land177";
-import { overdueWorks, scheduleTodayMount, todayTopMount, weekView } from "./calendar.js?v=land177";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land177";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land178";
+import { readingView } from "./teacher-reading.js?v=land178";
+import { optionsOf } from "./practice.js?v=land178";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land178";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land178";
+import { overdueWorks, scheduleTodayMount, todayTopMount, weekView } from "./calendar.js?v=land178";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land178";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land177";
+} from "./review.js?v=land178";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -24,6 +24,7 @@ export const SOURCES = {
   "oge-rus": { title: "ОГЭ · русский язык", manifest: "js/oge-data/manifest.json", dir: "js/oge-data" },
   "vpr-rus": { title: "ВПР · русский язык, 8 класс", manifest: "js/vpr-data/manifest.json", dir: "js/vpr-data" },
   "ege-lit": { title: "ЕГЭ · литература", manifest: "js/literature-data/manifest.json", dir: "js/literature-data" },
+  "oge-lit": { title: "ОГЭ · литература", manifest: "js/literature-oge-data/manifest.json", dir: "js/literature-oge-data" },
 };
 
 const MODES = {
@@ -45,6 +46,10 @@ const MODES = {
     ["digits-any", "Номера в любом порядке (24 = 42)"],
     ["word", "Слово / краткий ответ"],
     ["open", "Развёрнутый ответ — проверяет преподаватель"],
+  ],
+  "oge-lit": [
+    ["open", "Развёрнутый ответ — проверяет преподаватель"],
+    ["essay", "Сочинение — проверяет преподаватель"],
   ],
   "ege-lit": [
     ["lit-short", "Краткий ответ (термин, имя)"],
@@ -83,6 +88,7 @@ function defaultMode(source, taskNo) {
   if (source === "ege-rus") return taskNo === 27 ? "essay" : "digits-any";
   if (source === "oge-rus") return taskNo === 1 || taskNo === 13 ? "essay" : "digits-any";
   if (source === "vpr-rus") return [1, 6, 7, 11, 12].includes(taskNo) ? "open" : [2, 3, 4].includes(taskNo) ? "word" : "digits-any";
+  if (source === "oge-lit") return taskNo === 5 ? "essay" : "open";
   if (taskNo === 11) return "essay";
   if ([4, 5, 9, 10].includes(taskNo)) return "open";
   if (taskNo === 2) return "lit-match";
@@ -90,7 +96,7 @@ function defaultMode(source, taskNo) {
 }
 
 function answerKindOf(source, mode) {
-  if (source === "ege-lit") return { "lit-short": "short", "lit-match": "match", open: "open", essay: "essay" }[mode] || "short";
+  if (source === "ege-lit" || source === "oge-lit") return { "lit-short": "short", "lit-match": "match", open: "open", essay: "essay" }[mode] || "short";
   if (mode === "word") return "word";
   if (mode === "essay" || mode === "open") return "essay";
   return "digits";
@@ -295,8 +301,19 @@ export async function mountTeacher(root, parts) {
     if (tab === "students") return await studentsView(host, render);
     if (tab === "student" && arg === "report") {
       render(`<div id="t-report"></div>`);
-      const pg = await import("./progress-charts.js?v=land177");
+      const pg = await import("./progress-charts.js?v=land178");
       return await pg.mountReport(host.querySelector("#t-report"), sub, { back: `#/cabinet/student/${sub}`, base: `#/cabinet/student/${sub}/report` });
+    }
+    if (tab === "student" && arg === "reading") {
+      render(`<div id="t-reading-list"></div>`);
+      const rl = await import("./reading-list.js?v=land178");
+      return await rl.mountReadingList(host.querySelector("#t-reading-list"), {
+        studentId: sub,
+        exam: parts[3] || null,
+        readOnly: true,
+        back: `#/cabinet/student/${sub}`,
+        base: `#/cabinet/student/${sub}/reading`,
+      });
     }
     if (tab === "student") return await studentView(host, render, sub);
     if (tab === "works") return await worksView(host, render, sub);
@@ -305,8 +322,27 @@ export async function mountTeacher(root, parts) {
     if (tab === "settings") {
       render(`<header class="tt-head"><div><p class="eyebrow">Кабинет</p><h1>Настройки</h1></div></header>${tgSlotHtml()}
         <section class="me-section"><h2>Расписание</h2><p><a href="#/cabinet/week">Google Календарь и сопоставление уроков — в разделе «Неделя» →</a></p></section>
+        <section class="me-section" id="t-exam-dates"><h2>Даты экзаменов по литературе</h2><p class="muted">Загружаем…</p></section>
         <section class="me-section"><h2>Оформление</h2>${themeSwitchHtml()}</section>`);
       mountTg(host, "teacher");
+      const rl = await import("./reading-list.js?v=land178");
+      const box = host.querySelector("#t-exam-dates");
+      const dates = await rl.examDates();
+      box.innerHTML = `<h2>Даты экзаменов по литературе</h2>
+        <p class="muted">По ним ученики видят на главной, сколько дней осталось и сколько читать в неделю. Пока даты не заданы, считается примерно.</p>
+        <form class="t-filter" id="t-exam-form">
+          <label>ОГЭ<input type="date" name="oge" value="${dates.oge.exact ? dates.oge.date : ""}" /></label>
+          <label>ЕГЭ<input type="date" name="ege" value="${dates.ege.exact ? dates.ege.date : ""}" /></label>
+          <button class="btn secondary" type="submit">Сохранить</button>
+          <span class="muted" id="t-exam-status" aria-live="polite"></span>
+        </form>`;
+      box.querySelector("#t-exam-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const f = new FormData(e.target);
+        const res = await Promise.all(["oge", "ege"].map((k) => rl.saveExamDate(k, f.get(k))));
+        const err = res.find((r) => r.error)?.error;
+        box.querySelector("#t-exam-status").textContent = err ? "Ошибка: " + err.message : "Сохранено";
+      });
       return;
     }
     if (tab === "bank") {
@@ -411,7 +447,7 @@ async function todayView(host, render) {
   const solvers = new Set(att.map((a) => a.student_id)).size;
   const q = queue.data || [];
   const name = (p) => escapeHtml(p?.full_name || p?.email || "ученик");
-  const shortSrc = (src) => ({ "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Лит." }[src] || "");
+  const shortSrc = (src) => ({ "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Лит.", "oge-lit": "ОГЭ лит." }[src] || "");
   const row = (href, title, sub, extra = "") => `
     <a class="tt-row" href="${href}">
       <span class="tt-body"><strong>${title}</strong><span class="muted">${sub}</span></span>
@@ -1158,7 +1194,7 @@ async function studentView(host, render, id) {
   render(`
     <p class="crumbs"><a href="#/cabinet/students">← Ученики</a></p>
     <h1>${escapeHtml(p.full_name || p.email)}</h1>
-    <p class="actions"><a class="btn secondary" href="#/cabinet/student/${p.id}/report?p=month">Прогресс и отчёт для родителей</a></p>
+    <p class="actions"><a class="btn secondary" href="#/cabinet/student/${p.id}/report?p=month">Прогресс и отчёт для родителей</a>${(p.courses || []).some((c) => /^lit:(9|10|11)$/.test(c)) ? ` <a class="btn secondary" href="#/cabinet/student/${p.id}/reading">Список чтения</a>` : ""}</p>
     <p class="t-xp">Очки: <b>${xpTotal}</b> · за неделю: <b>+${xpWeek}</b> · дней с занятиями: <b>${activeDays}</b> · закреплено глав правил: <b>${(mastered || []).length}</b></p>
     <p class="lede">${isPseudoEmail(p.email) ? `логин <b>${escapeHtml(loginOf(p.email))}</b>` : escapeHtml(p.email || "")} · ${STATUS_TEXT[p.status]}${p.grade ? ` · ${p.grade} класс` : ""}${p.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""} · ${p.tg_chat_id ? "Telegram подключён" : "Telegram не подключён"}</p>
     ${accountBlockHtml(p)}
@@ -1929,7 +1965,7 @@ async function taskFormView(host, render, editId) {
         <label>Тема (для фильтра у учеников)<input name="topic" value="${escapeHtml(t?.topic || "")}" placeholder="Задания преподавателя" /></label>
         <label>Тип ответа<select name="mode">${modeOpts(source, mode)}</select></label>
       </div>
-      <div class="grid-2" data-lit ${source === "ege-lit" ? "" : "hidden"}>
+      <div class="grid-2" data-lit ${source === "ege-lit" || source === "oge-lit" ? "" : "hidden"}>
         <label>Автор<input name="author" value="${escapeHtml(t?.data?.author || "")}" /></label>
         <label>Произведение<input name="work" value="${escapeHtml(t?.data?.work || "")}" /></label>
       </div>
@@ -1960,7 +1996,7 @@ async function taskFormView(host, render, editId) {
     const opt = form.querySelector('[name="bank"]').selectedOptions[0];
     const n = Number(opt?.dataset.task);
     if (!t) modeSel.innerHTML = modeOpts(src, defaultMode(src, n));
-    form.querySelector("[data-lit]").hidden = src !== "ege-lit";
+    form.querySelector("[data-lit]").hidden = src !== "ege-lit" && src !== "oge-lit";
     form.querySelector("[data-answer]").hidden = CHECKED_BY_TEACHER.has(modeSel.value);
   };
   bindSourceSwitch(form, "", syncMode);
@@ -2439,14 +2475,14 @@ async function importRus(source, log) {
   return total;
 }
 
-async function importLit(log) {
-  const source = "ege-lit";
+async function importLit(log, source = "ege-lit") {
+  const dir = SOURCES[source].dir;
   const files = await bankFiles(source);
   let total = 0;
   for (const file of files) {
     const [bank, list] = await Promise.all([
-      getJson(`js/literature-data/bank/${file.bank}.json`),
-      getJson(`js/literature-data/bank/${file.bank}.list.json`).catch(() => ({ problems: [] })),
+      getJson(`${dir}/bank/${file.bank}.json`),
+      getJson(`${dir}/bank/${file.bank}.list.json`).catch(() => ({ problems: [] })),
     ]);
     const listById = new Map((list.problems || []).map((p) => [String(p.id), p]));
     const passages = Object.entries(bank.passages || {}).map(([id, p]) => {
@@ -2492,7 +2528,7 @@ async function importLit(log) {
       if (error) throw humanError(error);
     }
     total += tasks.length;
-    log(`Литература, ${file.kind === "extra" ? "доп." : "№ " + file.task} (${file.bank}): ${tasks.length} заданий, ${passages.length} текстов`);
+    log(`${SOURCES[source].title}, ${file.kind === "extra" ? "доп." : "№ " + file.task} (${file.bank}): ${tasks.length} заданий, ${passages.length} текстов`);
   }
   return total;
 }
@@ -2503,7 +2539,7 @@ async function importView(host, render) {
     <h1>Импорт банка сайта</h1>
     ${bankSubnav("import")}
     <div class="card stack t-task-form">
-      <p>Переносит задания из JSON-файлов сайта (ЕГЭ, ОГЭ и ВПР по русскому, литература) в базу. Ответы и разборы попадают в закрытую таблицу.
+      <p>Переносит задания из JSON-файлов сайта (ЕГЭ, ОГЭ и ВПР по русскому, ЕГЭ и ОГЭ по литературе) в базу. Ответы и разборы попадают в закрытую таблицу.
       Первые ${DEMO_PER_FILE} задания каждого номера отмечаются как демо для гостей — это можно поменять в банке.</p>
       <p>Сейчас в базе импортированных заданий: <strong>${count ?? 0}</strong>. Повторный импорт безопасен: задания обновятся, ваши авторские не тронутся.</p>
       <p class="muted">Импорт работает там, где лежат файлы банка (локальная копия сайта). Займёт несколько минут — не закрывайте вкладку.</p>
@@ -2511,7 +2547,8 @@ async function importView(host, render) {
         <label class="t-inline"><input type="checkbox" name="s" value="ege-rus" checked /> ЕГЭ · русский</label>
         <label class="t-inline"><input type="checkbox" name="s" value="oge-rus" checked /> ОГЭ · русский</label>
         <label class="t-inline"><input type="checkbox" name="s" value="vpr-rus" checked /> ВПР · русский, 8 кл.</label>
-        <label class="t-inline"><input type="checkbox" name="s" value="ege-lit" checked /> Литература</label>
+        <label class="t-inline"><input type="checkbox" name="s" value="ege-lit" checked /> ЕГЭ · литература</label>
+        <label class="t-inline"><input type="checkbox" name="s" value="oge-lit" checked /> ОГЭ · литература</label>
       </div>
       <button class="btn" id="t-import">Начать импорт</button>
       <pre id="t-import-log" class="t-log"></pre>
@@ -2528,7 +2565,7 @@ async function importView(host, render) {
     const started = Date.now();
     let total = 0;
     try {
-      for (const s of chosen) total += s === "ege-lit" ? await importLit(log) : await importRus(s, log);
+      for (const s of chosen) total += s.endsWith("-lit") ? await importLit(log, s) : await importRus(s, log);
       log(`Готово: ${total} заданий за ${Math.round((Date.now() - started) / 1000)} с.`);
       window.__importDone = { ok: true, total };
     } catch (err) {

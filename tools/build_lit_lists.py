@@ -38,7 +38,8 @@ def slim_bank(data: dict) -> dict:
 
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8")
-    files = sorted(BANK.glob("*.json"))
+    bank = ROOT / "js" / "literature-oge-data" / "bank" if "--oge" in sys.argv else BANK
+    files = sorted(bank.glob("*.json"))
     files = [p for p in files if not p.name.endswith(".list.json")]
     total_full = 0
     total_list = 0

@@ -25,7 +25,7 @@ const tip = (q, a, link) => ({ q, a, link });
 
 function tipsFor(state, hash) {
   const route = (hash.match(/^#\/([a-z]+)/) || [])[1] || "";
-  const onTask = /^#\/(ege|oge|literature)\/\d+\/./.test(hash);
+  const onTask = /^#\/(ege|oge|literature|literature\/oge)\/\d+\/./.test(hash);
   const out = [];
   if (onTask)
     out.push(
