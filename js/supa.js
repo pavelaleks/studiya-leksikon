@@ -372,6 +372,15 @@ export async function uploadWorkFile(original) {
   return path;
 }
 
+/** Удалить файлы работ из хранилища (только свои; убранные учеником страницы). */
+export async function removeWorkFiles(paths) {
+  const uid = session?.user?.id;
+  const own = (paths || []).filter((p) => uid && p.startsWith(uid + "/"));
+  if (!own.length) return;
+  const { error } = await supa.storage.from("works").remove(own);
+  if (error) throw humanError(error);
+}
+
 export async function signedFileUrl(path) {
   const { data, error } = await supa.storage.from("works").createSignedUrl(path, 3600);
   if (error) throw humanError(error);

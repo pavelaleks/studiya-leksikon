@@ -2270,3 +2270,13 @@ body.is-reading .lh-btn { display: none; }
 .legal-page li { margin: 4px 0; }
 .apply-consent { display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 14px; font-size: 14px; line-height: 1.45; color: var(--ink-soft); cursor: pointer; }
 .apply-consent input { width: 18px; height: 18px; margin-top: 2px; flex: none; accent-color: var(--accent-fill); }
+
+/* Письменная работа: страницы — порядок и удаление */
+.pr-photo figcaption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.pr-page-tools { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; margin-left: auto; }
+.pr-page-tools .linklike { font-size: 13px; padding: 4px 0; min-height: 28px; }
+.pr-page-tools .linklike:disabled { opacity: 0.35; cursor: default; text-decoration: none; }
+.pr-page-tools .pr-page-del { color: var(--danger, #b3261e); }
+.pr-pdf { display: flex; align-items: center; justify-content: center; aspect-ratio: 3 / 4; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-weight: 600; text-decoration: none; }
+.pr-photo-missing figcaption { padding: 12px; border: 1px dashed var(--line); border-radius: 10px; }
+.pr-files-hint { font-size: 13px; margin-top: 6px; }

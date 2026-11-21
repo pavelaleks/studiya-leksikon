@@ -5,7 +5,7 @@
  *  - письменная работа: черновик, фото, сдача на проверку, оценка.
  */
 import { escapeHtml } from "./ui.js";
-import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land166";
+import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land167";
 import {
   accessState,
   currentUser,
@@ -15,6 +15,7 @@ import {
   signedFileUrl,
   submitAnswer,
   uploadWorkFile,
+  removeWorkFiles,
 } from "./supa.js";
 
 const STATUS_TEXT = {
@@ -325,6 +326,7 @@ export function bindWritten(
   };
   let work = null;
   let files = [];
+  let removed = []; // страницы, убранные учеником: удаляем из хранилища после сохранения
   teacherSolution(solution, problem, sanitize, item, solutionTitle);
 
   const loadSolution = async () => {
@@ -337,22 +339,30 @@ export function bindWritten(
   };
 
   const urls = {};
-  const filesHtml = async (paths) => {
+  const pageTools = (i, n) => `
+      <span class="pr-page-tools">
+        <button type="button" class="linklike" data-move="-1" data-i="${i}" ${i === 0 ? "disabled" : ""} aria-label="Страница ${i + 1}: сделать раньше">← раньше</button>
+        <button type="button" class="linklike" data-move="1" data-i="${i}" ${i === n - 1 ? "disabled" : ""} aria-label="Страница ${i + 1}: сделать позже">позже →</button>
+        <button type="button" class="linklike pr-page-del" data-del="${i}" aria-label="Убрать страницу ${i + 1}">убрать</button>
+      </span>`;
+  const filesHtml = async (paths, edit = false) => {
     if (!paths.length) return "";
     const items = await Promise.all(
       paths.map(async (p, i) => {
+        const tools = edit ? pageTools(i, paths.length) : "";
         try {
           urls[p] = urls[p] || (await signedFileUrl(p));
         } catch {
-          return `<span>Фото ${i + 1}</span>`;
+          return `<figure class="pr-photo pr-photo-missing"><figcaption>Страница ${i + 1} · не загрузилась${tools}</figcaption></figure>`;
         }
         const layer = work?.annotations?.photos?.[p];
         const marked = layer && ((layer.strokes || []).length || (layer.labels || []).length);
-        if (/\.pdf$/i.test(p)) return `<a href="${escapeHtml(urls[p])}" target="_blank" rel="noopener">PDF ${i + 1}</a>`;
+        if (/\.pdf$/i.test(p))
+          return `<figure class="pr-photo pr-photo-pdf"><a class="pr-pdf" href="${escapeHtml(urls[p])}" target="_blank" rel="noopener">PDF</a><figcaption>Страница ${i + 1}${tools}</figcaption></figure>`;
         return `<figure class="pr-photo" data-path="${escapeHtml(p)}">
             <canvas></canvas>
             <figcaption>Страница ${i + 1}${marked ? " · с пометками преподавателя" : ""}
-              <button type="button" class="linklike" data-dl="${escapeHtml(p)}">скачать</button></figcaption>
+              ${edit ? "" : `<button type="button" class="linklike" data-dl="${escapeHtml(p)}">скачать</button>`}${tools}</figcaption>
           </figure>`;
       })
     );
@@ -361,11 +371,13 @@ export function bindWritten(
   const drawFiles = () =>
     box.querySelectorAll(".pr-photo").forEach(async (fig) => {
       const p = fig.dataset.path;
+      if (!p) return;
       const canvas = fig.querySelector("canvas");
       try {
         await renderPhoto(canvas, urls[p], work?.annotations?.photos?.[p]);
       } catch {
-        fig.querySelector("figcaption").textContent = "Фото не загрузилось";
+        fig.querySelector("canvas")?.replaceWith(Object.assign(document.createElement("p"), { className: "muted", textContent: "Фото не загрузилось" }));
+        return;
       }
       fig.querySelector("[data-dl]")?.addEventListener("click", () => downloadCanvas(canvas, `stranica-${p.split("/").pop().replace(/\.[a-z]+$/i, "")}.jpg`));
       canvas.addEventListener("click", () => window.open(canvas.toDataURL("image/jpeg", 0.9), "_blank"));
@@ -418,15 +430,16 @@ export function bindWritten(
       }
       <label for="pr-essay">${escapeHtml(label)}</label>
       <textarea id="pr-essay" class="lit-essay" ${editable ? "" : "readonly"} placeholder="Напишите ответ здесь. Можно также приложить фото тетради.">${escapeHtml(text)}</textarea>
-      <div id="pr-files">${await filesHtml(files)}</div>
+      <div id="pr-files">${await filesHtml(files, editable)}</div>
       ${
         editable
           ? `
         <div class="pr-work-actions">
-          <label class="btn secondary pr-file-btn">Приложить фото<input type="file" id="pr-file" accept="image/*,application/pdf" multiple hidden /></label>
+          <label class="btn secondary pr-file-btn">${files.length ? "Добавить страницы" : "Приложить фото"}<input type="file" id="pr-file" accept="image/*,application/pdf" multiple hidden /></label>
           <button type="button" class="btn ${noSubmit ? "" : "secondary"}" id="pr-save">${noSubmit ? "Сохранить ответ" : "Сохранить черновик"}</button>
           ${noSubmit ? "" : `<button type="button" class="btn" id="pr-submit">Сдать на проверку</button>`}
         </div>
+        <p class="muted pr-files-hint">Сочинение на нескольких листах: сфотографируйте каждую страницу. Можно выбрать сразу все фото, а порядок поправить кнопками «раньше» и «позже».</p>
         ${noSubmit ? `<p class="muted">Ответ сдастся автоматически, когда вы завершите работу или выйдет время. Сохраняйте почаще.</p>` : ""}`
           : ""
       }
@@ -457,30 +470,69 @@ export function bindWritten(
         autosave = setTimeout(() => persist("draft", { quiet: true }), 20000);
       }
     });
+    const redrawFiles = async () => {
+      box.querySelector("#pr-files").innerHTML = await filesHtml(files, true);
+      drawFiles();
+      const btn = box.querySelector(".pr-file-btn");
+      if (btn?.firstChild) btn.firstChild.textContent = files.length ? "Добавить страницы" : "Приложить фото";
+    };
+    box.querySelector("#pr-files")?.addEventListener("click", async (e) => {
+      const mv = e.target.closest("[data-move]");
+      const del = e.target.closest("[data-del]");
+      if (mv) {
+        const i = Number(mv.dataset.i);
+        const j = i + Number(mv.dataset.move);
+        if (j < 0 || j >= files.length) return;
+        const next = [...files];
+        [next[i], next[j]] = [next[j], next[i]];
+        files = next;
+        await redrawFiles();
+        box.querySelector(`[data-move="${mv.dataset.move}"][data-i="${j}"]`)?.focus();
+        say("Порядок страниц изменён. Не забудьте сохранить или сдать работу.");
+      } else if (del) {
+        const i = Number(del.dataset.del);
+        if (!confirm(`Убрать страницу ${i + 1} из работы?`)) return;
+        removed = [...removed, files[i]];
+        files = files.filter((_, k) => k !== i);
+        await redrawFiles();
+        say(`Страница убрана. Не забудьте сохранить или сдать работу.`);
+      }
+    });
     box.querySelector("#pr-file")?.addEventListener("change", async (e) => {
-      const list = [...(e.target.files || [])].slice(0, 6);
-      for (const f of list) {
-        if (f.size > 10 * 1024 * 1024) {
-          say(`Файл «${f.name}» больше 10 МБ.`);
+      const list = [...(e.target.files || [])];
+      e.target.value = "";
+      if (!list.length) return;
+      const problems = [];
+      let added = 0;
+      for (const [k, f] of list.entries()) {
+        if (f.size > 10 * 1024 * 1024 && !f.type.startsWith("image/")) {
+          problems.push(`«${f.name}» больше 10 МБ`);
           continue;
         }
-        say(`Загружаем «${f.name}»…`);
+        say(list.length > 1 ? `Загружаем ${k + 1} из ${list.length}…` : `Загружаем «${f.name}»…`);
         try {
           files = [...files, await uploadWorkFile(f)];
+          added++;
+          await redrawFiles();
         } catch (err) {
-          say(err.message);
-          return;
+          problems.push(`«${f.name}»: ${err.message}`);
         }
       }
-      box.querySelector("#pr-files").innerHTML = await filesHtml(files);
-      drawFiles();
-      say("Фото прикреплены. Не забудьте сохранить или сдать работу.");
+      const done = added ? `Добавлено страниц: ${added}. Не забудьте сохранить или сдать работу.` : "";
+      say([done, problems.length ? `Не загрузились: ${problems.join("; ")}.` : ""].filter(Boolean).join(" "));
     });
+    const cleanup = () => {
+      if (!removed.length) return;
+      const gone = removed.filter((p) => !files.includes(p));
+      removed = [];
+      removeWorkFiles(gone).catch(() => {});
+    };
     const persist = async (next, { quiet = false } = {}) => {
       const body = area.value.trim();
       if (quiet) {
         try {
           work = await saveWork({ id: work?.id, taskId: problem._tid, itemId: item?.id || null, body, files, status: "draft", choice: options.length ? choiceNow() : undefined });
+          cleanup();
           say(`Сохранено автоматически в ${new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}.`);
         } catch {
           /* следующая попытка — при следующем вводе */
@@ -499,6 +551,7 @@ export function bindWritten(
       say(next === "submitted" ? "Сдаём…" : "Сохраняем…");
       try {
         work = await saveWork({ id: work?.id, taskId: problem._tid, itemId: item?.id || null, body, files, status: next, choice: options.length ? choiceNow() : undefined });
+        cleanup();
         if (next === "submitted") {
           try {
             localStorage.removeItem(draftKey);
