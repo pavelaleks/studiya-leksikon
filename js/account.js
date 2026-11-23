@@ -1,14 +1,14 @@
 /** Вход, регистрация и личный кабинет ученика (#/login, #/me). */
-import { itogDates } from "./itog-data.js?v=land187";
-import { bz, bzDayStart } from "./tz.js?v=land187";
+import { itogDates } from "./itog-data.js?v=land188";
+import { bz, bzDayStart } from "./tz.js?v=land188";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land187";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land187";
-import { movedHtml, myNextLessons } from "./calendar.js?v=land187";
-import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land187";
+import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land188";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land188";
+import { movedHtml, myNextLessons } from "./calendar.js?v=land188";
+import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land188";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, selfExamHtml,
-} from "./dashboard.js?v=land187";
+} from "./dashboard.js?v=land188";
 import {
   accessState,
   currentProfile,
@@ -427,7 +427,7 @@ export async function mountMe(root) {
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land187")
+    import("./lessons.js?v=land188")
       .then((m) => (isProfile ? m.myLessonsHtml() : m.myHomeData().then((d) => ({ ...d, fmtDue: m.fmtDue }))))
       .catch(() => (isProfile ? "" : null)),
     isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },
@@ -505,7 +505,7 @@ export async function mountMe(root) {
     setHwBadge(home.hw.length);
     if (student) mountSchedule(host, home, groupNames);
     if (student && subjectsOf(p).lit)
-      import("./reading-list.js?v=land187")
+      import("./reading-list.js?v=land188")
         .then((m) => m.mountHomeCard(host.querySelector("#me-reading"), p))
         .catch((e) => console.warn(e));
     host.querySelectorAll("[data-guide-close]").forEach((b) =>
