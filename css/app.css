@@ -2654,3 +2654,7 @@ a.me-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
 .is-legend { line-height: 1.9; }
 .lib-return { font-weight: 600; }
 .reader-return { max-width: 720px; margin: 10px auto 0; padding: 0 16px; font-size: .95em; }
+/* читалка: «вы остановились здесь» */
+.reader-resume { position: relative; max-width: 720px; margin: 10px auto 0; padding: 10px 40px 10px 14px; border-radius: 12px; background: var(--accent-soft); color: var(--ink); font-size: .95em; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.reader-resume .btn-sm, .reader-resume .btn { padding: 6px 12px; min-height: 0; font-size: .92em; }
+.reader-resume-x { position: absolute; right: 8px; top: 6px; border: 0; background: none; color: var(--ink-soft); font-size: 20px; cursor: pointer; }

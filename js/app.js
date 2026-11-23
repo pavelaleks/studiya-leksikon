@@ -1,26 +1,26 @@
-import { installStudioTime } from "./tz.js?v=land190";
-import { mountHelper } from "./helper.js?v=land190";
-import { applyTheme, layout, escapeHtml } from "./ui.js?v=land190";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land190";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land190";
-import { mountLiterature } from "./literature.js?v=land190";
-import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land190";
-import { mountRussian } from "./russian.js?v=land190";
-import { mountOge } from "./oge.js?v=land190";
-import { markVprDone, mountVpr } from "./vpr.js?v=land190";
-import { mountQuiz } from "./quiz.js?v=land190";
-import { bindApplyForm, bindRevealPhone } from "./apply.js?v=land190";
-import { EGE_TITLES } from "./ege.js?v=land190";
-import { renderExercise } from "./exercises.js?v=land190";
-import { mountTrainer } from "./trainers.js?v=land190";
-import { parseRoute } from "./route.js?v=land190";
+import { installStudioTime } from "./tz.js?v=land193";
+import { mountHelper } from "./helper.js?v=land193";
+import { applyTheme, layout, escapeHtml } from "./ui.js?v=land193";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land193";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land193";
+import { mountLiterature } from "./literature.js?v=land193";
+import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land193";
+import { mountRussian } from "./russian.js?v=land193";
+import { mountOge } from "./oge.js?v=land193";
+import { markVprDone, mountVpr } from "./vpr.js?v=land193";
+import { mountQuiz } from "./quiz.js?v=land193";
+import { bindApplyForm, bindRevealPhone } from "./apply.js?v=land193";
+import { EGE_TITLES } from "./ege.js?v=land193";
+import { renderExercise } from "./exercises.js?v=land193";
+import { mountTrainer } from "./trainers.js?v=land193";
+import { parseRoute } from "./route.js?v=land193";
 import { accessState, currentProfile, currentUser, hasAccess, initAuth, mySolved, onAuthChange, supa } from "./supa.js";
-import { routeSubject, subjectsOf } from "./track.js?v=land190";
-import { markEgeDone, markOgeDone } from "./progress.js?v=land190";
-import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land190";
-import { mountTeacher, teacherPage } from "./teacher.js?v=land190";
-import "./session.js?v=land190";
-import { lessonPage, mountLesson } from "./lessons.js?v=land190";
+import { routeSubject, subjectsOf } from "./track.js?v=land193";
+import { markEgeDone, markOgeDone } from "./progress.js?v=land193";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land193";
+import { mountTeacher, teacherPage } from "./teacher.js?v=land193";
+import "./session.js?v=land193";
+import { lessonPage, mountLesson } from "./lessons.js?v=land193";
 
 // Время студии: все даты на сайте — по Барнаулу, как в Google Календаре.
 installStudioTime();
@@ -83,7 +83,7 @@ function bindSearch(sectionId, q) {
   if (!search) return;
   search.addEventListener("input", () => {
     mountHtml(rulesIndex(content, sectionId, search.value), "rules", { scroll: false });
-    import("./rulequiz.js?v=land190").then((m) => m.markRulesIndex(app)).catch(() => {});
+    import("./rulequiz.js?v=land193").then((m) => m.markRulesIndex(app)).catch(() => {});
     bindSearch(sectionId, search.value);
     const again = app.querySelector("#rule-search");
     if (again) {
@@ -209,7 +209,7 @@ async function render() {
   }
 
   if (a === "privacy" || a === "consent") {
-    const m = await import("./legal.js?v=land190");
+    const m = await import("./legal.js?v=land193");
     mountHtml(a === "privacy" ? m.privacyPage() : m.consentPage(), "legal");
     setTitle(a === "privacy" ? "Политика обработки персональных данных" : "Согласие на обработку персональных данных");
     return;
@@ -223,7 +223,7 @@ async function render() {
 
   if (a === "rules") {
     mountHtml(rulesIndex(content, b || "", q), "rules");
-    import("./rulequiz.js?v=land190").then((m) => m.markRulesIndex(app)).catch(() => {});
+    import("./rulequiz.js?v=land193").then((m) => m.markRulesIndex(app)).catch(() => {});
     bindSearch(b || "", q);
     setTitle(b ? "Правила" : "Правила");
     return;
@@ -242,7 +242,7 @@ async function render() {
       : {};
     mountHtml(rulePage(rule, neighbors), "rules");
     bindRulePrint();
-    import("./rulequiz.js?v=land190").then((m) => m.mountRuleQuiz(app)).catch((e) => console.warn(e));
+    import("./rulequiz.js?v=land193").then((m) => m.mountRuleQuiz(app)).catch((e) => console.warn(e));
     setTitle(rule?.title || "Правило");
     return;
   }
@@ -304,7 +304,7 @@ async function render() {
   }
 
   if (a === "itog") {
-    const m = await import("./itog.js?v=land190");
+    const m = await import("./itog.js?v=land193");
     mountHtml(m.itogPage(), "itog");
     setTitle("Итоговое сочинение");
     await m.mountItog(app, parts.slice(1));
@@ -365,7 +365,7 @@ async function render() {
     const box = app.querySelector("#enter-box");
     const token = b;
     history.replaceState(null, "", location.pathname + location.search + "#/enter"); // токен не остаётся в адресной строке
-    const { enterWithToken } = await import("./pseudo.js?v=land190");
+    const { enterWithToken } = await import("./pseudo.js?v=land193");
     const { currentUser: cu, currentProfile: cp, supa: sb } = await import("./supa.js");
     if (cu()) {
       const who = cp()?.full_name || "другой пользователь";
@@ -402,7 +402,7 @@ async function render() {
     if ((b === "progress" || b === "report") && currentUser()) {
       mountHtml(mePage(), "me");
       setTitle(b === "report" ? "Отчёт для родителей" : "Прогресс");
-      const pg = await import("./progress-charts.js?v=land190");
+      const pg = await import("./progress-charts.js?v=land193");
       if (b === "report") await pg.mountReport(app.querySelector("#me-root"), currentUser().id);
       else await pg.mountProgress(app);
       return;
@@ -410,7 +410,7 @@ async function render() {
     if (b === "reading" && currentUser()) {
       mountHtml(mePage(), "me");
       setTitle("Список чтения");
-      const rl = await import("./reading-list.js?v=land190");
+      const rl = await import("./reading-list.js?v=land193");
       await rl.mountReadingList(app.querySelector("#me-root"), { exam: parts[2] || null });
       return;
     }

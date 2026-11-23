@@ -10,11 +10,11 @@
  */
 import { escapeHtml } from "./ui.js";
 import { currentUser, supa } from "./supa.js";
-import { bindWritten, writtenBlockHtml } from "./practice.js?v=land190";
-import { bzDayStart } from "./tz.js?v=land190";
+import { bindWritten, writtenBlockHtml } from "./practice.js?v=land193";
+import { bzDayStart } from "./tz.js?v=land193";
 import {
   CHECKLIST, CRITERIA, EXAMPLES, NEW_LIT_TOPICS, PASS_RULE, PLAN, REQUIREMENTS, SAMPLE_SET, SECTIONS, SUB_TITLE, TEXTS, TRAINING_TOPICS, itogDates,
-} from "./itog-data.js?v=land190";
+} from "./itog-data.js?v=land193";
 
 const ROOT = "#/itog";
 const TABS = [
@@ -180,9 +180,17 @@ function readTime(min) {
 function textCard(x, active) {
   const href = textHref(x);
   const av = availability(x);
+  // закладка читалки (lib:pos:<id>): для сборников — только если остановились в той же главе
+  let bm = null;
+  try {
+    bm = x.w ? JSON.parse(localStorage.getItem("lib:pos:" + x.w) || "null") : null;
+  } catch {}
+  const cont = bm?.ch && (!x.ch || bm.ch === x.ch) && (bm.p > 0 || bm.pct > 0) ? bm : null;
   const action =
     av === "site"
-      ? `<a class="btn" href="${escapeHtml(href)}" data-return>Читать на сайте</a>`
+      ? cont
+        ? `<a class="btn" href="#/library/w/${x.w}/${cont.ch}" data-return>Продолжить чтение${cont.pct ? ` · ${cont.pct}%` : ""}</a>`
+        : `<a class="btn" href="${escapeHtml(href)}" data-return>Читать на сайте</a>`
       : av === "online"
         ? `<a class="btn secondary" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${linkLabel(href)}</a>`
         : href

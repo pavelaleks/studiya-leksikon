@@ -1,7 +1,7 @@
 import { escapeHtml } from "./ui.js";
 import { legend, mark } from "./markup.js";
-import { EGE_TITLES } from "./ege.js?v=land190";
-import { readProgress } from "./progress.js?v=land190";
+import { EGE_TITLES } from "./ege.js?v=land193";
+import { readProgress } from "./progress.js?v=land193";
 import { STUDIO, studioTelegram, studioWhatsApp } from "./config.js";
 import { iconTelegram, iconWhatsApp } from "./icons.js";
 import { accessState, currentProfile } from "./supa.js";

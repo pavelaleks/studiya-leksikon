@@ -101,6 +101,43 @@ function store(key, value) {
   return value;
 }
 
+/* ---------- закладка: глава + абзац; у вошедших — ещё и в базе (между устройствами) ---------- */
+
+async function bookmark(id) {
+  const local = store("pos:" + id);
+  const uid = currentUser()?.id;
+  if (!uid) return local;
+  try {
+    const { data } = await supa.from("reading_pos").select("ch, para, pct, updated_at").eq("user_id", uid).eq("work_id", id).maybeSingle();
+    if (data && !(local?.at > Date.parse(data.updated_at))) {
+      const bm = { ch: data.ch, p: data.para, pct: data.pct, at: Date.parse(data.updated_at) };
+      store("pos:" + id, bm);
+      return bm;
+    }
+  } catch {
+    /* нет сети или таблицы — хватит закладки в браузере */
+  }
+  return local;
+}
+
+let bmTimer = null;
+function saveBookmark(id, bm) {
+  bm.at = Date.now();
+  store("pos:" + id, bm);
+  const uid = currentUser()?.id;
+  if (!uid) return;
+  clearTimeout(bmTimer);
+  bmTimer = setTimeout(() => {
+    supa
+      .from("reading_pos")
+      .upsert({ user_id: uid, work_id: id, ch: bm.ch, para: bm.p || 0, pct: bm.pct || 0, updated_at: new Date(bm.at).toISOString() })
+      .then(
+        () => {},
+        () => {}
+      );
+  }, 2500);
+}
+
 function returnHref() {
   try {
     const r = JSON.parse(sessionStorage.getItem("lx-return") || "null");
@@ -252,7 +289,7 @@ async function workView(host, id) {
   }
   const quiz = qs.find((q) => q.work_id === w.id);
   const read = new Set(store("read:" + w.id) || []);
-  const last = store("pos:" + w.id);
+  const last = w.toc ? await bookmark(w.id) : null;
   const tocHtml = w.toc
     ? `
       <section class="lib-toc card">
@@ -281,7 +318,7 @@ async function workView(host, id) {
       ${w.note ? `<p class="muted">${escapeHtml(w.note)}</p>` : ""}
     </header>
     <div class="lib-actions">
-      ${w.toc ? `<a class="btn" href="${startHref}">${last?.ch ? "Продолжить чтение" : "Читать"}</a>` : ""}
+      ${w.toc ? `<a class="btn" href="${startHref}">${last?.ch ? `Продолжить${w.toc.length > 1 && w.toc[last.ch - 1] ? `: «${escapeHtml(w.toc[last.ch - 1].t)}»` : " чтение"}${last.pct ? ` · ${last.pct}%` : ""}` : "Читать"}</a>` : ""}
       ${quiz ? `<a class="btn secondary" href="#/library/quiz/${quiz.id}">${me.passed.has(quiz.id) ? "Тест по статье ✓" : `Тест по статье · +${quiz.points}`}</a>` : ""}
       ${w.polka ? ext(polkaUrl(w.polka), "Статья на «Полке» ↗", "btn secondary") : ""}
       ${w.wiki ? ext(wikiUrl(w.wiki), "Википедия ↗", "btn secondary") : ""}
@@ -335,6 +372,7 @@ async function readerView(host, id, n) {
       </div>
       <div class="reader-progress"><span style="width:${Math.round((100 * (idx + 1)) / w.toc.length)}%"></span></div>
       ${returnLink() ? `<p class="reader-return">${returnLink()}</p>` : ""}
+      <div class="reader-resume" id="reader-resume" hidden></div>
       <article class="reader-text">
         <h2 class="reader-ch">${escapeHtml(t.t)}</h2>
         ${ch.h}
@@ -374,21 +412,59 @@ async function readerView(host, id, n) {
     pop.textContent = note.textContent;
     sup.after(pop);
   });
-  // закладка: глава и место в ней; глава прочитана, когда дочитали до конца
-  const pos = store("pos:" + w.id);
-  if (pos?.ch === idx + 1 && pos.y > 0) {
-    requestAnimationFrame(() => window.scrollTo(0, pos.y * (document.documentElement.scrollHeight - innerHeight)));
-  } else window.scrollTo(0, 0);
+  // закладка: глава и абзац. Открыли ту же главу — возвращаем на место; другую — предлагаем вернуться.
+  // Пока читатель не ушёл дальше первого абзаца, прежнюю закладку не трогаем (не затираем случайным открытием).
+  const paras = [...host.querySelectorAll(".reader-text > *")].filter((el) => !el.matches("h2, aside, ol, .reader-tasks"));
+  const here = idx + 1;
+  const resume = host.querySelector("#reader-resume");
+  const curPara = () => {
+    let i = 0;
+    while (i < paras.length && paras[i].getBoundingClientRect().bottom < 96) i++;
+    return Math.min(i, Math.max(0, paras.length - 1));
+  };
+  const pctNow = () => {
+    const h = document.documentElement.scrollHeight - innerHeight;
+    return h > 0 ? Math.min(100, Math.round((100 * scrollY) / h)) : 100;
+  };
+  const showResume = (html) => {
+    resume.innerHTML = `${html} <button type="button" class="reader-resume-x" aria-label="Скрыть">×</button>`;
+    resume.hidden = false;
+    resume.querySelector(".reader-resume-x").addEventListener("click", () => (resume.hidden = true));
+  };
+  let engaged = false;
+  window.scrollTo({ top: 0, behavior: "instant" });
+  const bm = await bookmark(w.id);
+  if (bm?.ch === here && (bm.p > 0 || bm.y > 0)) {
+    const target = bm.p ? paras[Math.min(bm.p, paras.length - 1)] : null;
+    // после того как текст разложился по строкам (шрифт, размер); дважды — на случай поздней подгрузки шрифта
+    const go = () => {
+      const y = target ? target.getBoundingClientRect().top + scrollY - 90 : bm.y * (document.documentElement.scrollHeight - innerHeight);
+      window.scrollTo({ top: Math.max(0, y), behavior: "instant" }); // без плавной прокрутки сайта
+    };
+    setTimeout(go, 30);
+    setTimeout(go, 400);
+    engaged = true;
+    showResume(`Вы там, где остановились в прошлый раз. <button type="button" class="linklike" data-top>В начало главы</button>`);
+    resume.querySelector("[data-top]").addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      resume.hidden = true;
+    });
+  } else if (bm?.ch && bm.ch !== here && w.toc[bm.ch - 1]) {
+    showResume(
+      `В прошлый раз вы остановились${w.toc.length > 1 ? ` на главе «${escapeHtml(w.toc[bm.ch - 1].t)}»` : ""}${bm.pct ? `, ${bm.pct}%` : ""}. <a class="btn btn-sm" href="#/library/w/${w.id}/${bm.ch}">Продолжить чтение</a>`
+    );
+  }
   let timer = null;
   const save = () => {
-    const h = document.documentElement.scrollHeight - innerHeight;
-    store("pos:" + w.id, { ch: idx + 1, y: h > 0 ? Math.round((scrollY / h) * 1000) / 1000 : 0 });
+    const p = curPara();
+    if (!engaged && p < 1) return;
+    engaged = true;
+    saveBookmark(w.id, { ch: here, p, pct: pctNow() });
   };
   const onScroll = () => {
     clearTimeout(timer);
     timer = setTimeout(save, 400);
   };
-  save();
   window.addEventListener("scroll", onScroll, { passive: true });
   const end = host.querySelector(".reader-end");
   const io = new IntersectionObserver((entries) => {
