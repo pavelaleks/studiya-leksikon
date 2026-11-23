@@ -4,8 +4,8 @@
  * Очки начисляет сервер (таблица xp_events), здесь — только показ и подсказки.
  */
 import { escapeHtml } from "./ui.js";
-import { currentTrack } from "./track.js?v=land186";
-import { EXAMS, autoNumbers, composeVariant, durationText } from "./exams.js?v=land186";
+import { currentTrack } from "./track.js?v=land187";
+import { EXAMS, autoNumbers, composeVariant, durationText } from "./exams.js?v=land187";
 import { currentUser, humanError, supa } from "./supa.js";
 
 const LEVELS = [
@@ -27,7 +27,7 @@ const EGE_RULE_QUERY = {
 // Тренажёры студии к номерам ОГЭ
 const OGE_TRAINER = { 2: "trenazher-osnova-leksikon", 3: "trenazher-oborotov-leksikon", 5: "trenazher-n-nn-leksikon" };
 
-const SECTION = { "ege-rus": "ege", "oge-rus": "oge", "vpr-rus": "vpr", "ege-lit": "literature", "oge-lit": "literature/oge" };
+const SECTION = { "ege-rus": "ege", "oge-rus": "oge", "vpr-rus": "vpr", "ege-lit": "literature", "oge-lit": "literature/oge", itog: "itog" };
 
 export function examCodeOf(profile) {
   return currentTrack(profile);
@@ -476,7 +476,7 @@ export async function mountDaily(root, d, profile) {
   try {
     localStorage.setItem(`daily-done-${currentUser()?.id}-${today}`, JSON.stringify(list.filter((t) => solvedToday(t.id)).map((t) => t.id)));
   } catch {}
-  import("./session.js?v=land186").then((m) => m.maybeCelebrateDaily(doneN, list.length)).catch(() => {});
+  import("./session.js?v=land187").then((m) => m.maybeCelebrateDaily(doneN, list.length)).catch(() => {});
   host.querySelector("#daily-new").addEventListener("click", () => {
     try {
       localStorage.removeItem(dailyKey());

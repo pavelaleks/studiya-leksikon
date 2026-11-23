@@ -99,8 +99,8 @@ export async function readingView(host, render, sub) {
     .then((r) => r.json())
     .then((d) => new Map(d.poems.map((p) => [p.id, `${p.author.split(" ").pop()}. ${p.title}`])))
     .catch(() => new Map());
-  const rl = await import("./reading-list.js?v=land186");
-  const { examsOf } = await import("./reading-canon.js?v=land186");
+  const rl = await import("./reading-list.js?v=land187");
+  const { examsOf } = await import("./reading-canon.js?v=land187");
   const [students, results, learned, quizzes, marks] = await Promise.all([
     supa.from("profiles").select("id, full_name, email, status, courses, exam_target").neq("role", "teacher").eq("status", "active").order("full_name"),
     supa.from("reading_results").select("student_id, quiz_id, passed, created_at"),

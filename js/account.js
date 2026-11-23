@@ -1,13 +1,14 @@
 /** Вход, регистрация и личный кабинет ученика (#/login, #/me). */
-import { bz, bzDayStart } from "./tz.js?v=land186";
+import { itogDates } from "./itog-data.js?v=land187";
+import { bz, bzDayStart } from "./tz.js?v=land187";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land186";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land186";
-import { movedHtml, myNextLessons } from "./calendar.js?v=land186";
-import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land186";
+import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land187";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land187";
+import { movedHtml, myNextLessons } from "./calendar.js?v=land187";
+import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land187";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, selfExamHtml,
-} from "./dashboard.js?v=land186";
+} from "./dashboard.js?v=land187";
 import {
   accessState,
   currentProfile,
@@ -23,7 +24,7 @@ import {
 } from "./supa.js";
 
 const EXAMS = ["ЕГЭ по русскому", "ОГЭ по русскому", "ЕГЭ по литературе", "ВПР", "Олимпиада", "Другое"];
-const SOURCE_TITLE = { "ege-rus": "ЕГЭ · русский", "oge-rus": "ОГЭ · русский", "vpr-rus": "ВПР · русский", "ege-lit": "ЕГЭ · литература", "oge-lit": "ОГЭ · литература" };
+const SOURCE_TITLE = { "ege-rus": "ЕГЭ · русский", "oge-rus": "ОГЭ · русский", "vpr-rus": "ВПР · русский", "ege-lit": "ЕГЭ · литература", "oge-lit": "ОГЭ · литература", itog: "Итоговое сочинение" };
 const STATUS_TEXT = {
   pending: "ждёт подтверждения",
   active: "ученик студии",
@@ -206,6 +207,19 @@ function setHwBadge(n) {
   });
 }
 
+/** Итоговое сочинение — ученикам 10–11 классов (по курсам или классу). */
+function itogShown(p) {
+  const g = (p?.courses || []).map((c) => Number(String(c).split(":")[1]));
+  return g.some((n) => n >= 10) || Number(p?.grade) >= 10;
+}
+function itogSub() {
+  const today = bzDayStart().getTime();
+  const next = itogDates().find((d) => bzDayStart(d.when).getTime() >= today);
+  if (!next) return "критерии, тексты, темы";
+  const days = Math.round((bzDayStart(next.when).getTime() - today) / 86400000);
+  return days ? `через ${days} дн. · ${next.label}` : "сегодня!";
+}
+
 function selfHtml(dash, code, p) {
   const [essayHref] = ESSAY_LINK[code] || ESSAY_LINK["ege-rus"];
   const works = dash?.works || [];
@@ -215,6 +229,7 @@ function selfHtml(dash, code, p) {
     ["#/me/profile#mistakes", "Тетрадь ошибок", dash?.mistakes?.length ? `${dash.mistakes.length} ${plural(dash.mistakes.length, "задание", "задания", "заданий")}` : "ошибок нет"],
     ["#/me/profile#self-exam", "Пробный экзамен", "по таймеру"],
     [returned ? "#/me/profile#works" : essayHref, "Сочинение", returned ? "вернули на доработку" : "проверит преподаватель"],
+    itogShown(p) && ["#/itog", "Итоговое сочинение", itogSub()],
     subjectsOf(p).lit && ["#/library/poems", "Стихи наизусть", "выучить и проверить"],
     subjectsOf(p).lit && ["#/library/read", "Читать и отвечать", "тексты с вопросами"],
   ].filter(Boolean);
@@ -233,6 +248,7 @@ export function taskHref(t) {
   if (t.source === "oge-rus") return `#/oge/${t.task_no}/${encodeURIComponent(t.source_ref)}`;
   if (t.source === "vpr-rus") return `#/vpr/${t.task_no}/${encodeURIComponent(t.source_ref)}`;
   if (t.source === "oge-lit") return `#/literature/oge/${t.task_no}/${encodeURIComponent(t.source_ref)}`;
+  if (t.source === "itog") return `#/itog/t/${encodeURIComponent(t.source_ref)}`;
   if (t.source === "ege-lit") {
     if (String(t.bank_file).startsWith("extra-")) return `#/literature/archive/${t.bank_file}/${encodeURIComponent(t.source_ref)}`;
     return `#/literature/${t.task_no}/${encodeURIComponent(t.source_ref)}`;
@@ -411,7 +427,7 @@ export async function mountMe(root) {
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land186")
+    import("./lessons.js?v=land187")
       .then((m) => (isProfile ? m.myLessonsHtml() : m.myHomeData().then((d) => ({ ...d, fmtDue: m.fmtDue }))))
       .catch(() => (isProfile ? "" : null)),
     isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },
@@ -489,7 +505,7 @@ export async function mountMe(root) {
     setHwBadge(home.hw.length);
     if (student) mountSchedule(host, home, groupNames);
     if (student && subjectsOf(p).lit)
-      import("./reading-list.js?v=land186")
+      import("./reading-list.js?v=land187")
         .then((m) => m.mountHomeCard(host.querySelector("#me-reading"), p))
         .catch((e) => console.warn(e));
     host.querySelectorAll("[data-guide-close]").forEach((b) =>

@@ -8,7 +8,7 @@
  * Координаты на фото — доли ширины/высоты (0…1), чтобы не зависеть от размера экрана.
  */
 import { escapeHtml } from "./ui.js";
-import { MARKS, RUBRICS, applyRules, countWords, rubricFor } from "./rubrics.js?v=land186";
+import { MARKS, RUBRICS, applyRules, countWords, rubricFor } from "./rubrics.js?v=land187";
 
 /* ------------------------------------------------------------------ */
 /* Текст с пометками                                                    */
@@ -783,8 +783,10 @@ export function studentReviewHtml(work) {
     .filter(([t]) => t !== "good" && t !== "note")
     .map(([t, n]) => `<span class="rv-chip rv-${escapeHtml(t)}">${escapeHtml(MARKS[t]?.label || t)}</span> ${n}`)
     .join(" · ");
+  const verdict = rubric?.verdict && rubric.criteria.every((c) => scores[c.code] !== undefined) ? rubric.verdict(Object.fromEntries(rubric.criteria.map((c) => [c.code, Number(scores[c.code])]))) : "";
   return `
     ${rubric ? `<p class="muted">${escapeHtml(rubric.title)}</p>` : ""}
+    ${verdict ? `<p class="rv-verdict"><b>${escapeHtml(verdict)}</b></p>` : ""}
     ${rows ? `<div class="t-table-wrap"><table class="t-table rv-table"><tbody>${rows}</tbody></table></div>` : ""}
     ${(crit.fired || []).length ? `<p class="rv-fired">${crit.fired.map(escapeHtml).join("<br>")}</p>` : ""}
     ${marks.length ? `<p class="muted">Пометки в тексте: ${legend || "—"}. Выделенные места и комментарии к ним — в тексте и списке ниже.</p>` : ""}`;

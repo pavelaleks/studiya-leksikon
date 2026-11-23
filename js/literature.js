@@ -1,7 +1,7 @@
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
 import { accessState, bankFull, bankList, clearBankCache } from "./supa.js";
-import { bindCheck, bindWritten, checkBlockHtml, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js?v=land186";
+import { bindCheck, bindWritten, checkBlockHtml, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js?v=land187";
 
 const SOURCE = "ege-lit";
 
@@ -265,6 +265,10 @@ function hubHtml(manifest) {
       <a class="lit-tool-card lit-tool-lib" href="#/library/read">
         <strong>Читать и отвечать</strong>
         <span>Статьи «Полки» о главных книгах и вопросы по ним — за очки</span>
+      </a>
+      <a class="lit-tool-card lit-tool-lib" href="#/itog">
+        <strong>Итоговое сочинение</strong>
+        <span>Декабрьское, для 10–11 классов: критерии, примеры, тексты к каждой теме, тренировка</span>
       </a>
     </div>
     <div class="lit-tools">
@@ -922,7 +926,7 @@ export async function mountLiterature(host, rest = []) {
   host.innerHTML = `<p class="lede muted">Загружаем задания…</p>`;
   try {
     if (rest[0] === "oge") {
-      const { mountLitOge } = await import("./lit-oge.js?v=land186");
+      const { mountLitOge } = await import("./lit-oge.js?v=land187");
       await mountLitOge(host, rest.slice(1));
       return;
     }

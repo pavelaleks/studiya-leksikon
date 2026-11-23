@@ -3,17 +3,17 @@
  *  Преподаватель: #/cabinet/lessons — список и создание; #/cabinet/lesson/:id — конструктор и живая таблица.
  *  Ученик: #/lesson/:id — задания урока; #/lesson/:id/:item — одно задание с проверкой по правилам урока.
  */
-import { bz, bzDayStart, fromBz, fromBzInput, toBzInput } from "./tz.js?v=land186";
+import { bz, bzDayStart, fromBz, fromBzInput, toBzInput } from "./tz.js?v=land187";
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land186";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land186";
-import { SOURCES, bankFiles } from "./teacher.js?v=land186";
+import { taskHref } from "./account.js?v=land187";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land187";
+import { SOURCES, bankFiles } from "./teacher.js?v=land187";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
-import { nextLessonFor } from "./calendar.js?v=land186";
+import { nextLessonFor } from "./calendar.js?v=land187";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land186";
+} from "./exams.js?v=land187";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -40,7 +40,7 @@ const fmtDT = (d) => (d ? new Date(d).toLocaleString("ru-RU", { dateStyle: "shor
 // Поля даты и времени — по барнаульскому времени (tz.js), где бы ни был преподаватель.
 const toLocalInput = toBzInput;
 const fromLocalInput = fromBzInput;
-const shortSource = (s) => ({ "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Лит.", "oge-lit": "ОГЭ лит." }[s] || s);
+const shortSource = (s) => ({ "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Лит.", "oge-lit": "ОГЭ лит.", itog: "Итог. соч." }[s] || s);
 
 function snippet(task, n = 110) {
   const t = String(task?.list_item?.questionText || task?.data?.questionText || "").replace(/\s+/g, " ").trim();
@@ -126,6 +126,9 @@ export const WRITTEN_TYPES = {
   "oge-lit-3": { source: "oge-lit", no: 3, title: "Литература ОГЭ, задание 3: ответ по стихотворению", group: "Литература · ОГЭ" },
   "oge-lit-4": { source: "oge-lit", no: 4, title: "Литература ОГЭ, задание 4: сопоставление", group: "Литература · ОГЭ" },
   "oge-lit-5": { source: "oge-lit", no: 5, title: "Сочинение по литературе ОГЭ (задание 5)", group: "Литература · ОГЭ" },
+  "itog-1": { source: "itog", no: 1, title: "Итоговое сочинение · раздел 1 (духовно-нравственные ориентиры)", group: "Итоговое сочинение" },
+  "itog-2": { source: "itog", no: 2, title: "Итоговое сочинение · раздел 2 (семья, общество, Отечество)", group: "Итоговое сочинение" },
+  "itog-3": { source: "itog", no: 3, title: "Итоговое сочинение · раздел 3 (природа и культура)", group: "Итоговое сочинение" },
 };
 
 function writtenTypeOptions() {
