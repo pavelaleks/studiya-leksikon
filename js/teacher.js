@@ -1,21 +1,21 @@
 /** Кабинет преподавателя: #/cabinet/... */
-import { bzDayStart } from "./tz.js?v=land185";
-import { installRealNames, loadRealNames, realNameOf, saveRealName, toggleHtml } from "./realnames.js?v=land185";
+import { bzDayStart } from "./tz.js?v=land186";
+import { installRealNames, loadRealNames, realNameOf, saveRealName, toggleHtml } from "./realnames.js?v=land186";
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land185";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land186";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land185";
+import { taskHref } from "./account.js?v=land186";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land185";
-import { readingView } from "./teacher-reading.js?v=land185";
-import { optionsOf } from "./practice.js?v=land185";
-import { convertStudent, createStudent, isPseudoEmail, isTakenPseudonym, loginOf, newPassword, newPseudonym, resetStudentPassword, suggestPseudonyms, takenPseudonyms } from "./pseudo.js?v=land185";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land185";
-import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land185";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land185";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land186";
+import { readingView } from "./teacher-reading.js?v=land186";
+import { optionsOf } from "./practice.js?v=land186";
+import { convertStudent, createEnterLink, createStudent, enterUrl, isPseudoEmail, isTakenPseudonym, loginOf, newPassword, newPseudonym, resetStudentPassword, suggestPseudonyms, takenPseudonyms } from "./pseudo.js?v=land186";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land186";
+import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land186";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land186";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land185";
+} from "./review.js?v=land186";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -305,12 +305,12 @@ export async function mountTeacher(root, parts) {
     if (tab === "students") return await studentsView(host, render);
     if (tab === "student" && arg === "report") {
       render(`<div id="t-report"></div>`);
-      const pg = await import("./progress-charts.js?v=land185");
+      const pg = await import("./progress-charts.js?v=land186");
       return await pg.mountReport(host.querySelector("#t-report"), sub, { back: `#/cabinet/student/${sub}`, base: `#/cabinet/student/${sub}/report` });
     }
     if (tab === "student" && arg === "reading") {
       render(`<div id="t-reading-list"></div>`);
-      const rl = await import("./reading-list.js?v=land185");
+      const rl = await import("./reading-list.js?v=land186");
       return await rl.mountReadingList(host.querySelector("#t-reading-list"), {
         studentId: sub,
         exam: parts[3] || null,
@@ -329,7 +329,7 @@ export async function mountTeacher(root, parts) {
         <section class="me-section" id="t-exam-dates"><h2>Даты экзаменов по литературе</h2><p class="muted">Загружаем…</p></section>
         <section class="me-section"><h2>Оформление</h2>${themeSwitchHtml()}</section>`);
       mountTg(host, "teacher");
-      const rl = await import("./reading-list.js?v=land185");
+      const rl = await import("./reading-list.js?v=land186");
       const box = host.querySelector("#t-exam-dates");
       const dates = await rl.examDates();
       box.innerHTML = `<h2>Даты экзаменов по литературе</h2>
@@ -703,10 +703,19 @@ const fmtDateTime = (d) => (d ? new Date(d).toLocaleString("ru-RU", { dateStyle:
 /* ---------- Ученики под псевдонимами ---------- */
 const SITE_URL = "https://lexicon-school.ru/";
 /** Готовое сообщение ученику: сайт, логин, пароль и короткая инструкция. */
-function studentMessage(login, password, fresh = true) {
+const untilText = (iso) => new Date(iso).toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+function studentMessage(login, password, fresh = true, link = null) {
   return [
     fresh ? "Привет! Это твой доступ к кабинету студии «Лексикон»." : "Привет! Твой новый пароль для кабинета студии «Лексикон».",
     "",
+    ...(link
+      ? [
+          "Быстрый вход — просто открой ссылку, она только для тебя (не пересылай никому):",
+          enterUrl(link.token),
+          `Ссылка действует до ${untilText(link.expires_at)}. Потом и на других устройствах входи по логину и паролю:`,
+          "",
+        ]
+      : []),
     `Сайт: ${SITE_URL}#/login`,
     `Логин: ${login}`,
     password ? `Пароль: ${password}` : "",
@@ -723,14 +732,14 @@ function studentMessage(login, password, fresh = true) {
     .filter((line, i, arr) => !(line === "" && arr[i - 1] === ""))
     .join("\n");
 }
-export const credsHtml = (login, password, name, fresh = true) => {
-  const msg = studentMessage(login, password, fresh);
+export const credsHtml = (login, password, name, fresh = true, link = null) => {
+  const msg = studentMessage(login, password, fresh, link);
   return `
   <div class="t-creds card">
     <p><strong>Сообщение для ученика${name ? ` (${escapeHtml(name)})` : ""}</strong> — скопируйте и отправьте в мессенджер:</p>
     <textarea class="t-msg" readonly rows="${msg.split("\n").length + 1}">${escapeHtml(msg)}</textarea>
     <p class="actions"><button class="btn" type="button" data-copy>Скопировать сообщение</button> <span class="muted" data-copy-status></span></p>
-    <p class="muted">Кто скрывается за псевдонимом, запишите у себя (в блокноте или телефоне), а не на сайте. Пароль после закрытия страницы больше не показывается — при необходимости задайте новый.</p>
+    <p class="muted">Пароль и ссылка после закрытия страницы больше не показываются — при необходимости задайте новый пароль или создайте новую ссылку в карточке ученика.</p>
   </div>`;
 };
 export function bindCopy(root) {
@@ -852,9 +861,10 @@ function bindNewStudent(host) {
         const { error: eu } = await supa.rpc("teacher_set_student", { p_student: r.id, p_status: "active", p_group: null, p_until: form.until.value });
         if (eu) console.warn("access_until", eu);
       }
+      const link = await createEnterLink(r.id).catch(() => null);
       st.textContent = "";
       const done = host.querySelector("#t-new-student-done");
-      done.innerHTML = credsHtml(r.login, form.password.value.trim(), form.elements.namedItem("name").value.trim()) + `<p class="actions"><a class="btn secondary" href="#/cabinet/students" data-reload>К списку учеников</a></p>`;
+      done.innerHTML = credsHtml(r.login, form.password.value.trim(), form.elements.namedItem("name").value.trim(), true, link) + `<p class="actions"><a class="btn secondary" href="#/cabinet/students" data-reload>К списку учеников</a></p>`;
       form.hidden = true;
       bindCopy(done);
       done.querySelector("[data-reload]").addEventListener("click", (ev) => {
@@ -873,7 +883,9 @@ function accountBlockHtml(p) {
     return `<section class="me-section" id="t-account">
       <h2>Вход ученика</h2>
       <p class="muted">Ученик забыл пароль — задайте новый и передайте ему.</p>
-      <p class="actions"><button class="btn secondary" type="button" id="t-newpass">Задать новый пароль</button></p>
+      <p class="actions"><button class="btn secondary" type="button" id="t-newpass">Задать новый пароль</button>
+        <button class="btn secondary" type="button" id="t-enterlink">Ссылка для входа</button></p>
+      <p class="muted t-link-state" id="t-link-state"></p>
       <div id="t-account-out"></div>
       <details class="t-rename-ps">
         <summary class="linklike">Сменить псевдоним</summary>
@@ -933,6 +945,41 @@ function bindNamesEditor(host) {
 
 function bindAccountBlock(host, p) {
   const out = host.querySelector("#t-account-out");
+  // личная ссылка для входа: состояние, новая ссылка, отзыв
+  const linkState = host.querySelector("#t-link-state");
+  const showLinkState = async () => {
+    if (!linkState) return;
+    const { data: l } = await supa.from("student_enter_links").select("expires_at, used_count, last_used_at").eq("student_id", p.id).maybeSingle();
+    if (!l) return (linkState.textContent = "Личной ссылки для входа пока нет.");
+    const alive = Date.parse(l.expires_at) > Date.now();
+    linkState.innerHTML = `${alive ? `Личная ссылка действует до ${escapeHtml(untilText(l.expires_at))}` : "Срок личной ссылки истёк"}${
+      l.used_count ? ` · по ней входили ${l.used_count} раз, последний — ${escapeHtml(new Date(l.last_used_at).toLocaleDateString("ru-RU"))}` : " · ещё не открывали"
+    }${alive ? ` · <button type="button" class="linklike" data-revoke>отозвать</button>` : ""}`;
+    linkState.querySelector("[data-revoke]")?.addEventListener("click", async () => {
+      if (!confirm("Отозвать ссылку? Войти по ней больше не получится; логин и пароль работают как раньше.")) return;
+      await supa.from("student_enter_links").delete().eq("student_id", p.id);
+      showLinkState();
+    });
+  };
+  showLinkState();
+  host.querySelector("#t-enterlink")?.addEventListener("click", async (e) => {
+    e.target.disabled = true;
+    try {
+      const link = await createEnterLink(p.id);
+      const url = enterUrl(link.token);
+      out.innerHTML = `<div class="t-creds card">
+        <p><strong>Ссылка для входа${p.full_name ? ` (${escapeHtml(p.full_name)})` : ""}</strong> — действует до ${escapeHtml(untilText(link.expires_at))}. Прежняя ссылка, если была, больше не работает.</p>
+        <textarea class="t-msg" readonly rows="4">${escapeHtml(`Твоя ссылка для входа в кабинет «Лексикона» — просто открой её (она только для тебя, не пересылай):\n${url}\nДействует до ${untilText(link.expires_at)}.`)}</textarea>
+        <p class="actions"><button class="btn" type="button" data-copy>Скопировать сообщение</button> <span class="muted" data-copy-status></span></p>
+        <p class="muted">Сама ссылка больше нигде не показывается — если потеряется, создайте новую.</p>
+      </div>`;
+      bindCopy(out);
+      showLinkState();
+    } catch (err) {
+      out.innerHTML = `<p class="lit-result is-bad">${escapeHtml(err.message)}</p>`;
+    }
+    e.target.disabled = false;
+  });
   const ren = host.querySelector("#t-rename-ps");
   if (ren) {
     const isFree = bindRegen(ren, { loginField: false });

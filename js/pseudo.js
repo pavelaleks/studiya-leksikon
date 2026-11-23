@@ -128,3 +128,23 @@ async function call(body) {
 export const createStudent = (o) => call({ action: "create", ...o });
 export const resetStudentPassword = (student, password) => call({ action: "reset", student, password });
 export const convertStudent = (o) => call({ action: "convert", ...o });
+
+/** Личная ссылка для входа ученика (новая заменяет прежнюю). → { token, expires_at } */
+export const createEnterLink = (student, days = 14) => call({ action: "link", student, days });
+export const enterUrl = (token) => `https://lexicon-school.ru/#/enter/${token}`;
+
+/** Вход по личной ссылке: сервер проверяет токен и выдаёт одноразовый код, им и входим. */
+export async function enterWithToken(token) {
+  const { data, error } = await supa.functions.invoke("admin", { body: { action: "enter", token } });
+  if (error) {
+    let msg = error.message;
+    try {
+      msg = (await error.context.json()).error || msg;
+    } catch {}
+    throw new Error(msg);
+  }
+  let res = await supa.auth.verifyOtp({ token_hash: data.token_hash, type: "magiclink" });
+  if (res.error) res = await supa.auth.verifyOtp({ token_hash: data.token_hash, type: "email" });
+  if (res.error) throw new Error(res.error.message);
+  return res.data;
+}
