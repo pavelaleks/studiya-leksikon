@@ -1,20 +1,21 @@
 /** Кабинет преподавателя: #/cabinet/... */
-import { bzDayStart } from "./tz.js?v=land182";
+import { bzDayStart } from "./tz.js?v=land184";
+import { installRealNames, loadRealNames, realNameOf, saveRealName, toggleHtml } from "./realnames.js?v=land184";
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land182";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land184";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land182";
+import { taskHref } from "./account.js?v=land184";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land182";
-import { readingView } from "./teacher-reading.js?v=land182";
-import { optionsOf } from "./practice.js?v=land182";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land182";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land182";
-import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land182";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land182";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land184";
+import { readingView } from "./teacher-reading.js?v=land184";
+import { optionsOf } from "./practice.js?v=land184";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land184";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land184";
+import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land184";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land184";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land182";
+} from "./review.js?v=land184";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -256,6 +257,7 @@ function shell(active, body, badges = {}) {
         ([id, title]) =>
           `<a class="pill ${active === id ? "active" : ""}" href="#/cabinet/${id}">${title}${badges[id] ? ` <span class="badge">${badges[id]}</span>` : ""}</a>`
       ).join("")}
+      ${toggleHtml()}
     </div>
     ${body}`;
 }
@@ -289,6 +291,7 @@ export async function mountTeacher(root, parts) {
     host.innerHTML = `<div class="empty">Этот раздел — только для преподавателя. Вы вошли как ученик. <a href="#/me">В личный кабинет</a></div>`;
     return;
   }
+  installRealNames(); // подписи настоящих имён рядом с псевдонимами (только у преподавателя)
   const [tab = "today", sub, arg] = parts;
   const b = await badges().catch(() => ({}));
   setWorksBadge(b.works || 0);
@@ -302,12 +305,12 @@ export async function mountTeacher(root, parts) {
     if (tab === "students") return await studentsView(host, render);
     if (tab === "student" && arg === "report") {
       render(`<div id="t-report"></div>`);
-      const pg = await import("./progress-charts.js?v=land182");
+      const pg = await import("./progress-charts.js?v=land184");
       return await pg.mountReport(host.querySelector("#t-report"), sub, { back: `#/cabinet/student/${sub}`, base: `#/cabinet/student/${sub}/report` });
     }
     if (tab === "student" && arg === "reading") {
       render(`<div id="t-reading-list"></div>`);
-      const rl = await import("./reading-list.js?v=land182");
+      const rl = await import("./reading-list.js?v=land184");
       return await rl.mountReadingList(host.querySelector("#t-reading-list"), {
         studentId: sub,
         exam: parts[3] || null,
@@ -326,7 +329,7 @@ export async function mountTeacher(root, parts) {
         <section class="me-section" id="t-exam-dates"><h2>Даты экзаменов по литературе</h2><p class="muted">Загружаем…</p></section>
         <section class="me-section"><h2>Оформление</h2>${themeSwitchHtml()}</section>`);
       mountTg(host, "teacher");
-      const rl = await import("./reading-list.js?v=land182");
+      const rl = await import("./reading-list.js?v=land184");
       const box = host.querySelector("#t-exam-dates");
       const dates = await rl.examDates();
       box.innerHTML = `<h2>Даты экзаменов по литературе</h2>
@@ -772,7 +775,8 @@ function newStudentHtml(groupOpts) {
       <details class="card t-new-student" id="t-new-student">
         <summary class="btn">+ Новый ученик</summary>
         <form class="stack" id="t-new-student-form">
-          <p class="muted">Настоящее имя и почту не вводим: ученик получает псевдоним, логин и пароль. Пароль забыл — задаёте новый на его странице.</p>
+          <p class="muted">Ученик получает псевдоним, логин и пароль — на сайте он везде под псевдонимом. Пароль забыл — задаёте новый на его странице.</p>
+          <label>Кто это <small class="muted">(настоящее имя — видно только вам)</small><input name="real" maxlength="120" autocomplete="off" placeholder="например, Маша Иванова" /></label>
           ${pseudoFieldsHtml(newPseudonym(), newPassword())}
           <div class="grid-2">
             <label>Класс<select name="grade">${GRADES.map((g) => `<option value="${g}" ${g === 9 ? "selected" : ""}>${g} класс</option>`).join("")}</select></label>
@@ -812,6 +816,8 @@ function bindNewStudent(host) {
         courses,
         group: form.group.value || null,
       });
+      const real = form.elements.namedItem("real").value.trim();
+      if (real) await saveRealName(r.id, real).catch((e2) => console.warn("real name", e2));
       if (form.until.value) {
         const { error: eu } = await supa.rpc("teacher_set_student", { p_student: r.id, p_status: "active", p_group: null, p_until: form.until.value });
         if (eu) console.warn("access_until", eu);
@@ -851,6 +857,40 @@ function accountBlockHtml(p) {
       <div id="t-account-out"></div>
     </section>`;
 }
+/** «Кто есть кто»: настоящие имена учеников одним списком (видно только преподавателю). */
+function namesEditorHtml(people) {
+  const list = (people || []).filter((p) => p.role !== "teacher");
+  if (!list.length) return "";
+  const empty = list.filter((p) => !realNameOf(p.id)).length;
+  return `<section class="me-section">
+    <details class="card t-names" ${empty ? "open" : ""} data-rn-skip>
+      <summary><strong>Кто есть кто</strong> <span class="muted">· настоящие имена${empty ? ` — не заполнено у ${empty}` : " заполнены"}</span></summary>
+      <p class="muted">Видно только вам: ученики и дальше видят друг друга под псевдонимами. Имя появится рядом с псевдонимом во всём кабинете (в тесных местах — при наведении). Кнопка «👤 Имена» вверху прячет подписи, если экран видят ученики.</p>
+      <div class="t-names-list">${list
+        .map(
+          (p) => `<label class="t-names-row"><span><strong>${escapeHtml(p.full_name || "—")}</strong>${isPseudoEmail(p.email) ? ` <small class="muted">${escapeHtml(loginOf(p.email))}</small>` : ""}</span>
+            <input data-real="${p.id}" maxlength="120" value="${escapeHtml(realNameOf(p.id))}" placeholder="Имя и фамилия" autocomplete="off" /></label>`
+        )
+        .join("")}</div>
+      <p class="muted" id="t-names-status" aria-live="polite">Сохраняется само, когда переходите к следующему полю.</p>
+    </details>
+  </section>`;
+}
+function bindNamesEditor(host) {
+  const st = host.querySelector("#t-names-status");
+  host.querySelectorAll("[data-real]").forEach((inp) =>
+    inp.addEventListener("change", async () => {
+      try {
+        await saveRealName(inp.dataset.real, inp.value);
+        inp.classList.add("is-saved");
+        if (st) st.textContent = "Сохранено.";
+      } catch (err) {
+        if (st) st.textContent = "Не сохранилось: " + err.message;
+      }
+    })
+  );
+}
+
 function bindAccountBlock(host, p) {
   const out = host.querySelector("#t-account-out");
   host.querySelector("#t-newpass")?.addEventListener("click", async (e) => {
@@ -893,6 +933,7 @@ function bindAccountBlock(host, p) {
 }
 
 async function studentsView(host, render) {
+  await loadRealNames().catch(() => null);
   const [{ data: people, error }, { data: groups }, { data: members }, { data: xp }, { data: creq }] = await Promise.all([
     supa.from("profiles").select("*").neq("role", "teacher").order("created_at", { ascending: false }),
     supa.from("groups").select("id, title").eq("archived", false).order("title"),
@@ -996,6 +1037,7 @@ async function studentsView(host, render) {
     </section>`
         : ""
     }
+    ${namesEditorHtml(people)}
     <section class="me-section">
       <h2>Все ученики · ${rest.length}</h2>
       <input class="search" id="t-q" type="search" placeholder="Поиск по имени, почте, цели" />
@@ -1012,6 +1054,7 @@ async function studentsView(host, render) {
     </section>`);
 
   bindNewStudent(host);
+  bindNamesEditor(host);
   host.querySelectorAll("[data-req-ok]").forEach((b) =>
     b.addEventListener("click", async () => {
       const row = b.closest("[data-req]");
@@ -1144,6 +1187,7 @@ function activityHtml(acts, atts) {
 }
 
 async function studentView(host, render, id) {
+  await loadRealNames().catch(() => null);
   const [{ data: p }, { data: stats }, { data: attempts }, { data: works }, { data: note }] = await Promise.all([
     supa.from("profiles").select("*").eq("id", id).maybeSingle(),
     supa.from("task_stats").select("*").eq("student_id", id),
@@ -1193,6 +1237,10 @@ async function studentView(host, render, id) {
   render(`
     <p class="crumbs"><a href="#/cabinet/students">← Ученики</a></p>
     <h1>${escapeHtml(p.full_name || p.email)}</h1>
+    <form class="t-real-name" id="t-real-name" data-rn-skip>
+      <label>Кто это <small class="muted">(видно только вам)</small><input name="real" maxlength="120" value="${escapeHtml(realNameOf(p.id))}" placeholder="Имя и фамилия" autocomplete="off" /></label>
+      <button class="btn secondary" type="submit">Сохранить</button> <span class="muted" data-st aria-live="polite"></span>
+    </form>
     <p class="actions"><a class="btn secondary" href="#/cabinet/student/${p.id}/report?p=month">Прогресс и отчёт для родителей</a>${(p.courses || []).some((c) => /^lit:(8|9|10|11)$/.test(c)) ? ` <a class="btn secondary" href="#/cabinet/student/${p.id}/reading">Список чтения</a>` : ""}</p>
     <p class="t-xp">Очки: <b>${xpTotal}</b> · за неделю: <b>+${xpWeek}</b> · дней с занятиями: <b>${activeDays}</b> · закреплено глав правил: <b>${(mastered || []).length}</b></p>
     <p class="lede">${isPseudoEmail(p.email) ? `логин <b>${escapeHtml(loginOf(p.email))}</b>` : escapeHtml(p.email || "")} · ${STATUS_TEXT[p.status]}${p.grade ? ` · ${p.grade} класс` : ""}${p.exam_target ? ` · ${escapeHtml(p.exam_target)}` : ""} · ${p.tg_chat_id ? "Telegram подключён" : "Telegram не подключён"}</p>
@@ -1259,6 +1307,16 @@ async function studentView(host, render, id) {
     }
   });
   bindAccountBlock(host, p);
+  host.querySelector("#t-real-name")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const out = e.target.querySelector("[data-st]");
+    try {
+      await saveRealName(p.id, e.target.real.value);
+      out.textContent = "Сохранено";
+    } catch (err) {
+      out.textContent = "Не сохранилось: " + err.message;
+    }
+  });
   host.querySelector("#t-note-save")?.addEventListener("click", async () => {
     const { error } = await supa
       .from("student_notes")

@@ -1,5 +1,5 @@
 import { escapeHtml } from "./ui.js";
-import { renderEgeExercise } from "./ege.js?v=land182";
+import { renderEgeExercise } from "./ege.js?v=land184";
 
 function sameGap(input, answer) {
   const dash = /[\u2014\u2013\u2212\u2012\u2010-]/g;

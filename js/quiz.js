@@ -3,8 +3,8 @@
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
 import { humanError, supa } from "./supa.js";
-import { sanitizeFor } from "./lessons.js?v=land182";
-import { RULE_QUESTIONS, TOPIC_TITLE } from "./quiz-rules.js?v=land182";
+import { sanitizeFor } from "./lessons.js?v=land184";
+import { RULE_QUESTIONS, TOPIC_TITLE } from "./quiz-rules.js?v=land184";
 
 const EXAM_OF = { 8: "vpr-rus", 9: "oge-rus", 10: "ege-rus", 11: "ege-rus" };
 const EXAM_TITLE = { "vpr-rus": "ВПР", "oge-rus": "ОГЭ", "ege-rus": "ЕГЭ" };

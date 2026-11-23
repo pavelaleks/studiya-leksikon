@@ -3,17 +3,17 @@
  *  Преподаватель: #/cabinet/lessons — список и создание; #/cabinet/lesson/:id — конструктор и живая таблица.
  *  Ученик: #/lesson/:id — задания урока; #/lesson/:id/:item — одно задание с проверкой по правилам урока.
  */
-import { bz, bzDayStart, fromBz, fromBzInput, toBzInput } from "./tz.js?v=land182";
+import { bz, bzDayStart, fromBz, fromBzInput, toBzInput } from "./tz.js?v=land184";
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land182";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land182";
-import { SOURCES, bankFiles } from "./teacher.js?v=land182";
+import { taskHref } from "./account.js?v=land184";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land184";
+import { SOURCES, bankFiles } from "./teacher.js?v=land184";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
-import { nextLessonFor } from "./calendar.js?v=land182";
+import { nextLessonFor } from "./calendar.js?v=land184";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land182";
+} from "./exams.js?v=land184";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {

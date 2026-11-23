@@ -2563,3 +2563,18 @@ a.me-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
 
 /* перенесённое занятие (calendar.js movedHtml) */
 .wk-moved { display: inline-block; margin-left: 4px; padding: 1px 8px; border-radius: 999px; font-size: .78em; font-weight: 600; background: color-mix(in srgb, var(--gold) 22%, transparent); color: var(--ink); white-space: nowrap; }
+
+/* Настоящие имена учеников у преподавателя (realnames.js) */
+.rn-wrap { cursor: help; }
+.rn { color: var(--ink-soft); font-weight: 400; font-size: .88em; }
+.chip .rn, .tt-rib .rn, .badge .rn, button .rn, .pill .rn, .tt-now-stats .rn, .me-tile .rn { display: none; }
+.rn-toggle { margin-left: auto; }
+.rn-toggle:not(.active) { opacity: .6; }
+.t-names-list { display: grid; gap: 6px; margin: 10px 0; }
+.t-names-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 10px; align-items: center; }
+.t-names-row input { padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: inherit; }
+.t-names-row input.is-saved { border-color: var(--forest); }
+.t-real-name { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin: -4px 0 12px; }
+.t-real-name input { padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: inherit; min-width: 220px; }
+@media (max-width: 560px) { .t-names-row { grid-template-columns: 1fr; gap: 4px; } }
+.t-group h3 [data-rename] { font-size: 12px; font-weight: 400; font-family: inherit; margin-left: 4px; vertical-align: middle; }

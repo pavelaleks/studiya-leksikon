@@ -8,7 +8,7 @@
  */
 import { escapeHtml } from "./ui.js";
 import { currentUser, humanError, supa } from "./supa.js";
-import { bz, bzDayStart, fromBz, fromBzInput, toBzInput } from "./tz.js?v=land182";
+import { bz, bzDayStart, fromBz, fromBzInput, toBzInput } from "./tz.js?v=land184";
 
 const DAY = 86400000;
 const WD = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
