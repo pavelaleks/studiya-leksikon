@@ -1,4 +1,4 @@
-// Псевдонимы учеников: «Рыжий Лис 47» + логин ryzhiy-lis-47 + пароль. Настоящих имён и почт на сайте нет.
+// Псевдонимы учеников: «Рыжий Лис» (без цифр, не повторяются) + логин ryzhiy-lis + пароль. Настоящих имён и почт на сайте нет.
 import { supa, humanError } from "./supa.js";
 
 export const STUDENT_DOMAIN = "students.lexicon.local";
@@ -50,13 +50,52 @@ const NOUN = [
 
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
-/** Новый псевдоним: { name: "Рыжий Лис 47", login: "ryzhiy-lis-47" }. */
-export function newPseudonym() {
-  const [m, f, al] = pick(ADJ);
-  const [noun, g, nl] = pick(NOUN);
+// сравниваем без регистра, «ё» и хвостовых цифр старых псевдонимов («Рыжий Лис 47» = «Рыжий Лис»)
+const norm = (s) => String(s || "").trim().toLowerCase().replace(/ё/g, "е").replace(/\s+\d+$/, "");
+
+/** Новый псевдоним без цифр: { name: "Рыжий Лис", login: "ryzhiy-lis" }.
+ *  taken — занятые псевдонимы, takenLogins — занятые логины (тогда к логину добавится число:
+ *  на сайте его не видно, он нужен только для входа). */
+export function newPseudonym(taken = new Set(), takenLogins = new Set()) {
+  const busy = new Set([...taken].map(norm));
+  // реже повторяем существительное, которое уже у кого-то есть («Лис», «Комета»), — так ученики не путаются
+  const usedNouns = new Set([...busy].map((n) => n.split(" ").pop()));
+  for (let i = 0; i < 400; i++) {
+    const [m, f, al] = pick(ADJ);
+    const [noun, g, nl] = pick(NOUN);
+    if (i < 200 && usedNouns.has(norm(noun))) continue;
+    const name = `${g === "m" ? m : f} ${noun}`;
+    if (busy.has(norm(name))) continue;
+    let login = `${al}-${nl}`;
+    for (let k = 2; takenLogins.has(login); k++) login = `${al}-${nl}-${k}`;
+    return { name, login };
+  }
   const n = 10 + Math.floor(Math.random() * 90);
-  return { name: `${g === "m" ? m : f} ${noun} ${n}`, login: `${al}-${nl}-${n}` };
+  return { name: `Новичок ${n}`, login: `novichok-${n}` };
 }
+
+/** Несколько свободных вариантов на выбор. */
+export function suggestPseudonyms(count = 4, taken = new Set(), takenLogins = new Set()) {
+  const busy = new Set(taken);
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    const ps = newPseudonym(busy, takenLogins);
+    busy.add(ps.name);
+    out.push(ps);
+  }
+  return out;
+}
+
+/** Занятые псевдонимы и логины (читает преподаватель). */
+export async function takenPseudonyms() {
+  const { data } = await supa.from("profiles").select("full_name, email");
+  return {
+    names: new Set((data || []).map((p) => String(p.full_name || "").trim()).filter(Boolean)),
+    logins: new Set((data || []).map((p) => loginOf(p.email)).filter(Boolean)),
+  };
+}
+
+export const isTakenPseudonym = (name, taken) => [...taken].some((t) => norm(t) === norm(name));
 
 /** Пароль, который легко продиктовать: два слова и цифры. */
 export function newPassword() {

@@ -1,21 +1,21 @@
 /** Кабинет преподавателя: #/cabinet/... */
-import { bzDayStart } from "./tz.js?v=land184";
-import { installRealNames, loadRealNames, realNameOf, saveRealName, toggleHtml } from "./realnames.js?v=land184";
+import { bzDayStart } from "./tz.js?v=land185";
+import { installRealNames, loadRealNames, realNameOf, saveRealName, toggleHtml } from "./realnames.js?v=land185";
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land184";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land185";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land184";
+import { taskHref } from "./account.js?v=land185";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land184";
-import { readingView } from "./teacher-reading.js?v=land184";
-import { optionsOf } from "./practice.js?v=land184";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land184";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land184";
-import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land184";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land184";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land185";
+import { readingView } from "./teacher-reading.js?v=land185";
+import { optionsOf } from "./practice.js?v=land185";
+import { convertStudent, createStudent, isPseudoEmail, isTakenPseudonym, loginOf, newPassword, newPseudonym, resetStudentPassword, suggestPseudonyms, takenPseudonyms } from "./pseudo.js?v=land185";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land185";
+import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land185";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land185";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land184";
+} from "./review.js?v=land185";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -305,12 +305,12 @@ export async function mountTeacher(root, parts) {
     if (tab === "students") return await studentsView(host, render);
     if (tab === "student" && arg === "report") {
       render(`<div id="t-report"></div>`);
-      const pg = await import("./progress-charts.js?v=land184");
+      const pg = await import("./progress-charts.js?v=land185");
       return await pg.mountReport(host.querySelector("#t-report"), sub, { back: `#/cabinet/student/${sub}`, base: `#/cabinet/student/${sub}/report` });
     }
     if (tab === "student" && arg === "reading") {
       render(`<div id="t-reading-list"></div>`);
-      const rl = await import("./reading-list.js?v=land184");
+      const rl = await import("./reading-list.js?v=land185");
       return await rl.mountReadingList(host.querySelector("#t-reading-list"), {
         studentId: sub,
         exam: parts[3] || null,
@@ -329,7 +329,7 @@ export async function mountTeacher(root, parts) {
         <section class="me-section" id="t-exam-dates"><h2>Даты экзаменов по литературе</h2><p class="muted">Загружаем…</p></section>
         <section class="me-section"><h2>Оформление</h2>${themeSwitchHtml()}</section>`);
       mountTg(host, "teacher");
-      const rl = await import("./reading-list.js?v=land184");
+      const rl = await import("./reading-list.js?v=land185");
       const box = host.querySelector("#t-exam-dates");
       const dates = await rl.examDates();
       box.innerHTML = `<h2>Даты экзаменов по литературе</h2>
@@ -761,13 +761,38 @@ const pseudoFieldsHtml = (ps, pw) => `
     <label>Логин (латиница)<input name="login" value="${escapeHtml(ps.login)}" pattern="[a-z0-9][a-z0-9-]{2,30}[a-z0-9]" required autocomplete="off" /></label>
   </div>
   <label>Пароль<input name="password" value="${escapeHtml(pw)}" minlength="8" required autocomplete="off" /></label>
-  <p class="actions"><button class="btn secondary" type="button" data-regen>Другой псевдоним</button></p>`;
-function bindRegen(form) {
-  form.querySelector("[data-regen]")?.addEventListener("click", () => {
-    const ps = newPseudonym();
-    form.elements.namedItem("name").value = ps.name;
-    form.login.value = ps.login;
+  <div class="t-ps-sug"><span class="muted">Свободные варианты:</span> <span data-sug></span>
+    <button class="linklike" type="button" data-regen>ещё варианты</button></div>`;
+
+/** Подсказки свободных псевдонимов (без цифр, без занятых). Возвращает проверку «псевдоним свободен». */
+function bindRegen(form, { loginField = true } = {}) {
+  let taken = { names: new Set(), logins: new Set() };
+  const box = form.querySelector("[data-sug]");
+  const nameIn = form.elements.namedItem("name");
+  const draw = () => {
+    if (!box) return;
+    box.innerHTML = suggestPseudonyms(4, taken.names, taken.logins)
+      .map((ps) => `<button type="button" class="chip t-ps-chip" data-name="${escapeHtml(ps.name)}" data-login="${escapeHtml(ps.login)}">${escapeHtml(ps.name)}</button>`)
+      .join(" ");
+  };
+  const use = (ps) => {
+    nameIn.value = ps.name;
+    if (loginField && form.login) form.login.value = ps.login;
+  };
+  takenPseudonyms()
+    .then((t) => {
+      taken = t;
+      // предложенный при открытии формы вариант мог оказаться занят
+      if (isTakenPseudonym(nameIn.value, taken.names) || /\d/.test(nameIn.value)) use(newPseudonym(taken.names, taken.logins));
+      draw();
+    })
+    .catch(() => draw());
+  box?.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-name]");
+    if (b) use({ name: b.dataset.name, login: b.dataset.login });
   });
+  form.querySelector("[data-regen]")?.addEventListener("click", draw);
+  return (name) => !isTakenPseudonym(name, taken.names);
 }
 function newStudentHtml(groupOpts) {
   return `
@@ -797,10 +822,15 @@ function newStudentHtml(groupOpts) {
 function bindNewStudent(host) {
   const form = host.querySelector("#t-new-student-form");
   if (!form) return;
-  bindRegen(form);
+  const isFree = bindRegen(form);
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const st = host.querySelector("#t-new-student-status");
+    if (!isFree(form.elements.namedItem("name").value)) {
+      st.className = "lit-result is-bad";
+      st.textContent = "Такой псевдоним уже есть — выберите другой из вариантов.";
+      return;
+    }
     const btn = form.querySelector('button[type="submit"]');
     const grade = Number(form.grade.value);
     const courses = [...form.querySelectorAll('input[name="subj"]:checked')].map((x) => `${x.value}:${grade}`);
@@ -845,6 +875,16 @@ function accountBlockHtml(p) {
       <p class="muted">Ученик забыл пароль — задайте новый и передайте ему.</p>
       <p class="actions"><button class="btn secondary" type="button" id="t-newpass">Задать новый пароль</button></p>
       <div id="t-account-out"></div>
+      <details class="t-rename-ps">
+        <summary class="linklike">Сменить псевдоним</summary>
+        <form class="stack" id="t-rename-ps" data-rn-skip>
+          <p class="muted">Логин для входа останется прежним (<b>${escapeHtml(loginOf(p.email))}</b>) — меняется только имя, под которым ученика видно на сайте.</p>
+          <label>Новый псевдоним<input name="name" value="${escapeHtml(p.full_name || "")}" maxlength="40" required /></label>
+          <div class="t-ps-sug"><span class="muted">Свободные варианты:</span> <span data-sug></span>
+            <button class="linklike" type="button" data-regen>ещё варианты</button></div>
+          <p class="actions"><button class="btn secondary" type="submit">Сохранить псевдоним</button> <span class="muted" data-st aria-live="polite"></span></p>
+        </form>
+      </details>
     </section>`;
   return `<section class="me-section" id="t-account">
       <h2>Перевести на псевдоним</h2>
@@ -893,6 +933,27 @@ function bindNamesEditor(host) {
 
 function bindAccountBlock(host, p) {
   const out = host.querySelector("#t-account-out");
+  const ren = host.querySelector("#t-rename-ps");
+  if (ren) {
+    const isFree = bindRegen(ren, { loginField: false });
+    ren.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const st = ren.querySelector("[data-st]");
+      const name = ren.elements.namedItem("name").value.trim();
+      if (!name || name === p.full_name) return;
+      if (!isFree(name)) {
+        st.textContent = "Такой псевдоним уже есть.";
+        return;
+      }
+      const { error } = await supa.from("profiles").update({ full_name: name }).eq("id", p.id);
+      if (error) {
+        st.textContent = "Не сохранилось: " + humanError(error).message;
+        return;
+      }
+      await loadRealNames(true).catch(() => null);
+      mountTeacher(document, ["student", p.id]);
+    });
+  }
   host.querySelector("#t-newpass")?.addEventListener("click", async (e) => {
     const pw = newPassword();
     if (!confirm(`Задать ученику новый пароль? Старый перестанет работать.`)) return;

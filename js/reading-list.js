@@ -8,7 +8,7 @@
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
 import { currentProfile, currentUser, supa } from "./supa.js";
-import { CANON, ERAS, EXAMS, examsOf, isRequired, yearsAhead } from "./reading-canon.js?v=land184";
+import { CANON, ERAS, EXAMS, examsOf, isRequired, yearsAhead } from "./reading-canon.js?v=land185";
 
 const DATA = new URL("js/library-data/", new URL(BASE, location.href));
 const cache = {};

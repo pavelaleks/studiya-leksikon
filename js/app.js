@@ -1,26 +1,26 @@
-import { installStudioTime } from "./tz.js?v=land184";
-import { mountHelper } from "./helper.js?v=land184";
-import { applyTheme, layout } from "./ui.js?v=land184";
-import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land184";
-import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land184";
-import { mountLiterature } from "./literature.js?v=land184";
-import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land184";
-import { mountRussian } from "./russian.js?v=land184";
-import { mountOge } from "./oge.js?v=land184";
-import { markVprDone, mountVpr } from "./vpr.js?v=land184";
-import { mountQuiz } from "./quiz.js?v=land184";
-import { bindApplyForm, bindRevealPhone } from "./apply.js?v=land184";
-import { EGE_TITLES } from "./ege.js?v=land184";
-import { renderExercise } from "./exercises.js?v=land184";
-import { mountTrainer } from "./trainers.js?v=land184";
-import { parseRoute } from "./route.js?v=land184";
+import { installStudioTime } from "./tz.js?v=land185";
+import { mountHelper } from "./helper.js?v=land185";
+import { applyTheme, layout } from "./ui.js?v=land185";
+import { allRules, exercisesFor, findRule, loadContent } from "./content.js?v=land185";
+import { homeHitsHtml, homePage, practiceIndex, rulePage, rulesIndex, egePage, ogePage, thanksPage, literaturePage } from "./pages.js?v=land185";
+import { mountLiterature } from "./literature.js?v=land185";
+import { libraryPage, libraryTitle, mountLibrary } from "./library.js?v=land185";
+import { mountRussian } from "./russian.js?v=land185";
+import { mountOge } from "./oge.js?v=land185";
+import { markVprDone, mountVpr } from "./vpr.js?v=land185";
+import { mountQuiz } from "./quiz.js?v=land185";
+import { bindApplyForm, bindRevealPhone } from "./apply.js?v=land185";
+import { EGE_TITLES } from "./ege.js?v=land185";
+import { renderExercise } from "./exercises.js?v=land185";
+import { mountTrainer } from "./trainers.js?v=land185";
+import { parseRoute } from "./route.js?v=land185";
 import { accessState, currentProfile, currentUser, hasAccess, initAuth, mySolved, onAuthChange, supa } from "./supa.js";
-import { routeSubject, subjectsOf } from "./track.js?v=land184";
-import { markEgeDone, markOgeDone } from "./progress.js?v=land184";
-import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land184";
-import { mountTeacher, teacherPage } from "./teacher.js?v=land184";
-import "./session.js?v=land184";
-import { lessonPage, mountLesson } from "./lessons.js?v=land184";
+import { routeSubject, subjectsOf } from "./track.js?v=land185";
+import { markEgeDone, markOgeDone } from "./progress.js?v=land185";
+import { bindLogin, bindPassword, loginPage, mePage, mountMe, passwordPage } from "./account.js?v=land185";
+import { mountTeacher, teacherPage } from "./teacher.js?v=land185";
+import "./session.js?v=land185";
+import { lessonPage, mountLesson } from "./lessons.js?v=land185";
 
 // Время студии: все даты на сайте — по Барнаулу, как в Google Календаре.
 installStudioTime();
@@ -83,7 +83,7 @@ function bindSearch(sectionId, q) {
   if (!search) return;
   search.addEventListener("input", () => {
     mountHtml(rulesIndex(content, sectionId, search.value), "rules", { scroll: false });
-    import("./rulequiz.js?v=land184").then((m) => m.markRulesIndex(app)).catch(() => {});
+    import("./rulequiz.js?v=land185").then((m) => m.markRulesIndex(app)).catch(() => {});
     bindSearch(sectionId, search.value);
     const again = app.querySelector("#rule-search");
     if (again) {
@@ -209,7 +209,7 @@ async function render() {
   }
 
   if (a === "privacy" || a === "consent") {
-    const m = await import("./legal.js?v=land184");
+    const m = await import("./legal.js?v=land185");
     mountHtml(a === "privacy" ? m.privacyPage() : m.consentPage(), "legal");
     setTitle(a === "privacy" ? "Политика обработки персональных данных" : "Согласие на обработку персональных данных");
     return;
@@ -223,7 +223,7 @@ async function render() {
 
   if (a === "rules") {
     mountHtml(rulesIndex(content, b || "", q), "rules");
-    import("./rulequiz.js?v=land184").then((m) => m.markRulesIndex(app)).catch(() => {});
+    import("./rulequiz.js?v=land185").then((m) => m.markRulesIndex(app)).catch(() => {});
     bindSearch(b || "", q);
     setTitle(b ? "Правила" : "Правила");
     return;
@@ -242,7 +242,7 @@ async function render() {
       : {};
     mountHtml(rulePage(rule, neighbors), "rules");
     bindRulePrint();
-    import("./rulequiz.js?v=land184").then((m) => m.mountRuleQuiz(app)).catch((e) => console.warn(e));
+    import("./rulequiz.js?v=land185").then((m) => m.mountRuleQuiz(app)).catch((e) => console.warn(e));
     setTitle(rule?.title || "Правило");
     return;
   }
@@ -367,7 +367,7 @@ async function render() {
     if ((b === "progress" || b === "report") && currentUser()) {
       mountHtml(mePage(), "me");
       setTitle(b === "report" ? "Отчёт для родителей" : "Прогресс");
-      const pg = await import("./progress-charts.js?v=land184");
+      const pg = await import("./progress-charts.js?v=land185");
       if (b === "report") await pg.mountReport(app.querySelector("#me-root"), currentUser().id);
       else await pg.mountProgress(app);
       return;
@@ -375,7 +375,7 @@ async function render() {
     if (b === "reading" && currentUser()) {
       mountHtml(mePage(), "me");
       setTitle("Список чтения");
-      const rl = await import("./reading-list.js?v=land184");
+      const rl = await import("./reading-list.js?v=land185");
       await rl.mountReadingList(app.querySelector("#me-root"), { exam: parts[2] || null });
       return;
     }

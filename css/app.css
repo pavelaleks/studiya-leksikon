@@ -2578,3 +2578,8 @@ a.me-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
 .t-real-name input { padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: inherit; min-width: 220px; }
 @media (max-width: 560px) { .t-names-row { grid-template-columns: 1fr; gap: 4px; } }
 .t-group h3 [data-rename] { font-size: 12px; font-weight: 400; font-family: inherit; margin-left: 4px; vertical-align: middle; }
+.t-ps-sug { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: .95em; }
+.t-ps-chip { cursor: pointer; border: 1px solid var(--line); }
+.t-ps-chip:hover { border-color: var(--accent); }
+.t-rename-ps { margin-top: 10px; }
+.t-rename-ps form { margin-top: 8px; }
