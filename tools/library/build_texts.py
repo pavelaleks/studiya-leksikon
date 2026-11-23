@@ -344,6 +344,23 @@ def build_work(work):
     return out
 
 
+def build_txt(work):
+    """Текст из простого .txt (lib.ru, KOI8-R): от заголовка до следующего заголовка; абзацы — строки с отступом."""
+    import html as _html
+    url, start, end = work["txt"]
+    path = os.path.join(CACHE, re.sub(r"[^\w]+", "_", url)[-80:])
+    os.makedirs(CACHE, exist_ok=True)
+    raw = open(fetch(url, path), "rb").read().decode("koi8-r", "replace")
+    text = _html.unescape(re.sub(r"<[^>]+>", "", raw))
+    i = text.rindex("\n" + start + "\n") + len(start) + 2
+    j = text.index("\n" + end + "\n", i) if end else len(text)
+    body = text[i:j].strip("\n")
+    paras = [re.sub(r"\s+", " ", p).strip() for p in re.split(r"\n(?=\s{3,}\S)", body)]
+    paras = [p.replace("--", "—") for p in paras if p]
+    h = "".join(f"<p>{_html.escape(p)}</p>" for p in paras)
+    return [{"t": work["title"], "h": h, "notes": [], "len": sum(len(p) for p in paras)}]
+
+
 def write_parts(work, chapters):
     os.makedirs(os.path.join(OUT, "texts"), exist_ok=True)
     for f in os.listdir(os.path.join(OUT, "texts")):
@@ -407,7 +424,7 @@ def main(only):
     wiki = wiki_check({w["wiki"] for w in W if w["wiki"]})
     works = []
     for work in W:
-        item = {k: v for k, v in work.items() if k not in ("ws", "join", "groups", "rename") and v not in (None, False, "")}
+        item = {k: v for k, v in work.items() if k not in ("ws", "join", "groups", "rename", "txt") and v not in (None, False, "")}
         if work["wiki"]:
             if not wiki.get(work["wiki"]):
                 print("!! нет статьи в Википедии:", work["wiki"])
@@ -425,6 +442,14 @@ def main(only):
                 chapters = build_work(work)
                 item["toc"], item["chars"] = write_parts(work, chapters)
                 print(f"   {len(chapters)} глав, {item['chars'] // 1000} тыс. знаков")
+        if work.get("txt") and not work["ws"]:
+            item["src"] = [work["txt"][0]]
+            if only and work["id"] not in only and work["id"] in old and old[work["id"]].get("toc"):
+                item["toc"] = old[work["id"]]["toc"]
+                item["chars"] = old[work["id"]].get("chars", 0)
+            else:
+                print("==", work["id"], work["txt"][0])
+                item["toc"], item["chars"] = write_parts(work, build_txt(work))
         works.append(item)
     os.makedirs(OUT, exist_ok=True)
     with open(cat_path, "w", encoding="utf-8") as f:

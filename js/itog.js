@@ -10,11 +10,11 @@
  */
 import { escapeHtml } from "./ui.js";
 import { currentUser, supa } from "./supa.js";
-import { bindWritten, writtenBlockHtml } from "./practice.js?v=land188";
-import { bzDayStart } from "./tz.js?v=land188";
+import { bindWritten, writtenBlockHtml } from "./practice.js?v=land190";
+import { bzDayStart } from "./tz.js?v=land190";
 import {
   CHECKLIST, CRITERIA, EXAMPLES, NEW_LIT_TOPICS, PASS_RULE, PLAN, REQUIREMENTS, SAMPLE_SET, SECTIONS, SUB_TITLE, TEXTS, TRAINING_TOPICS, itogDates,
-} from "./itog-data.js?v=land188";
+} from "./itog-data.js?v=land190";
 
 const ROOT = "#/itog";
 const TABS = [
@@ -155,6 +155,23 @@ function textHref(x) {
   if (x.w) return `#/library/w/${x.w}${x.ch ? "/" + x.ch : ""}`;
   return x.href || "";
 }
+/** Где читать: на сайте / онлайн по ссылке / только рекомендация (описание). */
+function availability(x) {
+  const href = textHref(x);
+  if (href.startsWith("#")) return "site";
+  if (href && !href.includes("wikipedia")) return "online";
+  return "info";
+}
+const AV = {
+  site: ["На сайте", "текст в библиотеке студии"],
+  online: ["Онлайн", "читать на другом сайте"],
+  info: ["Рекомендуем", "текста онлайн нет — только описание"],
+};
+function linkLabel(href) {
+  if (href.includes("lib.ru")) return "Читать в библиотеке Мошкова ↗";
+  if (href.includes("books.yandex")) return "Читать в Яндекс Книгах ↗";
+  return "Читать текст ↗";
+}
 function readTime(min) {
   if (min <= 60) return `≈ ${min} мин`;
   if (min <= 300) return `≈ ${Math.round(min / 60)} ч`;
@@ -162,32 +179,106 @@ function readTime(min) {
 }
 function textCard(x, active) {
   const href = textHref(x);
-  const internal = href.startsWith("#");
-  return `<article class="card is-text" data-subs="${x.subs.join(" ")}" data-small="${x.min <= 120 ? 1 : 0}">
-    <p class="is-text-h"><span class="muted">${escapeHtml(x.a)}</span> <strong>«${escapeHtml(x.t)}»</strong></p>
+  const av = availability(x);
+  const action =
+    av === "site"
+      ? `<a class="btn" href="${escapeHtml(href)}" data-return>Читать на сайте</a>`
+      : av === "online"
+        ? `<a class="btn secondary" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${linkLabel(href)}</a>`
+        : href
+          ? `<a class="linklike muted" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">О произведении ↗</a>`
+          : "";
+  return `<article class="card is-text is-av-${av}" data-av="${av}" data-min="${x.min}" data-n="${x.subs.length}" data-a="${escapeHtml(x.a.split(" ").pop())}" data-t="${escapeHtml(x.t)}">
+    <p class="is-text-h"><span class="is-av" title="${escapeHtml(AV[av][1])}">${AV[av][0]}</span><span class="muted">${escapeHtml(x.a)}</span> <strong>«${escapeHtml(x.t)}»</strong></p>
     <p class="is-text-meta"><span class="lib-mark">${escapeHtml(x.size)}</span> <span class="lib-mark">${readTime(x.min)}</span>
       ${x.subs.map((s) => `<a class="lib-mark ${s === active ? "is-focus" : ""}" href="${ROOT}/texts?s=${s}" title="${escapeHtml(SUB_TITLE[s] || "")}">${s}</a>`).join("")}</p>
     <p><b>Что доказывает:</b> ${escapeHtml(x.idea)}</p>
     <p class="muted"><b>Как использовать:</b> ${escapeHtml(x.use)}</p>
-    ${href ? `<p class="actions"><a class="btn secondary" href="${escapeHtml(href)}" ${internal ? "" : 'target="_blank" rel="noopener noreferrer"'}>${internal ? "Читать на сайте" : "О произведении ↗"}</a></p>` : ""}
+    ${action ? `<p class="actions">${action}</p>` : ""}
   </article>`;
 }
-function textsHtml(active) {
+
+const SORTS = [
+  ["len", "Сначала короткие"],
+  ["topics", "Больше тем — выше"],
+  ["author", "По автору"],
+  ["title", "По названию"],
+];
+function textsState() {
+  const q = new URLSearchParams(location.hash.split("?")[1] || "");
+  return { s: q.get("s") || "", av: q.get("av") || "", sort: q.get("sort") || "len", small: q.get("small") === "1" };
+}
+function stateHash(st) {
+  const q = new URLSearchParams();
+  if (st.s) q.set("s", st.s);
+  if (st.av) q.set("av", st.av);
+  if (st.sort && st.sort !== "len") q.set("sort", st.sort);
+  if (st.small) q.set("small", "1");
+  const qs = q.toString();
+  return `${ROOT}/texts${qs ? "?" + qs : ""}`;
+}
+function textsList(st) {
+  const cmp = {
+    len: (a, b) => a.min - b.min,
+    topics: (a, b) => b.subs.length - a.subs.length || a.min - b.min,
+    author: (a, b) => a.a.split(" ").pop().localeCompare(b.a.split(" ").pop(), "ru") || a.t.localeCompare(b.t, "ru"),
+    title: (a, b) => a.t.localeCompare(b.t, "ru"),
+  }[st.sort] || ((a, b) => a.min - b.min);
+  const bySub = TEXTS.filter((x) => !st.s || x.subs.includes(st.s));
+  const shown = bySub.filter((x) => (!st.av || availability(x) === st.av) && (!st.small || x.min <= 120)).sort(cmp);
+  const counts = { site: 0, online: 0, info: 0 };
+  bySub.forEach((x) => counts[availability(x)]++);
+  return { bySub, shown, counts };
+}
+function textsHtml(st) {
   const subChips = SECTIONS.map(
     (s) => `<div class="is-subpick"><span class="muted">Раздел ${s.n}:</span> ${s.subs
-      .map(([c, t]) => `<a class="pill ${c === active ? "active" : ""}" href="${ROOT}/texts?s=${c}" title="${escapeHtml(t)}">${c} ${escapeHtml(t.split(/[,;(]/)[0])}</a>`)
+      .map(([c, t]) => `<a class="pill ${c === st.s ? "active" : ""}" href="${stateHash({ ...st, s: c })}" title="${escapeHtml(t)}">${c} ${escapeHtml(t.split(/[,;(]/)[0])}</a>`)
       .join("")}</div>`
   ).join("");
-  const list = TEXTS.filter((x) => !active || x.subs.includes(active)).sort((a, b) => a.min - b.min);
   return `
     <section class="me-section">
-      <p>Один хорошо знакомый текст закрывает несколько тем: «Судьба человека» подойдёт и к достоинству (1.1), и к милосердию (1.2), и к семье (2.1), и к Родине (2.3). Выберите подраздел — останутся подходящие тексты, сначала короткие.</p>
+      <p>Один хорошо знакомый текст закрывает несколько тем: «Судьба человека» подойдёт и к достоинству (1.1), и к милосердию (1.2), и к семье (2.1), и к Родине (2.3). Выберите подраздел — останутся подходящие тексты.</p>
       ${subChips}
-      <label class="lib-check"><input type="checkbox" id="is-small" /> только небольшие (до 2 часов чтения)</label>
-      ${active ? `<p class="is-active"><b>${active}</b> ${escapeHtml(SUB_TITLE[active] || "")} · ${list.length} ${ru(list.length, "текст", "текста", "текстов")} · <a href="${ROOT}/texts">все</a></p>` : ""}
-      <div class="is-texts">${list.map((x) => textCard(x, active)).join("")}</div>
-      <p class="muted">Тексты из школьной программы — в <a href="#/library">библиотеке</a>, их можно читать прямо здесь. Для остальных — ссылка на описание; сами книги есть в любой библиотеке.</p>
+      ${st.s ? `<p class="is-active"><b>${st.s}</b> ${escapeHtml(SUB_TITLE[st.s] || "")} · <a href="${stateHash({ ...st, s: "" })}">все подразделы</a></p>` : ""}
+      <div class="is-controls" id="is-controls"></div>
+      <div class="is-texts" id="is-texts"></div>
+      <p class="muted is-legend"><span class="is-av is-av-site">На сайте</span> — текст в <a href="#/library">библиотеке</a> студии (общественное достояние).
+        <span class="is-av is-av-online">Онлайн</span> — бесплатно на другом сайте: библиотека Мошкова или Яндекс Книги (текст защищён авторским правом, поэтому не у нас).
+        <span class="is-av is-av-info">Рекомендуем</span> — текста онлайн нет, есть описание; книга — в любой библиотеке.</p>
     </section>`;
+}
+function bindTexts(host) {
+  const draw = () => {
+    const st = textsState();
+    const { bySub, shown, counts } = textsList(st);
+    const pill = (av, label, n) => `<button type="button" class="pill ${st.av === av ? "active" : ""}" data-av="${av}">${label}${n != null ? ` <span class="muted">${n}</span>` : ""}</button>`;
+    host.querySelector("#is-controls").innerHTML = `
+      <div class="is-avpick" role="group" aria-label="Где читать">${pill("", "Все", bySub.length)}${pill("site", "На сайте", counts.site)}${pill("online", "Онлайн", counts.online)}${pill("info", "Рекомендуем", counts.info)}</div>
+      <label class="is-sort">Порядок <select id="is-sort">${SORTS.map(([v, t]) => `<option value="${v}" ${st.sort === v ? "selected" : ""}>${t}</option>`).join("")}</select></label>
+      <label class="lib-check"><input type="checkbox" id="is-small" ${st.small ? "checked" : ""} /> до 2 часов чтения</label>
+      <span class="muted">${shown.length} ${ru(shown.length, "текст", "текста", "текстов")}</span>`;
+    host.querySelector("#is-texts").innerHTML = shown.map((x) => textCard(x, st.s)).join("") || '<p class="empty">Под эти условия текстов нет — снимите какой-нибудь фильтр.</p>';
+  };
+  const set = (patch) => {
+    history.replaceState(null, "", location.pathname + location.search + stateHash({ ...textsState(), ...patch }));
+    draw();
+  };
+  host.addEventListener("click", (e) => {
+    const b = e.target.closest("#is-controls [data-av]");
+    if (b) set({ av: b.dataset.av });
+    // уходим читать на сайте — запоминаем, куда вернуться (библиотека покажет ссылку «← Итоговое сочинение»)
+    if (e.target.closest("[data-return]")) {
+      try {
+        sessionStorage.setItem("lx-return", JSON.stringify({ href: location.hash, label: "Итоговое сочинение · тексты", at: Date.now() }));
+      } catch {}
+    }
+  });
+  host.addEventListener("change", (e) => {
+    if (e.target.id === "is-sort") set({ sort: e.target.value });
+    if (e.target.id === "is-small") set({ small: e.target.checked });
+  });
+  draw();
 }
 
 /* ---------------- Темы ---------------- */
@@ -288,11 +379,8 @@ export async function mountItog(root, parts = []) {
   } else if (tab === "criteria") host.innerHTML = shell(tab, criteriaHtml());
   else if (tab === "how") host.innerHTML = shell(tab, howHtml());
   else if (tab === "texts") {
-    host.innerHTML = shell(tab, textsHtml(q.get("s") || ""));
-    const small = host.querySelector("#is-small");
-    small?.addEventListener("change", () =>
-      host.querySelectorAll(".is-text").forEach((c) => (c.hidden = small.checked && c.dataset.small !== "1"))
-    );
+    host.innerHTML = shell(tab, textsHtml(textsState()));
+    bindTexts(host);
   } else if (tab === "topics") host.innerHTML = shell(tab, await topicsHtml());
   else host.innerHTML = shell("", aboutHtml());
   document.title = `${title} — Студия Лексикон`;

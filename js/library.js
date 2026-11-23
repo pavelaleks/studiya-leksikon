@@ -101,6 +101,26 @@ function store(key, value) {
   return value;
 }
 
+function returnHref() {
+  try {
+    const r = JSON.parse(sessionStorage.getItem("lx-return") || "null");
+    return r?.href && Date.now() - r.at < 3 * 3600000 && /^#\/[\w/?=&.%-]*$/.test(r.href) ? r.href : "";
+  } catch {
+    return "";
+  }
+}
+
+/** «Вернуться туда, откуда пришли»: раздел, открывший текст (например, итоговое сочинение), кладёт адрес в sessionStorage. */
+function returnLink(cls = "lib-return") {
+  try {
+    const r = JSON.parse(sessionStorage.getItem("lx-return") || "null");
+    if (!r?.href || Date.now() - r.at > 3 * 3600000 || !/^#\/[\w/?=&.%-]*$/.test(r.href)) return "";
+    return `<a class="${cls}" href="${escapeHtml(r.href)}">← ${escapeHtml(r.label || "Назад")}</a>`;
+  } catch {
+    return "";
+  }
+}
+
 const polkaUrl = (n, block) => `https://polka.academy/articles/${n}${block ? `?block=${block}` : ""}`;
 const wikiUrl = (t) => `https://ru.wikipedia.org/wiki/${encodeURIComponent(t.replaceAll(" ", "_"))}`;
 const ext = (href, text, cls = "lib-link") =>
@@ -248,7 +268,7 @@ async function workView(host, id) {
       </section>`;
   const startHref = w.toc ? `#/library/w/${w.id}/${last?.ch ? last.ch : 1}` : "";
   host.innerHTML = `
-    <p class="crumbs"><a href="#/library">← Библиотека</a></p>
+    <p class="crumbs">${returnLink() ? `${returnLink()} · ` : ""}<a href="#/library">${returnLink() ? "Библиотека" : "← Библиотека"}</a></p>
     <header class="lib-work-head">
       <p class="eyebrow">${escapeHtml(w.author || "Древнерусская литература")}</p>
       <h1>${escapeHtml(w.title)}</h1>
@@ -314,6 +334,7 @@ async function readerView(host, id, n) {
         <button type="button" class="reader-btn" data-act="theme" aria-label="Цвет страницы">◐</button>
       </div>
       <div class="reader-progress"><span style="width:${Math.round((100 * (idx + 1)) / w.toc.length)}%"></span></div>
+      ${returnLink() ? `<p class="reader-return">${returnLink()}</p>` : ""}
       <article class="reader-text">
         <h2 class="reader-ch">${escapeHtml(t.t)}</h2>
         ${ch.h}
@@ -324,7 +345,7 @@ async function readerView(host, id, n) {
       <nav class="reader-nav">
         ${idx > 0 ? `<a class="btn secondary" href="#/library/w/${w.id}/${idx}">← Назад</a>` : `<span></span>`}
         <span class="muted">${idx + 1} / ${w.toc.length}</span>
-        ${idx + 1 < w.toc.length ? `<a class="btn" href="#/library/w/${w.id}/${idx + 2}">Дальше →</a>` : `<a class="btn" href="#/library/w/${w.id}">Готово</a>`}
+        ${idx + 1 < w.toc.length ? `<a class="btn" href="#/library/w/${w.id}/${idx + 2}">Дальше →</a>` : `<a class="btn" href="${escapeHtml(returnHref() || `#/library/w/${w.id}`)}">${returnHref() ? "Готово — вернуться" : "Готово"}</a>`}
       </nav>
     </div>`;
   const reader = host.querySelector(".reader");

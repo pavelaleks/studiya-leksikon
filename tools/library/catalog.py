@@ -16,9 +16,10 @@ PERIODS = [
 W = []
 
 
-def w(id, author, title, period, code, ws=None, polka=None, wiki=None, focus=False, school=False, kind="prose", note="", join=False, groups=None, rename=None):
+def w(id, author, title, period, code, ws=None, polka=None, wiki=None, focus=False, school=False, kind="prose", note="", join=False, groups=None, rename=None, txt=None):
+    # txt=(url, начало, конец) — текст из простого .txt (lib.ru), если его нет в Викитеке; только общественное достояние
     W.append(dict(id=id, author=author, title=title, period=period, code=code, ws=ws, polka=polka, wiki=wiki,
-                  focus=focus, school=school, kind=kind, note=note, join=join, groups=groups, rename=rename))
+                  focus=focus, school=school, kind=kind, note=note, join=join, groups=groups, rename=rename, txt=txt))
 
 
 # Древнерусская и XVIII век
@@ -72,7 +73,7 @@ w("gorky-rasskazy", "М. Горький", "Рассказы", "rubezh", "18", fo
 w("na-dne", "М. Горький", "На дне", "rubezh", "19", ws="На дне (Горький)/ИС 1986", polka=615, wiki="На дне", focus=True, kind="drama")
 w("bunin", "И. А. Бунин", "Рассказы", "rubezh", "21", focus=True, wiki="Господин из Сан-Франциско",
   ws=["Господин из Сан-Франциско (Бунин)", "Антоновские яблоки (Бунин)/Версия 2", "Лёгкое дыхание (Бунин)", "Тёмные аллеи (Бунин)"],
-  note="«Господин из Сан-Франциско», «Антоновские яблоки», «Лёгкое дыхание», «Тёмные аллеи». «Чистый понедельник» — по ссылкам")
+  note="«Господин из Сан-Франциско», «Антоновские яблоки», «Лёгкое дыхание», «Тёмные аллеи». «Чистый понедельник» — отдельно в библиотеке")
 w("dvenadcat", "А. А. Блок", "Двенадцать", "rubezh", "23", ws="Двенадцать (Блок)", polka=495, wiki="Двенадцать (поэма)", focus=True, kind="poem")
 w("oblako", "В. В. Маяковский", "Облако в штанах", "rubezh", "25", ws="Облако в штанах (Маяковский)", polka=503, wiki="Облако в штанах",
   focus=True, kind="poem")
@@ -126,5 +127,10 @@ w("chekhov-rannie", "А. П. Чехов", "Ранние рассказы", "xix2
   note="«Хамелеон», «Толстый и тонкий», «Смерть чиновника», «Тоска», «Злоумышленник», «Лошадиная фамилия»")
 # Под охраной авторского права — только статьи (Википедия)
 w("sudba", "М. А. Шолохов", "Судьба человека", "xx", "ОГЭ 41", wiki="Судьба человека")
+# Итоговое сочинение: короткие тексты в общественном достоянии
+w("russkiy-yazyk", "И. С. Тургенев", "Русский язык", "xix2", "ИС", ws="Русский язык (Тургенев)", wiki="Русский язык (стихотворение в прозе)",
+  note="Стихотворение в прозе (1882)")
+w("chisty", "И. А. Бунин", "Чистый понедельник", "xx", "ИС", wiki="Чистый понедельник (рассказ)", note="Из цикла «Тёмные аллеи» (1944)",
+  txt=("http://lib.ru/BUNIN/allei.txt", "ЧИСТЫЙ ПОНЕДЕЛЬНИК", "ЧАСОВНЯ"))
 w("shukshin", "В. М. Шукшин", "Рассказы", "xx", "ОГЭ 43 · ЕГЭ 46", wiki="Шукшин, Василий Макарович", note="«Чудик», «Стенька Разин», «Критики» и др.")
 w("matrenin", "А. И. Солженицын", "Матрёнин двор", "xx", "ОГЭ 44", wiki="Матрёнин двор")

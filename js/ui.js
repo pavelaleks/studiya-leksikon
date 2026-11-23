@@ -1,6 +1,6 @@
 import { accessState, currentProfile } from "./supa.js";
 import { studioTelegram, studioWhatsApp } from "./config.js";
-import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land188";
+import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land190";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -135,6 +135,7 @@ function footerHtml(full) {
             <a href="#/ege">ЕГЭ по русскому</a>
             <a href="#/oge">ОГЭ по русскому</a>
             <a href="#/vpr">ВПР по русскому</a>
+            <a href="#/itog">Итоговое сочинение</a>
             <a href="#/literature">Литература</a>
             <a href="#/check">Проверь себя перед экзаменом</a>
           </nav>
@@ -211,6 +212,9 @@ export function escapeHtml(value) {
 export function layout(content, active = "", { hideFooter = false } = {}) {
   const isHome = active === "home";
   const subj = subjectsOf(currentProfile());
+  // «Итоговое сочинение»: гостям, преподавателю и ученикам 10–11 классов (или без курсов)
+  const prof = currentProfile();
+  const showItog = !prof || prof.role === "teacher" || !(prof.courses || []).length || (prof.courses || []).some((c) => /:1[01]$/.test(c)) || Number(prof.grade) >= 10;
   const nav = isHome
     ? `
           <a href="#about">Программы</a>
@@ -225,6 +229,7 @@ export function layout(content, active = "", { hideFooter = false } = {}) {
           <a href="#/ege" class="${active === "ege" ? "active" : ""}">ЕГЭ</a>
           <a href="#/oge" class="${active === "oge" ? "active" : ""}">ОГЭ</a>
           <a href="#/vpr" class="${active === "vpr" ? "active" : ""}">ВПР</a>` : ""}
+          ${showItog ? `<a href="#/itog" class="${active === "itog" ? "active" : ""}">Итоговое сочинение</a>` : ""}
           ${subj.lit ? `<a href="#/literature" class="${active === "literature" ? "active" : ""}">Литература</a>` : ""}
           ${accountLink(active)}`;
   return `

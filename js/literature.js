@@ -1,7 +1,7 @@
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
 import { accessState, bankFull, bankList, clearBankCache } from "./supa.js";
-import { bindCheck, bindWritten, checkBlockHtml, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js?v=land188";
+import { bindCheck, bindWritten, checkBlockHtml, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js?v=land190";
 
 const SOURCE = "ege-lit";
 
@@ -926,7 +926,7 @@ export async function mountLiterature(host, rest = []) {
   host.innerHTML = `<p class="lede muted">Загружаем задания…</p>`;
   try {
     if (rest[0] === "oge") {
-      const { mountLitOge } = await import("./lit-oge.js?v=land188");
+      const { mountLitOge } = await import("./lit-oge.js?v=land190");
       await mountLitOge(host, rest.slice(1));
       return;
     }

@@ -2639,3 +2639,18 @@ a.me-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
   .is-aside { position: static; }
   .is-topic-row { flex-direction: column; align-items: flex-start; }
 }
+/* итоговое: где читать текст; возврат из библиотеки */
+.is-text { border-left-width: 4px; }
+.is-text.is-av-site { border-left-color: var(--forest); }
+.is-text.is-av-online { border-left-color: var(--gold); }
+.is-text.is-av-info { border-left-color: var(--line); }
+.is-text.is-av-info .is-text-h strong { font-weight: 600; }
+.is-av { display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 999px; font-size: .74em; font-weight: 700; letter-spacing: .02em; vertical-align: 1px; background: var(--paper-deep); color: var(--ink-soft); }
+.is-av.is-av-site, .is-av-site .is-text-h .is-av { background: var(--ok-bg); color: var(--ok); }
+.is-av.is-av-online, .is-av-online .is-text-h .is-av { background: color-mix(in srgb, var(--gold) 24%, transparent); color: var(--ink); }
+.is-controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin: 12px 0 4px; }
+.is-avpick { display: flex; flex-wrap: wrap; gap: 6px; }
+.is-sort select { margin-left: 6px; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font: inherit; }
+.is-legend { line-height: 1.9; }
+.lib-return { font-weight: 600; }
+.reader-return { max-width: 720px; margin: 10px auto 0; padding: 0 16px; font-size: .95em; }
