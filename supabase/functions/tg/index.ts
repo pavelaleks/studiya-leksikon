@@ -125,9 +125,12 @@ function expandIcs(ICAL: any, text: string, fromMs: number, toMs: number) {
   // deno-lint-ignore no-explicit-any
   const out: any[] = [];
   // deno-lint-ignore no-explicit-any
-  const push = (ev: any, start: any, end: any, recurring: boolean) => {
+  // deno-lint-ignore no-explicit-any
+  const push = (ev: any, start: any, end: any, recurring: boolean, rid: any = null) => {
     if (String(ev.component.getFirstPropertyValue("status") || "").toUpperCase() === "CANCELLED") return;
     const s = start.toJSDate().getTime();
+    // Перенесённое занятие: исключение серии, у которого время не совпадает с исходным (RECURRENCE-ID).
+    const orig = rid ? rid.toJSDate().getTime() : null;
     const e = end ? end.toJSDate().getTime() : s;
     if (e < fromMs || s > toMs) return;
     out.push({
@@ -139,11 +142,15 @@ function expandIcs(ICAL: any, text: string, fromMs: number, toMs: number) {
       // у события «на весь день» — просто дата (без часового пояса), например 2026-11-21
       date: start.isDate ? start.toString().slice(0, 10) : null,
       recurring,
+      // id серии без хвоста «_R20261127T100000», который Google добавляет при «Это и последующие»
+      base: String(ev.uid || "").replace(/_R\d{8}(T\d{6}Z?)?(?=@|$)/, ""),
+      moved_from: orig && Math.abs(orig - s) > 60000 ? new Date(orig).toISOString() : null,
     });
   };
   for (const ev of masters.values()) {
     if (!ev.isRecurring()) {
-      push(ev, ev.startDate, ev.endDate, Boolean(ev.isRecurrenceException && ev.isRecurrenceException()));
+      const exc = Boolean(ev.isRecurrenceException && ev.isRecurrenceException());
+      push(ev, ev.startDate, ev.endDate, exc, exc ? ev.recurrenceId : null);
       continue;
     }
     const it = ev.iterator();
@@ -153,7 +160,7 @@ function expandIcs(ICAL: any, text: string, fromMs: number, toMs: number) {
       const t = next.toJSDate().getTime();
       if (t > toMs) break;
       const d = ev.getOccurrenceDetails(next);
-      push(d.item, d.startDate, d.endDate, true);
+      push(d.item, d.startDate, d.endDate, true, d.item !== ev ? d.recurrenceId : null);
     }
   }
   out.sort((a, b) => a.start.localeCompare(b.start));
@@ -247,7 +254,7 @@ async function remind() {
     }
     for (const e of evs) {
       if (e.allDay) continue;
-      const key = String((c.map || {})[e.uid] || "");
+      const key = String((c.map || {})[e.uid] || (c.map || {})[e.base] || "");
       if (!key || key === "-") continue;
       const mins = (Date.parse(e.start) - now) / 60000;
       const kind = mins > 0 && mins <= 150 ? "soon" : hour >= 19 && hour < 23 && dateOf(Date.parse(e.start)) === tomorrow ? "eve" : "";

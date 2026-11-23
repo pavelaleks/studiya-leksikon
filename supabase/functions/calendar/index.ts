@@ -47,9 +47,9 @@ async function myLessons(uid: string) {
     try {
       const evs = expandIcs(ICAL, await fetchIcs(c.ics_url), from, to);
       for (const e of evs) {
-        const key = String((c.map || {})[e.uid] || "");
+        const key = String((c.map || {})[e.uid] || (c.map || {})[e.base] || "");
         if (!label.has(key) || e.allDay) continue;
-        out.push({ start: e.start, end: e.end, label: label.get(key) });
+        out.push({ start: e.start, end: e.end, label: label.get(key), moved_from: e.moved_from });
       }
     } catch (_) {
       /* календарь недоступен — просто без расписания */
@@ -89,9 +89,12 @@ function expandIcs(ICAL: any, text: string, fromMs: number, toMs: number) {
   // deno-lint-ignore no-explicit-any
   const out: any[] = [];
   // deno-lint-ignore no-explicit-any
-  const push = (ev: any, start: any, end: any, recurring: boolean) => {
+  // deno-lint-ignore no-explicit-any
+  const push = (ev: any, start: any, end: any, recurring: boolean, rid: any = null) => {
     if (String(ev.component.getFirstPropertyValue("status") || "").toUpperCase() === "CANCELLED") return;
     const s = start.toJSDate().getTime();
+    // Перенесённое занятие: исключение серии, у которого время не совпадает с исходным (RECURRENCE-ID).
+    const orig = rid ? rid.toJSDate().getTime() : null;
     const e = end ? end.toJSDate().getTime() : s;
     if (e < fromMs || s > toMs) return;
     out.push({
@@ -103,11 +106,15 @@ function expandIcs(ICAL: any, text: string, fromMs: number, toMs: number) {
       // у события «на весь день» — просто дата (без часового пояса), например 2026-11-21
       date: start.isDate ? start.toString().slice(0, 10) : null,
       recurring,
+      // id серии без хвоста «_R20261127T100000», который Google добавляет при «Это и последующие»
+      base: String(ev.uid || "").replace(/_R\d{8}(T\d{6}Z?)?(?=@|$)/, ""),
+      moved_from: orig && Math.abs(orig - s) > 60000 ? new Date(orig).toISOString() : null,
     });
   };
   for (const ev of masters.values()) {
     if (!ev.isRecurring()) {
-      push(ev, ev.startDate, ev.endDate, Boolean(ev.isRecurrenceException && ev.isRecurrenceException()));
+      const exc = Boolean(ev.isRecurrenceException && ev.isRecurrenceException());
+      push(ev, ev.startDate, ev.endDate, exc, exc ? ev.recurrenceId : null);
       continue;
     }
     const it = ev.iterator();
@@ -117,7 +124,7 @@ function expandIcs(ICAL: any, text: string, fromMs: number, toMs: number) {
       const t = next.toJSDate().getTime();
       if (t > toMs) break;
       const d = ev.getOccurrenceDetails(next);
-      push(d.item, d.startDate, d.endDate, true);
+      push(d.item, d.startDate, d.endDate, true, d.item !== ev ? d.recurrenceId : null);
     }
   }
   out.sort((a, b) => a.start.localeCompare(b.start));

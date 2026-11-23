@@ -1,19 +1,20 @@
 /** Кабинет преподавателя: #/cabinet/... */
+import { bzDayStart } from "./tz.js?v=land182";
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land180";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land182";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land180";
+import { taskHref } from "./account.js?v=land182";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land180";
-import { readingView } from "./teacher-reading.js?v=land180";
-import { optionsOf } from "./practice.js?v=land180";
-import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land180";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land180";
-import { overdueWorks, scheduleTodayMount, todayTopMount, weekView } from "./calendar.js?v=land180";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land180";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land182";
+import { readingView } from "./teacher-reading.js?v=land182";
+import { optionsOf } from "./practice.js?v=land182";
+import { convertStudent, createStudent, isPseudoEmail, loginOf, newPassword, newPseudonym, resetStudentPassword } from "./pseudo.js?v=land182";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land182";
+import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land182";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land182";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land180";
+} from "./review.js?v=land182";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -301,12 +302,12 @@ export async function mountTeacher(root, parts) {
     if (tab === "students") return await studentsView(host, render);
     if (tab === "student" && arg === "report") {
       render(`<div id="t-report"></div>`);
-      const pg = await import("./progress-charts.js?v=land180");
+      const pg = await import("./progress-charts.js?v=land182");
       return await pg.mountReport(host.querySelector("#t-report"), sub, { back: `#/cabinet/student/${sub}`, base: `#/cabinet/student/${sub}/report` });
     }
     if (tab === "student" && arg === "reading") {
       render(`<div id="t-reading-list"></div>`);
-      const rl = await import("./reading-list.js?v=land180");
+      const rl = await import("./reading-list.js?v=land182");
       return await rl.mountReadingList(host.querySelector("#t-reading-list"), {
         studentId: sub,
         exam: parts[3] || null,
@@ -325,7 +326,7 @@ export async function mountTeacher(root, parts) {
         <section class="me-section" id="t-exam-dates"><h2>Даты экзаменов по литературе</h2><p class="muted">Загружаем…</p></section>
         <section class="me-section"><h2>Оформление</h2>${themeSwitchHtml()}</section>`);
       mountTg(host, "teacher");
-      const rl = await import("./reading-list.js?v=land180");
+      const rl = await import("./reading-list.js?v=land182");
       const box = host.querySelector("#t-exam-dates");
       const dates = await rl.examDates();
       box.innerHTML = `<h2>Даты экзаменов по литературе</h2>
@@ -390,7 +391,7 @@ const fmtUntil = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString("ru-RU"
 function seenText(d) {
   if (!d) return "—";
   const t = new Date(d);
-  const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const day = (x) => bzDayStart(x).getTime();
   const diff = Math.round((day(new Date()) - day(t)) / 86400000);
   const time = t.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
   if (diff === 0) return `сегодня в ${time}`;
@@ -411,8 +412,7 @@ function sessionsOf(times) {
 }
 
 async function todayView(host, render) {
-  const dayStart = new Date();
-  dayStart.setHours(0, 0, 0, 0);
+  const dayStart = bzDayStart();
   const dayEnd = new Date(dayStart.getTime() + 86400000);
   const fiveDays = new Date(Date.now() - 5 * 86400000).toISOString();
   const [pending, queue, live, todayLessons, todayAtt, recentAtt, recentWorks, students, creqs, drafts] = await Promise.all([
@@ -1100,9 +1100,7 @@ function activityHtml(acts, atts) {
   acts.forEach((a) => (bySection[sectionTitle(a.section)] = (bySection[sectionTitle(a.section)] || 0) + 1));
   const top = Object.entries(bySection).sort((a, b) => b[1] - a[1]).slice(0, 8);
   const days = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - 13 + i);
+    const d = new Date(bzDayStart().getTime() - (13 - i) * 86400000);
     const next = d.getTime() + 86400000;
     const inDay = (t) => {
       const x = new Date(t).getTime();
@@ -1703,8 +1701,9 @@ async function groupsView(host, render) {
       const candidates = (students || []).filter((st) => !inGroup.has(st.id));
       return `
       <div class="card t-group" data-id="${g.id}">
-        <h3>${escapeHtml(g.title)} ${g.archived ? '<small class="muted">архив</small>' : ""} <span class="tt-count">${list.length}</span></h3>
-        <p class="muted">${{ online: "онлайн", offline: "очно", mixed: "очно и онлайн" }[g.format]} · код для вступления: <code>${escapeHtml(g.invite_code || "")}</code></p>
+        <h3>${escapeHtml(g.title)} ${g.archived ? '<small class="muted">архив</small>' : ""} <span class="tt-count">${list.length}</span>
+          <button type="button" class="linklike muted" data-rename title="Переименовать группу">переименовать</button></h3>
+        <p class="muted"><span data-slot></span>${{ online: "онлайн", offline: "очно", mixed: "очно и онлайн" }[g.format]} · код для вступления: <code>${escapeHtml(g.invite_code || "")}</code></p>
         <ul class="t-members">${
           list
             .map(
@@ -1789,6 +1788,26 @@ async function groupsView(host, render) {
       })
     );
   });
+  host.querySelectorAll("[data-rename]").forEach((btn) =>
+    btn.addEventListener("click", async () => {
+      const id = btn.closest("[data-id]").dataset.id;
+      const g = groups.find((x) => x.id === id);
+      const t = prompt("Новое название группы. Лучше без дня недели и времени — их сайт берёт из Google Календаря и сам пометит перенос.", g.title);
+      if (!t || !t.trim() || t.trim() === g.title) return;
+      const { error } = await supa.from("groups").update({ title: t.trim() }).eq("id", id);
+      if (error) return alert(humanError(error).message);
+      mountTeacher(document, ["groups"]);
+    })
+  );
+  // «обычно по пятницам в 17:00» — из календаря, без задержки страницы
+  usualSlots()
+    .then((slots) =>
+      host.querySelectorAll(".t-group[data-id]").forEach((c) => {
+        const v = slots.get(`g:${c.dataset.id}`);
+        if (v) c.querySelector("[data-slot]").textContent = v + " · ";
+      })
+    )
+    .catch(() => {});
   host.querySelectorAll('[data-act="archive"]').forEach((btn) =>
     btn.addEventListener("click", async () => {
       const id = btn.closest("[data-id]").dataset.id;

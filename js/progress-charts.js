@@ -3,8 +3,9 @@
  * у преподавателя — #/cabinet/student/<id>/report). Графики рисуются здесь же, в SVG.
  */
 import { escapeHtml } from "./ui.js";
+import { bz, bzDayStart } from "./tz.js?v=land182";
 import { currentProfile, currentUser, supa } from "./supa.js";
-import { RUBRICS } from "./rubrics.js?v=land180";
+import { RUBRICS } from "./rubrics.js?v=land182";
 
 const SRC = { "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Литература", "oge-lit": "ОГЭ · лит." };
 const SRC_LONG = { "ege-rus": "ЕГЭ по русскому", "oge-rus": "ОГЭ по русскому", "vpr-rus": "ВПР по русскому", "ege-lit": "ЕГЭ по литературе", "oge-lit": "ОГЭ по литературе" };
@@ -13,12 +14,12 @@ const PERIODS = { week: ["Неделя", 7], month: ["Месяц", 30], all: ["�
 const DAY = 86400000;
 
 const pad = (n) => String(n).padStart(2, "0");
-const dkey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const startOfDay = (t) => {
-  const d = new Date(t);
-  d.setHours(0, 0, 0, 0);
-  return d;
+// Дни — по Барнаулу (tz.js), чтобы отчёт совпадал у ученика и преподавателя.
+const dkey = (d) => {
+  const x = bz(d);
+  return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
 };
+const startOfDay = (t) => bzDayStart(new Date(t));
 const fmtDate = (d, o = { day: "numeric", month: "long" }) => new Date(d).toLocaleDateString("ru-RU", o);
 const plural = (n, one, few, many) => (n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? few : many);
 const pct = (ok, n) => (n ? Math.round((100 * ok) / n) : null);
@@ -139,7 +140,7 @@ function recommendations(d, x) {
 function heatmapSvg(d) {
   const weeks = d.period === "all" ? 26 : 12;
   const today = startOfDay(Date.now());
-  const dow = (today.getDay() + 6) % 7; // пн = 0
+  const dow = (bz(today).getDay() + 6) % 7; // пн = 0
   const start = new Date(today.getTime() - ((weeks - 1) * 7 + dow) * DAY);
   const counts = new Map();
   d.all.forEach((a) => {
@@ -179,7 +180,7 @@ function heatmapSvg(d) {
 function weeklySvg(d) {
   const n = d.period === "all" ? 16 : 8;
   const today = startOfDay(Date.now());
-  const dow = (today.getDay() + 6) % 7;
+  const dow = (bz(today).getDay() + 6) % 7;
   const mon = new Date(today.getTime() - dow * DAY);
   const weeks = Array.from({ length: n }, (_, i) => {
     const from = new Date(mon.getTime() - (n - 1 - i) * 7 * DAY);

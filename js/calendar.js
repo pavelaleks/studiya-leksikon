@@ -8,27 +8,32 @@
  */
 import { escapeHtml } from "./ui.js";
 import { currentUser, humanError, supa } from "./supa.js";
+import { bz, bzDayStart, fromBz, fromBzInput, toBzInput } from "./tz.js?v=land182";
 
 const DAY = 86400000;
 const WD = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
 const pad = (n) => String(n).padStart(2, "0");
-const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const hm = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-const dayTitle = (d) => `${WD[d.getDay()]}, ${d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}`;
+// Всё по барнаульскому времени (tz.js): как в Google Календаре, на любом устройстве.
+const ymd = (d) => {
+  const x = bz(d);
+  return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
+};
+const hm = (d) => {
+  const x = bz(d);
+  return `${pad(x.getHours())}:${pad(x.getMinutes())}`;
+};
+const dayTitle = (d) => `${WD[bz(d).getDay()]}, ${d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}`;
 const shortWhen = (iso) => {
   const d = new Date(iso);
-  return `${WD[d.getDay()]} ${d.toLocaleDateString("ru-RU", { day: "numeric", month: "numeric" })}, ${hm(d)}`;
+  return `${WD[bz(d).getDay()]} ${d.toLocaleDateString("ru-RU", { day: "numeric", month: "numeric" })}, ${hm(d)}`;
 };
-const toLocalInput = (d) => {
-  if (!d) return "";
-  const x = new Date(d);
-  return new Date(x.getTime() - x.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-};
+const toLocalInput = toBzInput;
+/** Понедельник недели (00:00 по Барнаулу). */
 export const mondayOf = (d = new Date()) => {
-  const x = new Date(d);
+  const x = bz(d);
   x.setHours(0, 0, 0, 0);
   x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
-  return x;
+  return fromBz(x);
 };
 
 /* ---------------- настройки и события ---------------- */
@@ -67,8 +72,55 @@ export async function calEvents(from, to) {
   const hit = evCache.get(key);
   if (hit && Date.now() - hit.at < 5 * 60000) return hit.data;
   const data = await callFn({ from: from.toISOString(), to: to.toISOString() });
+  inheritSplit(await calConfig(), data?.events);
   evCache.set(key, { at: Date.now(), data });
   return data;
+}
+
+/** «Это и последующие» в Google создаёт новую серию (uid с хвостом _R…) — она получает группу старой серии.
+ *  Только в памяти: при следующем сохранении сопоставления запись попадёт и в базу. */
+function inheritSplit(cfg, events) {
+  for (const e of events || []) {
+    if (e.base && e.base !== e.uid && cfg.map[e.uid] === undefined && cfg.map[e.base] !== undefined) cfg.map[e.uid] = cfg.map[e.base];
+  }
+}
+
+/** Пометка «перенесено с …» для занятия, сдвинутого в Google («Только это мероприятие»). */
+export function movedHtml(e, cls = "wk-moved") {
+  if (!e?.moved_from) return "";
+  return ` <span class="${cls}" title="Занятие перенесено">перенесено с ${escapeHtml(shortWhen(e.moved_from))}</span>`;
+}
+
+const WD_LONG = ["воскресеньям", "понедельникам", "вторникам", "средам", "четвергам", "пятницам", "субботам"];
+/** Обычное время занятий по событиям: самый частый «день недели + время» среди неперенесённых. */
+export function usualSlot(events) {
+  const cnt = new Map();
+  (events || []).forEach((e) => {
+    if (e.moved_from || e.allDay) return;
+    const d = new Date(e.start);
+    const k = `${bz(d).getDay()}|${hm(d)}`;
+    cnt.set(k, (cnt.get(k) || 0) + 1);
+  });
+  const best = [...cnt.entries()].sort((a, b) => b[1] - a[1])[0];
+  if (!best || best[1] < 2) return "";
+  const [wd, t] = best[0].split("|");
+  return `обычно по ${WD_LONG[wd]} в ${t}`;
+}
+
+/** Обычное время каждой группы/ученика из календаря (на 5 недель вперёд): Map key → «обычно по пятницам в 17:00». */
+export async function usualSlots() {
+  const cfg = await calConfig();
+  if (!cfg.ics_url) return new Map();
+  const from = mondayOf(new Date());
+  const { events } = await calEvents(from, new Date(from.getTime() + 35 * DAY));
+  const by = new Map();
+  (events || []).forEach((e) => {
+    const k = cfg.map[e.uid];
+    if (!k || k === "-") return;
+    if (!by.has(k)) by.set(k, []);
+    by.get(k).push(e);
+  });
+  return new Map([...by.entries()].map(([k, evs]) => [k, usualSlot(evs)]).filter(([, v]) => v));
 }
 
 /** Ближайшее занятие группы/ученика (ключ «g:id» или «s:id») после момента after. */
@@ -189,7 +241,7 @@ function eventHtml(e, ctx) {
       .map((g) => `<option value="g:${g.id}" ${sel === `g:${g.id}` ? "selected" : ""}>группа «${escapeHtml(g.title)}»</option>`)
       .join("")}${ctx.students.map((st) => `<option value="s:${st.id}" ${sel === `s:${st.id}` ? "selected" : ""}>${escapeHtml(st.full_name || "ученик")}</option>`).join("")}<option value="-">не урок — не показывать</option>`;
   return `<div class="wk-ev${key ? " is-mapped" : ""}" data-uid="${escapeHtml(e.uid)}" data-start="${e.start}">
-    <div class="wk-ev-head"><strong>${time}</strong> <span>${escapeHtml(e.title)}</span>${e.recurring ? ' <span class="muted" title="повторяется">↻</span>' : ""}</div>
+    <div class="wk-ev-head"><strong>${time}</strong> <span>${escapeHtml(e.title)}</span>${e.recurring ? ' <span class="muted" title="повторяется">↻</span>' : ""}${movedHtml(e)}</div>
     ${
       key
         ? `<div class="wk-ev-who"><span class="chip">${escapeHtml(ctx.names.get(key) || "?")}</span>
@@ -347,9 +399,8 @@ function bindDays(host, ctx, reload) {
     const input = chip.querySelector("[data-due-input]");
     chip.querySelectorAll("[data-shift]").forEach((b) =>
       b.addEventListener("click", () => {
-        const d = new Date(input.value || w.due);
-        d.setDate(d.getDate() + Number(b.dataset.shift));
-        input.value = toLocalInput(d);
+        const d = new Date(input.value ? fromBzInput(input.value) : w.due);
+        input.value = toLocalInput(new Date(d.getTime() + Number(b.dataset.shift) * DAY));
       })
     );
     chip.addEventListener("toggle", async () => {
@@ -369,7 +420,7 @@ function bindDays(host, ctx, reload) {
       if (!input.value) return;
       st.textContent = "переносим…";
       try {
-        await moveLesson(w.l.id, new Date(input.value));
+        await moveLesson(w.l.id, new Date(fromBzInput(input.value)));
         reload();
       } catch (err) {
         st.textContent = err.message;
@@ -393,8 +444,7 @@ function bindDays(host, ctx, reload) {
       const w = ctx.works.find((x) => x.l.id === id);
       if (!w) return;
       const old = new Date(w.due);
-      const [y, m, d] = day.dataset.date.split("-").map(Number);
-      const nd = new Date(y, m - 1, d, old.getHours(), old.getMinutes());
+      const nd = new Date(fromBzInput(`${day.dataset.date}T${hm(old)}`));
       if (ymd(nd) === ymd(old)) return;
       if (!confirm(`Перенести срок «${w.l.title}» на ${dayTitle(nd)}, ${hm(nd)}?`)) return;
       try {
@@ -413,7 +463,7 @@ export async function weekView(host, render, offset = 0) {
   const to = new Date(from.getTime() + 7 * DAY);
   const reload = () => weekView(host, render, offset);
   const ctx = await buildCtx(from, to);
-  const days = Array.from({ length: 7 }, (_, i) => new Date(from.getTime() + i * DAY + 3600000)).map((d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()));
+  const days = Array.from({ length: 7 }, (_, i) => new Date(from.getTime() + i * DAY));
   const range = `${from.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })} — ${new Date(to.getTime() - DAY).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}`;
   const unmapped = ctx.events.filter((e) => !e.allDay && !ctx.cfg.map[e.uid]).length;
   render(`
@@ -509,8 +559,7 @@ export async function todayTopMount(host) {
     return;
   }
   if (!cfg.ics_url) return;
-  const dayStart = new Date();
-  dayStart.setHours(0, 0, 0, 0);
+  const dayStart = bzDayStart();
   const ctx = await buildCtx(dayStart, new Date(dayStart.getTime() + DAY));
   const now = Date.now();
   const evs = ctx.events.filter((e) => !e.allDay && ctx.cfg.map[e.uid] !== "-").sort((a, b) => a.start.localeCompare(b.start));
@@ -564,7 +613,7 @@ export async function todayTopMount(host) {
       : `<a class="btn" href="#/cabinet/lessons?new=1${to}">Подготовить занятие</a>`;
     return `<div class="tt-now${live ? " is-live" : ""}">
       <p class="tt-now-head">${head}</p>
-      <p class="tt-now-title">${escapeHtml(who(e))}${l ? ` · ${escapeHtml(l.title)}` : ""}</p>
+      <p class="tt-now-title">${escapeHtml(who(e))}${l ? ` · ${escapeHtml(l.title)}` : ""}${movedHtml(e)}</p>
       ${live ? `<span class="today-bar"><span style="width:${pct}%"></span></span>` : ""}
       ${stats}
       ${!key ? `<p class="muted">Урок не сопоставлен с группой или учеником — укажите это в расписании ниже.</p>` : ""}
@@ -582,7 +631,7 @@ export async function todayTopMount(host) {
         const st = en <= now ? "is-past" : s <= now ? "is-live" : "";
         const pr = prepared.get(e.uid + e.start);
         const flag = st === "" && pr.key && pr.key !== "-" && !pr.ok ? ' <span class="tt-rib-warn">не подготовлено</span>' : "";
-        return `<span class="tt-rib ${st}">${hm(new Date(s))} ${escapeHtml(who(e))}${st === "is-live" ? " · идёт" : ""}${flag}</span>`;
+        return `<span class="tt-rib ${st}">${hm(new Date(s))} ${escapeHtml(who(e))}${st === "is-live" ? " · идёт" : ""}${e.moved_from ? " · перенос" : ""}${flag}</span>`;
       })
       .join("")}</div>`;
   }
@@ -598,8 +647,7 @@ export async function scheduleTodayMount(host) {
       box.innerHTML = `<p class="muted"><a href="#/cabinet/week">Подключить расписание из Google Календаря →</a> — будет видно, какие занятия сегодня и что к ним задано.</p>`;
       return;
     }
-    const from = new Date();
-    from.setHours(0, 0, 0, 0);
+    const from = bzDayStart();
     const to = new Date(from.getTime() + DAY);
     const ctx = await buildCtx(from, to);
     box.innerHTML = `<h2>Расписание на сегодня <a class="linklike" href="#/cabinet/week">неделя →</a></h2>${ctx.calError ? `<p class="lit-result is-bad">${escapeHtml(ctx.calError)}</p>` : ""}${dayHtml(from, ctx)}`;
@@ -686,7 +734,7 @@ export async function studentScheduleMount(host, groupNames = []) {
       const isToday = ymd(s) === ymd(new Date());
       const isTomorrow = ymd(s) === ymd(new Date(Date.now() + DAY));
       return `<div class="me-lesson${isToday ? " is-today" : ""}">
-        <p class="me-lesson-when"><strong>${isToday ? "Сегодня" : isTomorrow ? "Завтра" : dayTitle(s)}, ${hm(s)}–${hm(new Date(l.end))}</strong> <span class="muted">${escapeHtml(l.label)}</span></p>
+        <p class="me-lesson-when"><strong>${isToday ? "Сегодня" : isTomorrow ? "Завтра" : dayTitle(s)}, ${hm(s)}–${hm(new Date(l.end))}</strong> <span class="muted">${escapeHtml(l.label)}</span>${movedHtml(l)}</p>
         ${
           todo.length
             ? `<p class="me-lesson-todo">К занятию: ${todo
@@ -699,7 +747,7 @@ export async function studentScheduleMount(host, groupNames = []) {
     .join("");
   box.innerHTML = `
     <h2>Мои занятия</h2>
-    ${groupNames.length ? `<p class="muted">Ты в группе: <strong>${escapeHtml(groupNames.join(", "))}</strong></p>` : ""}
+    ${groupNames.length ? `<p class="muted">Ты в группе: <strong>${escapeHtml(groupNames.join(", "))}</strong>${usualSlot(lessons) ? ` · ${usualSlot(lessons)}` : ""}</p>` : ""}
     ${rows || '<p class="muted">Расписание появится здесь, когда преподаватель его подключит.</p>'}`;
   box.hidden = false;
 }
