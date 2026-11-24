@@ -2,7 +2,7 @@
  * Supabase: вход, профиль, банк заданий, проверка ответов, письменные работы.
  * Публикуемый ключ безопасно держать в браузере — доступ ограничивают правила RLS в базе.
  */
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.100.0/+esm";
+import { createClient } from "./vendor/supabase-2.100.0.js";
 
 export const SUPABASE_URL = "https://mhlpcwquvphrnpxsjzne.supabase.co";
 export const SUPABASE_KEY = "sb_publishable_bPGGvWOilhwuzM0EzIPNzQ_LtyHfT9_";
