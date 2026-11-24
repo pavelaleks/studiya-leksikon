@@ -1,9 +1,9 @@
 import { BASE } from "./config.js";
-import { doneIds, markEgeDone, pickEgeVariant, readProgress, touchEge } from "./progress.js?v=land193";
+import { doneIds, markEgeDone, pickEgeVariant, readProgress, touchEge } from "./progress.js?v=land194";
 import { escapeHtml } from "./ui.js";
 import { accessState, bankList, bankProblem, clearBankCache } from "./supa.js";
-import { theoryTasks, theoryBody, theoryArticleHtml, theoryClosedHtml, clearTheoryCache } from "./theory.js?v=land193";
-import { bindCheck, bindWritten, checkBlockHtml, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js?v=land193";
+import { theoryTasks, theoryBody, theoryArticleHtml, theoryClosedHtml, clearTheoryCache } from "./theory.js?v=land194";
+import { bindCheck, bindWritten, checkBlockHtml, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js?v=land194";
 
 const SOURCE = "ege-rus";
 

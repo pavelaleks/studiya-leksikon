@@ -3,9 +3,9 @@
  * у преподавателя — #/cabinet/student/<id>/report). Графики рисуются здесь же, в SVG.
  */
 import { escapeHtml } from "./ui.js";
-import { bz, bzDayStart } from "./tz.js?v=land193";
+import { bz, bzDayStart } from "./tz.js?v=land194";
 import { currentProfile, currentUser, supa } from "./supa.js";
-import { RUBRICS } from "./rubrics.js?v=land193";
+import { RUBRICS } from "./rubrics.js?v=land194";
 
 const SRC = { "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Литература", "oge-lit": "ОГЭ · лит." };
 const SRC_LONG = { "ege-rus": "ЕГЭ по русскому", "oge-rus": "ОГЭ по русскому", "vpr-rus": "ВПР по русскому", "ege-lit": "ЕГЭ по литературе", "oge-lit": "ОГЭ по литературе" };

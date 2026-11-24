@@ -2658,3 +2658,135 @@ a.me-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
 .reader-resume { position: relative; max-width: 720px; margin: 10px auto 0; padding: 10px 40px 10px 14px; border-radius: 12px; background: var(--accent-soft); color: var(--ink); font-size: .95em; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .reader-resume .btn-sm, .reader-resume .btn { padding: 6px 12px; min-height: 0; font-size: .92em; }
 .reader-resume-x { position: absolute; right: 8px; top: 6px; border: 0; background: none; color: var(--ink-soft); font-size: 20px; cursor: pointer; }
+
+/* Робот-подсказчик «Лексик» (js/robot.js): левый нижний угол, правый занят «Пером».
+   Режимы: .is-peek — выглядывает из-за края; .is-sulk — обиделся, сидит в углу; .is-out — вышел с облачком. */
+.lr-root { position: fixed; left: 16px; bottom: 0; z-index: 44; display: flex; align-items: flex-end; gap: 10px; pointer-events: none; }
+.lr-root > * { pointer-events: auto; }
+.lr-bot { position: relative; width: 80px; height: 102px; padding: 0; border: 0; background: none; cursor: pointer; flex: none; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.18)); transition: transform .45s cubic-bezier(.3, .7, .4, 1.2); -webkit-tap-highlight-color: transparent; }
+.lr-bot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 12px; }
+.lr-svg { width: 100%; height: 100%; overflow: visible; }
+.lr-shell { fill: var(--card); stroke: var(--accent); stroke-width: 2.2; }
+.lr-screen { fill: #2a2420; }
+.lr-eyes ellipse { fill: #9fe6c4; transform-box: fill-box; transform-origin: center; animation: lr-blink 4.2s infinite; }
+.lr-eyes-alt path { fill: none; stroke: #9fe6c4; stroke-width: 2.2; stroke-linecap: round; }
+.lr-smile { fill: none; stroke: #9fe6c4; stroke-width: 2; stroke-linecap: round; }
+.lr-eyes-alt, .lr-mouth-sad, .lr-arms-crossed, .lr-sparks { display: none; }
+.lr-stroke, .lr-arm, .lr-arms-crossed { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; }
+.lr-cap { fill: var(--accent); stroke: var(--accent); stroke-width: 1.5; stroke-linejoin: round; }
+.lr-cord { fill: none; stroke: #d9a441; stroke-width: 1.6; }
+.lr-bead { fill: #d9a441; }
+.lr-tassel { transform-origin: 36px 14px; animation: lr-sway 3s ease-in-out infinite; }
+.lr-capg { transform-origin: 36px 20px; }
+.lr-letter { font: 700 13px/1 var(--serif); fill: var(--accent); }
+.lr-leg { fill: var(--accent); }
+.lr-arm-r { transform-origin: 50px 63px; }
+.lr-arm-l { transform-origin: 22px 63px; }
+.lr-body { transform-origin: 36px 78px; }
+.lr-sparks path { fill: #d9a441; }
+
+/* выглядывает: видна голова в шапочке; при наведении — чуть выше */
+.lr-root.is-peek { z-index: 39; }
+.lr-root.is-peek .lr-bot { transform: translateY(58%) rotate(8deg); }
+.lr-root.is-peek .lr-bot:hover, .lr-root.is-peek .lr-bot:focus-visible { transform: translateY(46%) rotate(4deg); }
+.lr-root.is-peek .lr-arm { display: none; }
+
+/* вышел */
+.lr-root.is-out { bottom: 14px; }
+.lr-root.is-rising .lr-bot { animation: lr-rise .65s cubic-bezier(.3, .7, .4, 1.3) both; }
+.lr-root.is-rising .lr-leg-l { animation: lr-step .3s ease-in-out 2; }
+.lr-root.is-rising .lr-leg-r { animation: lr-step .3s ease-in-out 2 reverse; }
+
+/* обиделся: сидит в углу, отвернулся, руки скрещены, глаза-чёрточки */
+.lr-root.is-sulk { z-index: 39; bottom: 4px; left: 6px; }
+.lr-root.is-sulk .lr-bot { transform: scale(.72) translateY(14%) scaleX(-1); transform-origin: 50% 100%; filter: grayscale(.55) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15)); opacity: .9; }
+.lr-root.is-sulk .lr-bot:hover { transform: scale(.76) translateY(12%) scaleX(-1) rotate(-4deg); }
+.lr-root.is-sulk .lr-eyes, .lr-root.is-sulk .lr-mouth-on, .lr-root.is-sulk .lr-arm, .lr-root.is-sulk .lr-legs { display: none; }
+.lr-root.is-sulk .lr-eyes-sad, .lr-root.is-sulk .lr-mouth-sad, .lr-root.is-sulk .lr-arms-crossed { display: inline; }
+.lr-root.is-sulk .lr-leg { transform: translateY(-6px) scaleY(.5); transform-box: fill-box; }
+.lr-root.is-sulk .lr-capg { transform: rotate(-12deg) translate(-2px, 3px); }
+.lr-root.is-sulk .lr-tassel { animation: none; }
+.lr-root.is-sulk .lr-say { left: 30px; }
+
+/* радость */
+.lr-root.do-joy .lr-eyes, .lr-root.do-joy .lr-mouth-sad { display: none; }
+.lr-root.do-joy .lr-eyes-joy, .lr-root.do-joy .lr-sparks { display: inline; }
+.lr-root.do-joy .lr-sparks { animation: lr-spark 1.2s ease-out both; transform-origin: 36px 46px; }
+.lr-root.do-joy .lr-bot { animation: lr-jump .45s ease-out 2; }
+.lr-root.do-joy .lr-arm-l { animation: lr-wave-l .3s ease-in-out 4; }
+.lr-root.do-joy .lr-arm-r { animation: lr-wave .3s ease-in-out 4; }
+
+/* трюки */
+.lr-root.do-jump .lr-bot { animation: lr-jump .55s cubic-bezier(.3, .7, .4, 1) 1; }
+.lr-root.do-spin .lr-svg { animation: lr-spin .8s ease-in-out 1; }
+.lr-root.do-hat .lr-capg { animation: lr-hat 1.1s cubic-bezier(.3, .6, .4, 1) 1; }
+.lr-root.do-wave .lr-arm-r { animation: lr-wave .4s ease-in-out 3; }
+.lr-root.do-shake .lr-body { animation: lr-shake .12s linear 8; }
+.lr-root.do-shake .lr-eyes, .lr-root.do-shake .lr-mouth-sad { display: none; }
+.lr-root.do-shake .lr-eyes-joy { display: inline; }
+.lr-root.do-nod .lr-body { animation: lr-nod .5s ease-in-out 2; }
+
+/* реплика над головой */
+.lr-say { position: absolute; z-index: 2; left: 14px; bottom: 104px; padding: 4px 10px; border-radius: 12px; background: var(--accent); color: #fff; font-size: 13px; font-weight: 700; white-space: nowrap; opacity: 0; transform: translateY(6px) scale(.9); transition: opacity .2s, transform .2s; pointer-events: none !important; }
+.lr-say.is-on { opacity: 1; transform: none; }
+.lr-root.is-peek .lr-say { bottom: 56px; }
+.lr-root.is-sulk .lr-say { bottom: 70px; background: var(--ink-soft); }
+
+.lr-bubble {
+  position: relative; max-width: 330px; margin-bottom: 34px; padding: 14px 16px 10px;
+  border: 1px solid var(--line); border-radius: 18px 18px 18px 4px; background: var(--card); color: var(--ink);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16); font-size: 15px; line-height: 1.45;
+  opacity: 0; transform: translateY(8px) scale(.97); transform-origin: left bottom; transition: opacity .25s, transform .25s;
+}
+.lr-bubble[hidden] { display: none; }
+.lr-root.is-talking .lr-bubble { opacity: 1; transform: none; }
+.lr-bubble p { margin: 0 0 8px; }
+.lr-hello { font-weight: 700; color: var(--accent); padding-right: 22px; }
+.lr-kicker { font-size: 12.5px; color: var(--ink-soft); }
+.lr-q { font-weight: 600; }
+.lr-def { font-style: italic; }
+.lr-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.lr-actions .btn { padding: 6px 12px; min-height: 0; font-size: 14px; }
+.lr-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+.lr-menu button, .lr-opts button {
+  display: flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--paper); color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer;
+}
+.lr-menu button:hover, .lr-opts button:not(:disabled):hover { border-color: var(--accent); }
+.lr-opts { display: grid; gap: 6px; margin-bottom: 8px; }
+.lr-opts button.is-ok { border-color: var(--ok); background: var(--ok-bg); }
+.lr-opts button.is-bad { border-color: var(--bad); background: var(--bad-bg); }
+.lr-opts button:disabled { cursor: default; color: var(--ink); }
+.lr-why p:first-child { font-size: 14px; }
+.lr-foot { font-size: 12.5px; color: var(--ink-soft); margin: 4px 0 0 !important; }
+.lr-foot button { border: 0; padding: 0; background: none; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; }
+.lr-x { position: absolute; top: 6px; right: 8px; width: 28px; height: 28px; border: 0; background: none; color: var(--ink-soft); font-size: 22px; line-height: 1; cursor: pointer; }
+
+@keyframes lr-rise { from { transform: translateY(58%) rotate(8deg); } to { transform: none; } }
+@keyframes lr-step { 50% { transform: translateY(-4px); } }
+@keyframes lr-jump { 0%, 100% { transform: none; } 40% { transform: translateY(-26px); } 70% { transform: translateY(2px) scaleY(.96); } }
+@keyframes lr-spin { from { transform: rotateY(0); } to { transform: rotateY(360deg); } }
+@keyframes lr-hat { 0%, 100% { transform: none; } 45% { transform: translateY(-38px) rotate(200deg); } 80% { transform: translateY(2px) rotate(360deg); } }
+@keyframes lr-wave { 50% { transform: rotate(-40deg); } }
+@keyframes lr-wave-l { 50% { transform: rotate(40deg); } }
+@keyframes lr-shake { 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
+@keyframes lr-nod { 50% { transform: translateY(2px) rotate(-3deg); } }
+@keyframes lr-spark { from { opacity: 0; transform: scale(.4); } 30% { opacity: 1; } to { opacity: 0; transform: scale(1.4); } }
+@keyframes lr-sway { 50% { transform: rotate(4deg); } }
+@keyframes lr-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+
+body.is-sheet .lr-root, body.is-reading .lr-root { display: none; }
+@media (max-width: 760px) {
+  .lr-root { left: 8px; right: auto; bottom: calc(62px + env(safe-area-inset-bottom, 0px)); }
+  .lr-root.is-out { right: 8px; bottom: calc(70px + env(safe-area-inset-bottom, 0px)); flex-direction: column-reverse; align-items: flex-start; gap: 4px; }
+  .lr-root.is-sulk { bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
+  .lr-bot { width: 54px; height: 69px; }
+  .lr-root.is-peek .lr-bot { transform: translateY(55%) rotate(8deg); }
+  .lr-say { bottom: 72px; }
+  .lr-root.is-peek .lr-say { bottom: 38px; }
+  .lr-root.is-sulk .lr-say { bottom: 48px; left: 20px; }
+  .lr-bubble { max-width: none; margin: 0; font-size: 14px; border-radius: 16px 16px 16px 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lr-root *, .lr-root { animation: none !important; transition: none !important; }
+}

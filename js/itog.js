@@ -10,11 +10,11 @@
  */
 import { escapeHtml } from "./ui.js";
 import { currentUser, supa } from "./supa.js";
-import { bindWritten, writtenBlockHtml } from "./practice.js?v=land193";
-import { bzDayStart } from "./tz.js?v=land193";
+import { bindWritten, writtenBlockHtml } from "./practice.js?v=land194";
+import { bzDayStart } from "./tz.js?v=land194";
 import {
   CHECKLIST, CRITERIA, EXAMPLES, NEW_LIT_TOPICS, PASS_RULE, PLAN, REQUIREMENTS, SAMPLE_SET, SECTIONS, SUB_TITLE, TEXTS, TRAINING_TOPICS, itogDates,
-} from "./itog-data.js?v=land193";
+} from "./itog-data.js?v=land194";
 
 const ROOT = "#/itog";
 const TABS = [

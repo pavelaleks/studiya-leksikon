@@ -2,6 +2,7 @@
 // (гость, ждёт подтверждения, ученик) и раздел сайта. При первом визите один раз предлагает помощь сам.
 import { escapeHtml } from "./ui.js";
 import { accessState } from "./supa.js";
+import { enableRobot, robotOff } from "./robot.js?v=land194";
 
 const SEEN = "lx-helper-seen";
 const FEATHER = `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 3.8a6 6 0 0 0-8.5 0L5 10.5V19h8.5l6.7-6.7a6 6 0 0 0 0-8.5z"/><path d="M16 8 2 22"/><path d="M17.5 15H9"/></svg>`;
@@ -79,6 +80,7 @@ function sheetHtml(state) {
           )
           .join("")}
       </div>
+      ${robotOff() ? `<p class="muted lh-foot">Робот Лексик с правилами выключен. <button class="btn secondary" type="button" data-lh-robot data-lh-close>Включить снова</button></p>` : ""}
       <p class="muted lh-foot">Не нашли ответ? <a href="#contact" data-lh-close>Напишите преподавателю в Telegram или WhatsApp</a>.</p>
     </div>`;
 }
@@ -93,6 +95,7 @@ function openSheet() {
     sheet.className = "lh-sheet";
     document.body.appendChild(sheet);
     sheet.addEventListener("click", (e) => {
+      if (e.target.closest("[data-lh-robot]")) enableRobot();
       if (e.target.closest("[data-lh-close]")) closeSheet();
     });
   }
