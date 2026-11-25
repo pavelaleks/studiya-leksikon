@@ -4,8 +4,8 @@
  * Очки начисляет сервер (таблица xp_events), здесь — только показ и подсказки.
  */
 import { escapeHtml } from "./ui.js";
-import { currentTrack } from "./track.js?v=land194";
-import { EXAMS, autoNumbers, composeVariant, durationText } from "./exams.js?v=land194";
+import { currentTrack } from "./track.js?v=land195";
+import { EXAMS, autoNumbers, composeVariant, durationText } from "./exams.js?v=land195";
 import { currentUser, humanError, supa } from "./supa.js";
 
 const LEVELS = [
@@ -476,7 +476,7 @@ export async function mountDaily(root, d, profile) {
   try {
     localStorage.setItem(`daily-done-${currentUser()?.id}-${today}`, JSON.stringify(list.filter((t) => solvedToday(t.id)).map((t) => t.id)));
   } catch {}
-  import("./session.js?v=land194").then((m) => m.maybeCelebrateDaily(doneN, list.length)).catch(() => {});
+  import("./session.js?v=land195").then((m) => m.maybeCelebrateDaily(doneN, list.length)).catch(() => {});
   host.querySelector("#daily-new").addEventListener("click", () => {
     try {
       localStorage.removeItem(dailyKey());

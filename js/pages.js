@@ -1,7 +1,7 @@
 import { escapeHtml } from "./ui.js";
 import { legend, mark } from "./markup.js";
-import { EGE_TITLES } from "./ege.js?v=land194";
-import { readProgress } from "./progress.js?v=land194";
+import { EGE_TITLES } from "./ege.js?v=land195";
+import { readProgress } from "./progress.js?v=land195";
 import { STUDIO, studioTelegram, studioWhatsApp } from "./config.js";
 import { iconTelegram, iconWhatsApp } from "./icons.js";
 import { accessState, currentProfile } from "./supa.js";
@@ -359,7 +359,7 @@ export function homePage(content) {
 
     <section class="landing-about" id="teacher" aria-labelledby="teacher-title">
       <p class="eyebrow">Команда</p>
-      <h2 id="teacher-title">${escapeHtml(STUDIO.teacherFull)}</h2>
+      <h2 id="teacher-title">Преподаватели студии</h2>
       <div class="landing-teacher-card">
         <img
           class="landing-teacher-photo"
@@ -370,6 +370,7 @@ export function homePage(content) {
           decoding="async"
         />
         <div>
+          <h3>${escapeHtml(STUDIO.teacherFull)}</h3>
           <p>Доктор филологических наук, профессор. Основатель, руководитель и ведущий преподаватель студии.</p>
           <ul class="landing-teacher-facts">
             <li>Преподаёт с 2002 года</li>
@@ -377,6 +378,21 @@ export function homePage(content) {
           </ul>
           <p>Открыл студию в 2024 году и ведёт большую часть занятий. Вместе с ним работает команда опытных филологов.</p>
           <p><a href="${escapeHtml(STUDIO.teacherSite)}" target="_blank" rel="noopener noreferrer">Личный сайт</a></p>
+        </div>
+      </div>
+      <div class="landing-teacher-card">
+        <img
+          class="landing-teacher-photo"
+          src="./css/art/alekseeva.jpg"
+          alt="Асель Адилбековна Алексеева"
+          width="160"
+          height="160"
+          loading="lazy"
+          decoding="async"
+        />
+        <div>
+          <h3>Асель Адилбековна Алексеева</h3>
+          <p>Учитель русского языка и литературы Лицея №&nbsp;1 г.&nbsp;Горно-Алтайска, первая квалификационная категория.</p>
         </div>
       </div>
     </section>

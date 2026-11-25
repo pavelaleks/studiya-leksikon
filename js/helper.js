@@ -2,7 +2,7 @@
 // (гость, ждёт подтверждения, ученик) и раздел сайта. При первом визите один раз предлагает помощь сам.
 import { escapeHtml } from "./ui.js";
 import { accessState } from "./supa.js";
-import { enableRobot, robotOff } from "./robot.js?v=land194";
+import { enableRobot, robotOff } from "./robot.js?v=land195";
 
 const SEEN = "lx-helper-seen";
 const FEATHER = `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 3.8a6 6 0 0 0-8.5 0L5 10.5V19h8.5l6.7-6.7a6 6 0 0 0 0-8.5z"/><path d="M16 8 2 22"/><path d="M17.5 15H9"/></svg>`;
