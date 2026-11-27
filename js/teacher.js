@@ -1,21 +1,21 @@
 /** Кабинет преподавателя: #/cabinet/... */
-import { bzDayStart } from "./tz.js?v=land195";
-import { installRealNames, loadRealNames, realNameOf, saveRealName, toggleHtml } from "./realnames.js?v=land195";
+import { bzDayStart } from "./tz.js?v=land196";
+import { installRealNames, loadRealNames, realNameOf, saveRealName, toggleHtml } from "./realnames.js?v=land196";
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land195";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land196";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land195";
+import { taskHref } from "./account.js?v=land196";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land195";
-import { readingView } from "./teacher-reading.js?v=land195";
-import { optionsOf } from "./practice.js?v=land195";
-import { convertStudent, createEnterLink, createStudent, enterUrl, isPseudoEmail, isTakenPseudonym, loginOf, newPassword, newPseudonym, resetStudentPassword, suggestPseudonyms, takenPseudonyms } from "./pseudo.js?v=land195";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land195";
-import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land195";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land195";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land196";
+import { readingView } from "./teacher-reading.js?v=land196";
+import { optionsOf } from "./practice.js?v=land196";
+import { convertStudent, createEnterLink, createStudent, enterUrl, isPseudoEmail, isTakenPseudonym, loginOf, newPassword, newPseudonym, resetStudentPassword, suggestPseudonyms, takenPseudonyms } from "./pseudo.js?v=land196";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land196";
+import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land196";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land196";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land195";
+} from "./review.js?v=land196";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -308,12 +308,12 @@ export async function mountTeacher(root, parts) {
     if (tab === "students") return await studentsView(host, render);
     if (tab === "student" && arg === "report") {
       render(`<div id="t-report"></div>`);
-      const pg = await import("./progress-charts.js?v=land195");
+      const pg = await import("./progress-charts.js?v=land196");
       return await pg.mountReport(host.querySelector("#t-report"), sub, { back: `#/cabinet/student/${sub}`, base: `#/cabinet/student/${sub}/report` });
     }
     if (tab === "student" && arg === "reading") {
       render(`<div id="t-reading-list"></div>`);
-      const rl = await import("./reading-list.js?v=land195");
+      const rl = await import("./reading-list.js?v=land196");
       return await rl.mountReadingList(host.querySelector("#t-reading-list"), {
         studentId: sub,
         exam: parts[3] || null,
@@ -332,7 +332,7 @@ export async function mountTeacher(root, parts) {
         <section class="me-section" id="t-exam-dates"><h2>Даты экзаменов по литературе</h2><p class="muted">Загружаем…</p></section>
         <section class="me-section"><h2>Оформление</h2>${themeSwitchHtml()}</section>`);
       mountTg(host, "teacher");
-      const rl = await import("./reading-list.js?v=land195");
+      const rl = await import("./reading-list.js?v=land196");
       const box = host.querySelector("#t-exam-dates");
       const dates = await rl.examDates();
       box.innerHTML = `<h2>Даты экзаменов по литературе</h2>
@@ -1445,32 +1445,82 @@ async function worksView(host, render, workId) {
   // работы на время, у которых вышло время: сервер сдаёт оставшиеся черновики
   const { data: timed } = await supa.from("lessons").select("id").not("duration_minutes", "is", null).neq("status", "draft").limit(30);
   await Promise.all((timed || []).map((l) => supa.rpc("finalize_exam_works", { p_lesson: l.id })));
-  const { data, error } = await supa
-    .from("written_works")
-    .select("id, status, submitted_at, score, max_score, body, item_id, choice, profiles(full_name, email), tasks(source, task_no, source_ref, work:data->>work), lesson_items(due_at, lessons(title))")
-    .in("status", ["submitted", "returned", "graded"])
-    .order("submitted_at", { ascending: false })
-    .limit(200);
+  const cols =
+    "id, status, submitted_at, reviewed_at, seen_at, archived_at, score, max_score, body, item_id, choice, profiles(full_name, email), tasks(source, task_no, source_ref, work:data->>work), lesson_items(due_at, lessons(title))";
+  const [{ data, error }, { data: archive }] = await Promise.all([
+    supa.from("written_works").select(cols).in("status", ["submitted", "returned", "graded"]).is("archived_at", null).order("submitted_at", { ascending: false }).limit(300),
+    supa.from("written_works").select(cols).not("archived_at", "is", null).order("archived_at", { ascending: false }).limit(100),
+  ]);
   if (error) throw humanError(error);
-  const row = (w) => `
+  const seenText = (w) =>
+    w.status === "submitted"
+      ? ""
+      : w.seen_at
+        ? ` · <span class="t-seen is-yes">ученик посмотрел ${fmtDateTime(w.seen_at)}</span>`
+        : ` · <span class="t-seen is-no">ученик ещё не посмотрел</span>`;
+  const link = (w) => `
     <a class="lit-item" href="#/cabinet/works/${w.id}">
       <span class="lit-item-n">${w.tasks?.task_no ?? "·"}</span>
       <span class="lit-item-body">
         <strong>${escapeHtml(w.profiles?.full_name || w.profiles?.email || "ученик")} · ${escapeHtml(SOURCES[w.tasks?.source]?.title || "")} № ${w.tasks?.task_no ?? ""}${w.tasks?.work ? ` · «${escapeHtml(w.tasks.work)}»` : ""}${w.choice ? ` · вариант ${w.choice}` : ""}</strong>
-        <span>${w.item_id ? `из занятия «${escapeHtml(w.lesson_items?.lessons?.title || "…")}»` : "сам, по желанию"} · ${WORK_STATUS[w.status]} · ${fmtDateTime(w.submitted_at)}${w.lesson_items?.due_at && w.submitted_at && new Date(w.submitted_at) > new Date(w.lesson_items.due_at) ? " · <b class=\"t-late\">после срока</b>" : ""}${w.score != null ? ` · ${w.score}${w.max_score ? `/${w.max_score}` : ""}` : ""}</span>
+        <span>${w.item_id ? `из занятия «${escapeHtml(w.lesson_items?.lessons?.title || "…")}»` : "сам, по желанию"} · ${WORK_STATUS[w.status]} · ${fmtDateTime(w.submitted_at)}${w.lesson_items?.due_at && w.submitted_at && new Date(w.submitted_at) > new Date(w.lesson_items.due_at) ? " · <b class=\"t-late\">после срока</b>" : ""}${w.score != null ? ` · ${w.score}${w.max_score ? `/${w.max_score}` : ""}` : ""}${seenText(w)}</span>
         <span class="muted">${escapeHtml((w.body || "фото").slice(0, 120))}</span>
       </span>
     </a>`;
+  const row = (w) =>
+    w.status === "graded"
+      ? `<div class="t-work-row">${link(w)}<button type="button" class="btn secondary" data-archive="${w.id}" data-seen="${w.seen_at ? 1 : 0}">В архив</button></div>`
+      : link(w);
+  const archRow = (w) => `<div class="t-work-row">${link(w)}<button type="button" class="btn secondary" data-unarchive="${w.id}">Вернуть</button></div>`;
   const queue = data.filter((w) => w.status === "submitted").reverse();
   const done = data.filter((w) => w.status !== "submitted");
+  const unseen = done.filter((w) => !w.seen_at);
+  const seenGraded = done.filter((w) => w.seen_at && w.status === "graded");
+  const seenReturned = done.filter((w) => w.seen_at && w.status === "returned");
   render(`
     <h1>Проверка работ</h1>
     <section class="me-section"><h2>Ждут проверки · ${queue.length}</h2>
       ${queue.length ? `<div class="lit-list">${queue.map(row).join("")}</div>` : `<p class="muted">Очередь пуста.</p>`}
     </section>
-    <section class="me-section"><h2>Проверенные и возвращённые</h2>
-      ${done.length ? `<div class="lit-list">${done.map(row).join("")}</div>` : `<p class="muted">Пока нет.</p>`}
+    <section class="me-section"><h2>Проверены — ученик ещё не посмотрел · ${unseen.length}</h2>
+      <p class="muted">Ученик видит уведомление в кабинете и в Telegram, если подключил. Здесь работа остаётся, пока он не откроет её и не нажмёт «Посмотрел(а)».</p>
+      ${unseen.length ? `<div class="lit-list">${unseen.map(row).join("")}</div>` : `<p class="muted">Все проверки просмотрены.</p>`}
+    </section>
+    <section class="me-section">
+      <div class="t-works-head"><h2>Ученик посмотрел — можно в архив · ${seenGraded.length}</h2>
+        ${seenGraded.length ? `<button type="button" class="btn" id="t-archive-seen">Все просмотренные в архив (${seenGraded.length})</button>` : ""}</div>
+      ${seenGraded.length ? `<div class="lit-list">${seenGraded.map(row).join("")}</div>` : `<p class="muted">Пока нет.</p>`}
+    </section>
+    ${seenReturned.length ? `<section class="me-section"><h2>На доработке — ученик посмотрел пометки · ${seenReturned.length}</h2>
+      <div class="lit-list">${seenReturned.map(row).join("")}</div></section>` : ""}
+    <section class="me-section">
+      <details class="me-archive"><summary>Архив · ${(archive || []).length}${(archive || []).length >= 100 ? "+" : ""}</summary>
+        ${(archive || []).length ? `<div class="lit-list">${archive.map(archRow).join("")}</div>` : `<p class="muted">Архив пуст.</p>`}
+      </details>
     </section>`);
+  const again = () => worksView(host, render);
+  const setArchived = async (ids, on) => {
+    const { error: err } = await supa.from("written_works").update({ archived_at: on ? new Date().toISOString() : null }).in("id", ids);
+    if (err) return alert(humanError(err).message);
+    again();
+  };
+  host.querySelectorAll("[data-archive]").forEach((b) =>
+    b.addEventListener("click", () => {
+      if (b.dataset.seen !== "1" && !confirm("Ученик ещё не посмотрел проверку. Всё равно убрать в архив? Уведомление у ученика останется, пока он не откроет работу.")) return;
+      b.disabled = true;
+      setArchived([b.dataset.archive], true);
+    })
+  );
+  host.querySelectorAll("[data-unarchive]").forEach((b) =>
+    b.addEventListener("click", () => {
+      b.disabled = true;
+      setArchived([b.dataset.unarchive], false);
+    })
+  );
+  host.querySelector("#t-archive-seen")?.addEventListener("click", (e) => {
+    e.currentTarget.disabled = true;
+    setArchived(seenGraded.map((w) => w.id), true);
+  });
 }
 
 async function workReview(host, render, id) {
@@ -1534,7 +1584,9 @@ async function workReview(host, render, id) {
     </nav>
     <h1>${escapeHtml(w.profiles?.full_name || w.profiles?.email || "Работа")}</h1>
     <p class="rv-origin">${origin}</p>
-    <p class="lede">${escapeHtml(SOURCES[w.tasks?.source]?.title || "")} · задание ${w.tasks?.task_no ?? ""} · № ${escapeHtml(String(w.tasks?.source_ref || ""))} · ${WORK_STATUS[w.status]} · сдано ${fmtDateTime(w.submitted_at)}</p>
+    <p class="lede">${escapeHtml(SOURCES[w.tasks?.source]?.title || "")} · задание ${w.tasks?.task_no ?? ""} · № ${escapeHtml(String(w.tasks?.source_ref || ""))} · ${WORK_STATUS[w.status]} · сдано ${fmtDateTime(w.submitted_at)}${
+      w.status === "graded" || w.status === "returned" ? (w.seen_at ? ` · <span class="t-seen is-yes">ученик посмотрел ${fmtDateTime(w.seen_at)}</span>` : ` · <span class="t-seen is-no">ученик ещё не посмотрел</span>`) : ""
+    }${w.archived_at ? " · в архиве" : ""}</p>
     ${(() => {
       const opts = optionsOf(w.tasks?.data?.questionHtml || "");
       const work = w.tasks?.data?.work ? `«${escapeHtml(w.tasks.data.work)}»${w.tasks.data.author ? `, ${escapeHtml(w.tasks.data.author)}` : ""}` : "";

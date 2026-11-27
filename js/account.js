@@ -1,14 +1,14 @@
 /** Вход, регистрация и личный кабинет ученика (#/login, #/me). */
-import { itogDates } from "./itog-data.js?v=land195";
-import { bz, bzDayStart } from "./tz.js?v=land195";
+import { itogDates } from "./itog-data.js?v=land196";
+import { bz, bzDayStart } from "./tz.js?v=land196";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land195";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land195";
-import { movedHtml, myNextLessons } from "./calendar.js?v=land195";
-import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land195";
+import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land196";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land196";
+import { movedHtml, myNextLessons } from "./calendar.js?v=land196";
+import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land196";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, selfExamHtml,
-} from "./dashboard.js?v=land195";
+} from "./dashboard.js?v=land196";
 import {
   accessState,
   currentProfile,
@@ -34,26 +34,43 @@ const STATUS_TEXT = {
 const DAILY_GOAL_HOME = 10;
 const WORK_STATUS = { draft: "черновик", submitted: "на проверке", returned: "вернули на доработку", graded: "проверена" };
 
-/** Свежепроверенные работы: «Работа проверена: 18 из 22 — посмотреть пометки». Скрываются, когда ученик открыл. */
+/** Где ученик видит свою работу с пометками: в занятии (если сдана туда) или на странице задания. */
+export function workHref(w) {
+  const lid = w?.lesson_items?.lesson_id;
+  if (w?.item_id && lid) return `#/lesson/${lid}/${w.item_id}`;
+  return taskHref(w?.tasks);
+}
+
+function workTitle(w) {
+  const lt = w?.lesson_items?.lessons?.title;
+  if (lt) return `«${lt}»`;
+  return `${SOURCE_TITLE[w?.tasks?.source] || "Работа"}, задание ${w?.tasks?.task_no ?? ""}`;
+}
+
+/** Проверенные, но ещё не просмотренные учеником работы (seen_at пуст). */
+export const unseenWorks = (works) => (works || []).filter((w) => (w.status === "graded" || w.status === "returned") && w.reviewed_at && !w.seen_at);
+
+/**
+ * Яркое уведомление вверху кабинета: «Работа проверена — посмотри пометки».
+ * Не пропадает, пока ученик не откроет работу и не нажмёт «Посмотрел(а)».
+ */
 function checkedWorksHtml(d) {
-  if (!d?.works?.length) return "";
-  let seen = [];
-  try {
-    seen = JSON.parse(localStorage.getItem("seen-works") || "[]");
-  } catch {}
-  const fresh = d.works
-    .filter((w) => (w.status === "graded" || w.status === "returned") && w.reviewed_at && Date.now() - new Date(w.reviewed_at) < 21 * 86400000 && !seen.includes(w.id))
-    .slice(0, 3);
+  const fresh = unseenWorks(d?.works).sort((a, b) => new Date(b.reviewed_at) - new Date(a.reviewed_at));
   if (!fresh.length) return "";
-  return `<section class="me-section me-block"><h2 class="me-label">Проверено</h2><div class="me-rows">${fresh
-    .map(
-      (w) => `<a class="me-row" href="${taskHref(w.tasks)}" data-seen-work="${w.id}">
-        <span class="me-row-main"><strong>${w.status === "graded" ? `${escapeHtml(SOURCE_TITLE[w.tasks?.source] || "Работа")}, задание ${w.tasks?.task_no ?? ""}` : "Работу вернули на доработку"}</strong>
-        <span class="muted">${w.status === "graded" ? "Посмотри пометки и комментарий" : `${escapeHtml(SOURCE_TITLE[w.tasks?.source] || "")}, задание ${w.tasks?.task_no ?? ""} — исправь и сдай снова`}</span></span>
-        ${w.status === "graded" && w.score != null ? `<span class="chip is-ok">${w.score}${w.max_score ? ` из ${w.max_score}` : ""}</span>` : `<span class="chip is-hot">доработать</span>`}
+  const n = fresh.length;
+  return `<section class="me-section me-block me-fresh" aria-labelledby="me-fresh-h">
+    <h2 id="me-fresh-h" class="me-label me-label-fresh">${n === 1 ? "Работа проверена" : "Работы проверены"} <span class="me-count">${n}</span></h2>
+    <p class="me-fresh-lede">Открой работу — там красные пометки преподавателя, баллы и комментарий. Когда разберёшься, нажми «Посмотрел(а)» внизу.</p>
+    <div class="me-rows">${fresh
+      .map(
+        (w) => `<a class="me-row" href="${workHref(w)}">
+        <span class="me-row-main"><strong>${escapeHtml(workTitle(w))}</strong>
+        <span class="muted">${w.status === "graded" ? "Посмотри пометки и комментарий" : "Вернули на доработку — посмотри пометки, исправь и сдай снова"} · ${new Date(w.reviewed_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}</span></span>
+        ${w.status === "graded" && w.score != null ? `<span class="chip is-ok">${w.score}${w.max_score ? ` из ${w.max_score}` : ""}</span>` : w.status === "returned" ? `<span class="chip is-hot">доработать</span>` : ""}
+        <span class="btn me-fresh-btn">Открыть →</span>
       </a>`
-    )
-    .join("")}</div></section>`;
+      )
+      .join("")}</div></section>`;
 }
 
 /** Письменные работы — отдельный трек по желанию: проверяет преподаватель, награда — после проверки. */
@@ -203,7 +220,7 @@ function setHwBadge(n) {
   } catch {}
   document.querySelectorAll('.tabbar a[href="#/me"]').forEach((a) => {
     a.querySelector(".tab-badge")?.remove();
-    if (n) a.insertAdjacentHTML("beforeend", `<span class="tab-badge" aria-label="не сдано: ${n}">${n}</span>`);
+    if (n) a.insertAdjacentHTML("beforeend", `<span class="tab-badge" aria-label="новое: ${n}">${n}</span>`);
   });
 }
 
@@ -385,20 +402,22 @@ function mistakesHtml(rows) {
 
 function worksHtml(rows) {
   if (!rows.length) return `<p class="muted">Письменных работ пока нет. Сочинения и развёрнутые ответы сдаются со страницы задания.</p>`;
-  return `<div class="lit-list">${rows
-    .map(
-      (w) => `
-      <a class="lit-item" href="${taskHref(w.tasks)}">
+  const unseen = new Set(unseenWorks(rows).map((w) => w.id));
+  const item = (w) => `
+      <a class="lit-item${unseen.has(w.id) ? " is-new-check" : ""}" href="${workHref(w)}">
         <span class="lit-item-n">${w.tasks?.task_no ?? "·"}</span>
         <span class="lit-item-body">
-          <strong>${escapeHtml(SOURCE_TITLE[w.tasks?.source] || "Работа")} · ${escapeHtml(WORK_STATUS[w.status] || w.status)}${
+          <strong>${escapeHtml(w.lesson_items?.lessons?.title ? `«${w.lesson_items.lessons.title}»` : SOURCE_TITLE[w.tasks?.source] || "Работа")} · ${escapeHtml(WORK_STATUS[w.status] || w.status)}${
             w.score != null ? ` · ${escapeHtml(String(w.score))}${w.max_score ? `/${escapeHtml(String(w.max_score))}` : ""}` : ""
-          }</strong>
+          }${unseen.has(w.id) ? ' <span class="chip is-hot">новая проверка — посмотри</span>' : ""}</strong>
           <span>${escapeHtml((w.body || "").slice(0, 140) || "фото работы")}</span>
         </span>
-      </a>`
-    )
-    .join("")}</div>`;
+      </a>`;
+  // Архив: проверенные работы, которые ученик уже посмотрел и закрыл
+  const archived = rows.filter((w) => w.status === "graded" && w.seen_at);
+  const current = rows.filter((w) => !archived.includes(w));
+  return `${current.length ? `<div class="lit-list">${current.map(item).join("")}</div>` : `<p class="muted">Новых проверок нет — всё просмотрено.</p>`}
+    ${archived.length ? `<details class="me-archive"><summary>Архив — просмотренные работы (${archived.length})</summary><div class="lit-list">${archived.map(item).join("")}</div></details>` : ""}`;
 }
 
 export async function mountMe(root) {
@@ -427,7 +446,7 @@ export async function mountMe(root) {
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land195")
+    import("./lessons.js?v=land196")
       .then((m) => (isProfile ? m.myLessonsHtml() : m.myHomeData().then((d) => ({ ...d, fmtDue: m.fmtDue }))))
       .catch(() => (isProfile ? "" : null)),
     isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },
@@ -435,10 +454,10 @@ export async function mountMe(root) {
     isProfile
       ? supa
           .from("written_works")
-          .select("id, status, score, max_score, body, created_at, tasks(source, bank_file, source_ref, task_no)")
+          .select("id, status, score, max_score, body, created_at, reviewed_at, seen_at, item_id, tasks(source, bank_file, source_ref, task_no), lesson_items(lesson_id, lessons(title))")
           .eq("student_id", user.id)
           .order("created_at", { ascending: false })
-          .limit(50)
+          .limit(100)
       : { data: [] },
     supa.from("group_members").select("groups(title)").eq("student_id", user.id),
   ]);
@@ -495,17 +514,17 @@ export async function mountMe(root) {
               .join("")}</nav>`
           : ""
       }
+      ${checkedWorksHtml(dash)}
       ${nowHtml(home)}
       ${student || home.hw.length ? hwHtml(home) : ""}
       ${student ? '<section class="me-section me-block" id="me-schedule" hidden></section>' : ""}
       ${student ? '<section class="me-section me-block" id="me-reading" hidden></section>' : ""}
-      ${checkedWorksHtml(dash)}
       ${student ? selfHtml(dash, code, p) : ""}
 `;
-    setHwBadge(home.hw.length);
+    setHwBadge(home.hw.length + unseenWorks(dash?.works).length);
     if (student) mountSchedule(host, home, groupNames);
     if (student && subjectsOf(p).lit)
-      import("./reading-list.js?v=land195")
+      import("./reading-list.js?v=land196")
         .then((m) => m.mountHomeCard(host.querySelector("#me-reading"), p))
         .catch((e) => console.warn(e));
     host.querySelectorAll("[data-guide-close]").forEach((b) =>
@@ -582,14 +601,6 @@ export async function mountMe(root) {
   });
   bindSelfExam(host);
   if (state === "student") mountTg(host, "student");
-  host.querySelectorAll("[data-seen-work]").forEach((a) =>
-    a.addEventListener("click", () => {
-      try {
-        const seen = JSON.parse(localStorage.getItem("seen-works") || "[]");
-        localStorage.setItem("seen-works", JSON.stringify([...seen, a.dataset.seenWork].slice(-200)));
-      } catch {}
-    })
-  );
   host.querySelectorAll("[data-track]").forEach((b) =>
     b.addEventListener("click", () => {
       setTrack(b.dataset.track);

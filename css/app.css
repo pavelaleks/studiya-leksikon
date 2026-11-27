@@ -2790,3 +2790,31 @@ body.is-sheet .lr-root, body.is-reading .lr-root { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .lr-root *, .lr-root { animation: none !important; transition: none !important; }
 }
+
+/* ---------- Проверенная работа: ученик должен увидеть пометки ---------- */
+.me-fresh .me-rows { border: 2px solid var(--accent); }
+.me-label-fresh { color: var(--accent); }
+.me-label-fresh::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: me-pulse 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .me-label-fresh::before { animation: none; } }
+.me-fresh-lede { margin: 0 0 10px; color: var(--ink-soft); line-height: 1.45; max-width: 40em; }
+.me-fresh .me-row { flex-wrap: wrap; background: var(--accent-soft); }
+.me-fresh-btn { padding: 8px 14px; min-height: 0; font-size: 0.9rem; }
+@media (max-width: 560px) { .me-fresh-btn { flex-basis: 100%; text-align: center; } }
+.me-archive { margin-top: 14px; }
+.me-archive > summary { cursor: pointer; color: var(--ink-soft); font-weight: 600; padding: 6px 0; }
+.me-archive .lit-list { margin-top: 8px; opacity: 0.85; }
+.lit-item.is-new-check { border: 2px solid var(--accent); background: var(--accent-soft); }
+.l-st.is-new-check { color: var(--accent); font-weight: 700; }
+.pr-review.is-fresh { border-left-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); scroll-margin-top: 80px; }
+.pr-fresh-note { margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); line-height: 1.45; }
+.pr-seen { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; justify-content: space-between; padding: 14px 18px; margin: 16px 0; }
+.pr-seen.is-fresh { border: 2px solid var(--accent); }
+.pr-seen p { margin: 0; flex: 1 1 260px; line-height: 1.45; }
+.pr-seen-done { margin: 14px 0; }
+/* преподаватель: кто посмотрел проверку, архив */
+.t-work-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.t-work-row .btn { padding: 8px 12px; min-height: 0; font-size: 0.85rem; }
+.t-seen { font-weight: 700; }
+.t-seen.is-yes { color: var(--ok); }
+.t-seen.is-no { color: var(--accent); }
+.t-works-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }

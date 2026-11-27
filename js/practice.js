@@ -5,7 +5,7 @@
  *  - письменная работа: черновик, фото, сдача на проверку, оценка.
  */
 import { escapeHtml } from "./ui.js";
-import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land195";
+import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land196";
 import {
   accessState,
   currentUser,
@@ -16,6 +16,7 @@ import {
   submitAnswer,
   uploadWorkFile,
   removeWorkFiles,
+  supa,
 } from "./supa.js";
 
 const STATUS_TEXT = {
@@ -398,12 +399,26 @@ export function bindWritten(
       /* ignore */
     }
     const text = work?.body || saved || "";
+    // проверка, которую ученик ещё не закрыл: выделяем и просим отметить «Посмотрел(а)»
+    const reviewed = work && (status === "graded" || status === "returned");
+    const fresh = reviewed && !work.seen_at && accessState() !== "teacher" && work.student_id === currentUser()?.id;
+    const seenHtml = !reviewed
+      ? ""
+      : fresh
+        ? `<div class="pr-seen card is-fresh">
+            <p>${status === "graded" ? "Посмотрел(а) все пометки и комментарий? Отметь — и работа уйдёт в архив." : "Посмотрел(а) пометки? Отметь, исправь работу и сдай её снова."}</p>
+            <button type="button" class="btn" id="pr-seen">Посмотрел(а)</button>
+          </div>`
+        : work.seen_at && status === "graded"
+          ? `<p class="muted pr-seen-done">Ты посмотрел(а) проверку ${new Date(work.seen_at).toLocaleDateString("ru-RU")}. Работа в архиве: Профиль → Письменные работы.</p>`
+          : "";
     const typedPath = work?.annotations?.typed?.path;
     const typedHtml = typedPath && (status === "graded" || status === "returned") ? `<h4>Ваш текст с пометками ручкой</h4>${await filesHtml([typedPath])}` : "";
     const review =
       work && (status === "graded" || status === "returned")
         ? `
-        <div class="pr-review card">
+        <div class="pr-review card${fresh ? " is-fresh" : ""}" id="pr-review">
+          ${fresh ? `<p class="pr-fresh-note"><strong>${status === "graded" ? "Преподаватель проверил работу." : "Преподаватель вернул работу на доработку."}</strong> Ниже — баллы, комментарий и твой текст с красными пометками. Разберись и нажми «Посмотрел(а)» в конце.</p>` : ""}
           <p class="eyebrow">${escapeHtml(STATUS_TEXT[status])}${work.reviewed_at ? ` · ${new Date(work.reviewed_at).toLocaleDateString("ru-RU")}` : ""}</p>
           ${work.score != null ? `<p class="pr-score"><strong>${escapeHtml(String(work.score))}</strong>${work.max_score ? ` из ${escapeHtml(String(work.max_score))}` : ""} баллов</p>` : ""}
           ${work.criteria || status === "graded" ? studentReviewHtml(work) : ""}
@@ -435,6 +450,7 @@ export function bindWritten(
       <label for="pr-essay">${escapeHtml(label)}</label>
       <textarea id="pr-essay" class="lit-essay" ${editable ? "" : "readonly"} placeholder="Напишите ответ здесь. Можно также приложить фото тетради.">${escapeHtml(text)}</textarea>
       <div id="pr-files">${await filesHtml(files, editable)}</div>
+      ${seenHtml}
       ${
         editable
           ? `
@@ -450,6 +466,24 @@ export function bindWritten(
       <p class="lit-send-status muted" id="pr-status" aria-live="polite"></p>`;
 
     drawFiles();
+    box.querySelector("#pr-seen")?.addEventListener("click", async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      const { data, error } = await supa.rpc("mark_work_seen", { p_work: work.id });
+      if (error) {
+        btn.disabled = false;
+        btn.insertAdjacentHTML("afterend", `<p class="lit-result is-bad">Не получилось отметить. Попробуй ещё раз.</p>`);
+        return;
+      }
+      work = { ...work, seen_at: data || new Date().toISOString() };
+      await render();
+      box.querySelector(".pr-seen-done, #pr-essay")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    // пришёл по уведомлению: сразу к проверке, а не к условию задания
+    if (fresh && !box.dataset.jumped) {
+      box.dataset.jumped = "1";
+      requestAnimationFrame(() => box.querySelector("#pr-review")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
     const area = box.querySelector("#pr-essay");
     const choiceNow = () => Number(box.querySelector('input[name="pr-choice"]:checked')?.value) || null;
     box.querySelectorAll('input[name="pr-choice"]').forEach((r) =>

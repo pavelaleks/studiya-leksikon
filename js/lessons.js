@@ -3,17 +3,17 @@
  *  Преподаватель: #/cabinet/lessons — список и создание; #/cabinet/lesson/:id — конструктор и живая таблица.
  *  Ученик: #/lesson/:id — задания урока; #/lesson/:id/:item — одно задание с проверкой по правилам урока.
  */
-import { bz, bzDayStart, fromBz, fromBzInput, toBzInput } from "./tz.js?v=land195";
+import { bz, bzDayStart, fromBz, fromBzInput, toBzInput } from "./tz.js?v=land196";
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land195";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land195";
-import { SOURCES, bankFiles } from "./teacher.js?v=land195";
+import { taskHref } from "./account.js?v=land196";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land196";
+import { SOURCES, bankFiles } from "./teacher.js?v=land196";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
-import { nextLessonFor } from "./calendar.js?v=land195";
+import { nextLessonFor } from "./calendar.js?v=land196";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land195";
+} from "./exams.js?v=land196";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -1788,6 +1788,9 @@ function itemStatus(it, att, works, timed) {
   if (TEACHER_CHECKED.has(it.tasks?.answer_mode)) {
     const w = works.find((x) => x.item_id === it.id);
     if (!w) return ["", "не начато"];
+    // проверено, но ученик ещё не открыл пометки
+    if ((w.status === "graded" || w.status === "returned") && !w.seen_at)
+      return ["is-new-check", `${w.status === "graded" ? `проверено${w.score != null ? `: ${w.score}${w.max_score ? `/${w.max_score}` : ""}` : ""}` : "вернули на доработку"} — открой и посмотри пометки`];
     return {
       draft: ["is-wait", timed ? "сохранено (сдастся при завершении)" : "черновик"],
       submitted: ["is-wait", "на проверке"],
@@ -1825,7 +1828,7 @@ export async function mountLesson(root, parts) {
     const [{ data: att }, { data: works }] = ids.length
       ? await Promise.all([
           supa.from("attempts").select("item_id, is_correct, answer, created_at").eq("student_id", uid).in("item_id", ids).order("created_at"),
-          supa.from("written_works").select("item_id, status, score, max_score").eq("student_id", uid).in("item_id", ids),
+          supa.from("written_works").select("item_id, status, score, max_score, seen_at").eq("student_id", uid).in("item_id", ids),
         ])
       : [{ data: [] }, { data: [] }];
 
@@ -1869,7 +1872,7 @@ function lessonOverview(host, { lesson, items }, att, works, timed) {
     .map((it, i) => {
       const [cls, text] = itemStatus(it, att, works, timed);
       return `
-      <a class="lit-item ${cls === "is-ok" ? "is-done" : ""}" href="#/lesson/${lesson.id}/${it.id}">
+      <a class="lit-item ${cls === "is-ok" ? "is-done" : cls === "is-new-check" ? "is-new-check" : ""}" href="#/lesson/${lesson.id}/${it.id}">
         <span class="lit-item-n">${lesson.kind === "exam" ? it.tasks?.task_no ?? i + 1 : i + 1}</span>
         <span class="lit-item-body">
           <strong>${escapeHtml(SOURCES[it.tasks?.source]?.title || "")}, задание ${it.tasks?.task_no ?? ""}${lesson.kind === "lesson" ? ` · ${escapeHtml(KIND[it.kind])}` : ""}</strong>
