@@ -8,7 +8,7 @@
  * Координаты на фото — доли ширины/высоты (0…1), чтобы не зависеть от размера экрана.
  */
 import { escapeHtml } from "./ui.js";
-import { MARKS, RUBRICS, applyRules, countWords, rubricFor } from "./rubrics.js?v=land196";
+import { MARKS, RUBRICS, applyRules, countWords, rubricFor } from "./rubrics.js?v=land197";
 
 /* ------------------------------------------------------------------ */
 /* Текст с пометками                                                    */
@@ -765,13 +765,19 @@ export function studentReviewHtml(work) {
   const crit = work.criteria || {};
   const rubric = crit.rubric && RUBRICS[crit.rubric];
   const scores = crit.scores || (crit.rubric ? {} : crit);
+  // критерии, обнулённые правилом (меньше N слов и т. п.): описание уровня («5 и более ошибок») ученику не показываем — оно неверно
+  const fired = crit.fired || [];
+  const zeroed = new Set();
+  (rubric?.rules || [])
+    .filter((r) => fired.includes(r.note))
+    .forEach((r) => (r.zero === "all" ? rubric.criteria.map((c) => c.code) : r.zero).forEach((c) => zeroed.add(c)));
   const rows = rubric
     ? rubric.criteria
         .map((c) => {
           const v = scores[c.code];
           const lvl = c.levels.find((l) => l[0] === Number(v));
           const max = Math.max(...c.levels.map((l) => l[0]));
-          return `<tr><td><b>${escapeHtml(c.code)}</b> ${escapeHtml(c.name)}</td><td class="rv-sc">${v ?? "—"} / ${max}</td><td class="muted">${escapeHtml(lvl?.[1] || "")}</td></tr>`;
+          return `<tr><td><b>${escapeHtml(c.code)}</b> ${escapeHtml(c.name)}</td><td class="rv-sc">${v ?? "—"} / ${max}</td><td class="muted">${escapeHtml(zeroed.has(c.code) && Number(v) === 0 ? "0 по правилу — см. ниже" : lvl?.[1] || "")}</td></tr>`;
         })
         .join("")
     : Object.entries(scores)
@@ -788,7 +794,7 @@ export function studentReviewHtml(work) {
     ${rubric ? `<p class="muted">${escapeHtml(rubric.title)}</p>` : ""}
     ${verdict ? `<p class="rv-verdict"><b>${escapeHtml(verdict)}</b></p>` : ""}
     ${rows ? `<div class="t-table-wrap"><table class="t-table rv-table"><tbody>${rows}</tbody></table></div>` : ""}
-    ${(crit.fired || []).length ? `<p class="rv-fired">${crit.fired.map(escapeHtml).join("<br>")}</p>` : ""}
+    ${fired.length ? `<p class="rv-fired">${fired.map((f) => escapeHtml(f.replace(/;?\s*при необходимости поправьте вручную\.?/, "."))).join("<br>")}</p>` : ""}
     ${marks.length ? `<p class="muted">Пометки в тексте: ${legend || "—"}. Выделенные места и комментарии к ним — в тексте и списке ниже.</p>` : ""}`;
 }
 

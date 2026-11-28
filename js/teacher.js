@@ -1,21 +1,21 @@
 /** Кабинет преподавателя: #/cabinet/... */
-import { bzDayStart } from "./tz.js?v=land196";
-import { installRealNames, loadRealNames, realNameOf, saveRealName, toggleHtml } from "./realnames.js?v=land196";
+import { bzDayStart } from "./tz.js?v=land197";
+import { installRealNames, loadRealNames, realNameOf, saveRealName, toggleHtml } from "./realnames.js?v=land197";
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land196";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land197";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land196";
+import { taskHref } from "./account.js?v=land197";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land196";
-import { readingView } from "./teacher-reading.js?v=land196";
-import { optionsOf } from "./practice.js?v=land196";
-import { convertStudent, createEnterLink, createStudent, enterUrl, isPseudoEmail, isTakenPseudonym, loginOf, newPassword, newPseudonym, resetStudentPassword, suggestPseudonyms, takenPseudonyms } from "./pseudo.js?v=land196";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land196";
-import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land196";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land196";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land197";
+import { readingView } from "./teacher-reading.js?v=land197";
+import { optionsOf } from "./practice.js?v=land197";
+import { convertStudent, createEnterLink, createStudent, enterUrl, isPseudoEmail, isTakenPseudonym, loginOf, newPassword, newPseudonym, resetStudentPassword, suggestPseudonyms, takenPseudonyms } from "./pseudo.js?v=land197";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land197";
+import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land197";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land197";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land196";
+} from "./review.js?v=land197";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -308,12 +308,12 @@ export async function mountTeacher(root, parts) {
     if (tab === "students") return await studentsView(host, render);
     if (tab === "student" && arg === "report") {
       render(`<div id="t-report"></div>`);
-      const pg = await import("./progress-charts.js?v=land196");
+      const pg = await import("./progress-charts.js?v=land197");
       return await pg.mountReport(host.querySelector("#t-report"), sub, { back: `#/cabinet/student/${sub}`, base: `#/cabinet/student/${sub}/report` });
     }
     if (tab === "student" && arg === "reading") {
       render(`<div id="t-reading-list"></div>`);
-      const rl = await import("./reading-list.js?v=land196");
+      const rl = await import("./reading-list.js?v=land197");
       return await rl.mountReadingList(host.querySelector("#t-reading-list"), {
         studentId: sub,
         exam: parts[3] || null,
@@ -332,7 +332,7 @@ export async function mountTeacher(root, parts) {
         <section class="me-section" id="t-exam-dates"><h2>Даты экзаменов по литературе</h2><p class="muted">Загружаем…</p></section>
         <section class="me-section"><h2>Оформление</h2>${themeSwitchHtml()}</section>`);
       mountTg(host, "teacher");
-      const rl = await import("./reading-list.js?v=land196");
+      const rl = await import("./reading-list.js?v=land197");
       const box = host.querySelector("#t-exam-dates");
       const dates = await rl.examDates();
       box.innerHTML = `<h2>Даты экзаменов по литературе</h2>
@@ -1653,8 +1653,10 @@ async function workReview(host, render, id) {
     if (end <= start) return;
     sel = { start, end };
     const rect = r.getBoundingClientRect();
-    const box = host.getBoundingClientRect();
-    pop.style.left = `${Math.max(0, rect.left - box.left)}px`;
+    // координаты — от того блока, относительно которого панель позиционируется (не от всего кабинета)
+    pop.hidden = false;
+    const box = (pop.offsetParent || host).getBoundingClientRect();
+    pop.style.left = `${Math.max(0, Math.min(rect.left - box.left, box.width - pop.offsetWidth))}px`;
     pop.style.top = `${rect.bottom - box.top + 6}px`;
     pop.hidden = false;
     pop.querySelector("#rv-note").value = "";

@@ -2799,6 +2799,7 @@ body.is-sheet .lr-root, body.is-reading .lr-root { display: none; }
 .wv-home .me-row.is-new strong { color: var(--accent); }
 .wv-new { display: inline-block; padding: 1px 7px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; vertical-align: 2px; }
 .wv-chip-score { background: var(--ok-bg); color: var(--ok); }
+.wv-chip-score.is-low { background: var(--bad-bg); color: var(--bad); }
 .wv-home-more { margin: 8px 2px 0; font-size: 0.9rem; }
 .wv-note { display: flex; align-items: center; gap: 12px; margin: 0 0 18px; padding: 12px 16px; border-radius: 14px; border: 2px solid var(--accent); background: var(--accent-soft); color: var(--ink); text-decoration: none; }
 .wv-note:hover { background: color-mix(in srgb, var(--accent) 16%, var(--paper, #fff)); }
