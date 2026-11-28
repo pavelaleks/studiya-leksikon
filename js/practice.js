@@ -5,7 +5,7 @@
  *  - письменная работа: черновик, фото, сдача на проверку, оценка.
  */
 import { escapeHtml } from "./ui.js";
-import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land198";
+import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land199";
 import {
   accessState,
   currentUser,
@@ -302,7 +302,7 @@ export function writtenBlockHtml({ label = "Ваш ответ" } = {}) {
 export function bindWritten(
   root,
   problem,
-  { sanitize, label = "Ваш ответ", solutionTitle = "Пояснение и образец", item = null, noSubmit = false, readOnly = false } = {}
+  { sanitize, label = "Ваш ответ", solutionTitle = "Пояснение и образец", item = null, noSubmit = false, readOnly = false, closed = false } = {}
 ) {
   const box = root.querySelector("#pr-work");
   const solution = root.querySelector("#pr-solution");
@@ -389,7 +389,7 @@ export function bindWritten(
 
   const render = async () => {
     const status = work?.status || "draft";
-    const editable = !readOnly && (status === "draft" || status === "returned");
+    const editable = !readOnly && (status === "returned" || (status === "draft" && !closed));
     files = work?.files || files;
     let saved = "";
     try {

@@ -3,17 +3,17 @@
  *  Преподаватель: #/cabinet/lessons — список и создание; #/cabinet/lesson/:id — конструктор и живая таблица.
  *  Ученик: #/lesson/:id — задания урока; #/lesson/:id/:item — одно задание с проверкой по правилам урока.
  */
-import { bz, bzDayStart, fromBz, fromBzInput, toBzInput } from "./tz.js?v=land198";
+import { bz, bzDayStart, fromBz, fromBzInput, toBzInput } from "./tz.js?v=land199";
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land198";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land198";
-import { SOURCES, bankFiles } from "./teacher.js?v=land198";
+import { taskHref } from "./account.js?v=land199";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land199";
+import { SOURCES, bankFiles } from "./teacher.js?v=land199";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
-import { nextLessonFor } from "./calendar.js?v=land198";
+import { nextLessonFor } from "./calendar.js?v=land199";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land198";
+} from "./exams.js?v=land199";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -348,7 +348,7 @@ export async function lessonsListView(host, render) {
   const [{ data: lessons, error }, { data: groups }, { data: students }, { data: items }, { data: assignees }] = await Promise.all([
     supa
       .from("lessons")
-      .select("id, title, status, kind, exam_code, duration_minutes, starts_at, closes_at, created_at, group_id, student_id, self_made, groups(title), profiles!lessons_student_id_fkey(full_name, email)")
+      .select("id, title, status, kind, exam_code, duration_minutes, starts_at, closes_at, created_at, group_id, student_id, self_made, auto_close_at, closed_at, closed_auto, groups(title), profiles!lessons_student_id_fkey(full_name, email)")
       .order("starts_at", { ascending: false, nullsFirst: true })
       .order("created_at", { ascending: false }),
     supa.from("groups").select("id, title").eq("archived", false).order("title"),
@@ -418,13 +418,19 @@ export async function lessonsListView(host, render) {
           : l.starts_at
             ? ` · ${fmtDT(l.starts_at)}`
             : "";
+    const closeNote =
+      ph === "done" && l.closed_at
+        ? ` · ${l.closed_auto ? "закрыто автоматически" : "закрыто"} ${fmtDT(l.closed_at)}`
+        : l.auto_close_at && ["current", "past"].includes(ph)
+          ? ` · <span class="l-closes${Date.parse(l.auto_close_at) - now < 86400000 ? " soon" : ""}">закроется ${fmtDT(l.auto_close_at)}</span>`
+          : "";
     const blob = [l.title, who, ...[...x.roster].map((sid) => (students || []).find((s) => s.id === sid)?.full_name || "")].join(" ").toLowerCase();
     return `
       <a class="lit-item" href="#/cabinet/lesson/${l.id}" data-blob="${escapeHtml(blob)}" data-group="${l.group_id || ""}" data-who="${escapeHtml([...x.roster].join(" "))}" data-kind="${l.kind}">
         <span class="lit-item-n">${count(l.id)}</span>
         <span class="lit-item-body">
           <strong>${escapeHtml(l.title)}</strong>
-          <span>${l.self_made ? '<span class="badge">сам</span> ' : ""}${escapeHtml(WORK_KIND[l.kind] || "Занятие")}${l.duration_minutes ? ` · ${durationText(l.duration_minutes)}` : ""} · ${escapeHtml(who || "никому не назначено")}${when}</span>
+          <span>${l.self_made ? '<span class="badge">сам</span> ' : ""}${escapeHtml(WORK_KIND[l.kind] || "Занятие")}${l.duration_minutes ? ` · ${durationText(l.duration_minutes)}` : ""} · ${escapeHtml(who || "никому не назначено")}${when}${closeNote}</span>
           ${["current", "past"].includes(ph) ? progress(x) : ""}
           ${ph === "draft" ? `<span class="lesson-status lesson-draft">${LESSON_STATUS.draft}</span>` : ""}
         </span>
@@ -435,8 +441,8 @@ export async function lessonsListView(host, render) {
     ["current", "Сейчас — ждут выполнения", "Открыты ученикам, срок ещё не прошёл. Сверху — у которых срок раньше.", (a, b) => byDue(a, b), true],
     ["planned", "Запланированы", "Откроются ученикам в указанное время.", (a, b) => Date.parse(a.l.starts_at) - Date.parse(b.l.starts_at), true],
     ["draft", "Черновики", "Ученики их не видят, пока вы не нажмёте «Открыть ученикам».", null, true],
-    ["past", "Срок прошёл", "Ещё открыты ученикам — можно проверить и нажать «Завершить».", (a, b) => byDue(b, a), false],
-    ["done", "Завершённые", "", null, false],
+    ["past", "Срок прошёл", "Ещё открыты ученикам. Закроются сами через 3 дня после срока — или нажмите «Завершить» раньше.", (a, b) => byDue(b, a), false],
+    ["done", "Завершённые", "Ученики видят их и свои результаты, но новые ответы уже не принимаются. Внутри можно открыть снова.", (a, b) => Date.parse(b.l.closed_at || b.l.created_at) - Date.parse(a.l.closed_at || a.l.created_at), false],
     ["self", "Пробники, которые ученики собрали сами", "", null, false],
   ];
   const rows = SECTIONS.map(([ph, title, note, sort, open]) => {
@@ -899,10 +905,28 @@ export async function lessonsListView(host, render) {
   });
 }
 
+// Когда занятие закроется само и что с этим можно сделать.
+function closeBoxHtml(l, hasDue = false) {
+  if (l.self_made || l.status === "draft") return "";
+  if (l.status === "done") {
+    return `<p class="l-close card muted">🔒 ${l.closed_auto ? "Закрыто автоматически" : "Завершено"}${l.closed_at ? ` ${escapeHtml(fmtDT(l.closed_at))}` : ""}. Ученики видят занятие и свои результаты, но новые ответы уже не принимаются (кроме работ, возвращённых на доработку). «Открыть снова» — ещё 3 дня.</p>`;
+  }
+  const soon = l.auto_close_at && Date.parse(l.auto_close_at) - Date.now() < 86400000;
+  return `<div class="l-close card${soon ? " soon" : ""}">
+    <p>${
+      l.auto_close && l.auto_close_at
+        ? `⏳ Закроется автоматически <strong>${escapeHtml(fmtDT(l.auto_close_at))}</strong> — ${l.keep_open_until && Date.parse(l.keep_open_until) >= Date.parse(l.auto_close_at) ? "продлено вами" : `через 3 дня после ${hasDue ? "срока сдачи" : "открытия"}`}. За сутки недоделавшим придёт напоминание.`
+        : "Автозакрытие выключено — занятие будет открыто, пока вы его не завершите."
+    }</p>
+    <p class="actions">${l.auto_close ? `<button class="btn secondary" type="button" data-extend>Продлить на 3 дня</button>` : ""}
+      <label class="l-close-off"><input type="checkbox" data-autoclose ${l.auto_close ? "checked" : ""} /> закрывать автоматически</label></p>
+  </div>`;
+}
+
 async function loadLesson(id) {
   const { data: lesson, error } = await supa
     .from("lessons")
-    .select("*, groups(id, title), profiles!lessons_student_id_fkey(id, full_name, email)")
+    .select("*, auto_close_at, groups(id, title), profiles!lessons_student_id_fkey(id, full_name, email)")
     .eq("id", id)
     .maybeSingle();
   if (error) throw humanError(error);
@@ -1151,6 +1175,7 @@ export async function lessonEditView(host, render, id) {
           : ""
       }
       <p class="lede">${escapeHtml(WORK_KIND[lesson.kind])}${lesson.exam_code ? ` · ${escapeHtml(EXAMS[lesson.exam_code]?.title || "")}` : ""} · ${escapeHtml(who || "никому не назначено")} · <span class="lesson-status lesson-${lesson.status}">${LESSON_STATUS[lesson.status]}</span></p>
+      ${closeBoxHtml(lesson, state.items.some((i) => i.due_at))}
       <div class="t-filter card">
         <label>Открыть с<input type="datetime-local" name="starts_at" value="${toLocalInput(lesson.starts_at)}" /></label>
         ${isWritten ? `<label>Сдать до<input type="datetime-local" name="due_at" value="${toLocalInput(lessonDue)}" /></label>${duePresetsHtml()}` : ""}
@@ -1165,7 +1190,7 @@ export async function lessonEditView(host, render, id) {
         <button class="btn secondary" type="submit">Сохранить</button>
       </div>
       <div class="actions">
-        ${lesson.status === "done" ? `<button class="btn" type="button" data-status="live">Открыть ученикам</button>` : ""}
+        ${lesson.status === "done" ? `<button class="btn" type="button" data-status="live" title="Занятие снова примет ответы и закроется через 3 дня">Открыть снова</button>` : ""}
         ${lesson.status === "live" ? `<button class="btn secondary" type="button" data-status="done">Завершить</button><button class="btn secondary" type="button" data-status="draft">Скрыть (черновик)</button>` : ""}
         ${lesson.status === "done" ? `<button class="btn secondary" type="button" data-status="draft">В черновик</button>` : ""}
         ${isWritten ? "" : `<button class="btn secondary" type="button" id="l-reveal-all">${isWork ? "Открыть результаты и разборы" : "Открыть все разборы"}</button>`}
@@ -1260,6 +1285,17 @@ export async function lessonEditView(host, render, id) {
       else reload();
     })
   );
+  host.querySelector("[data-extend]")?.addEventListener("click", async () => {
+    const from = Math.max(Date.now(), Date.parse(lesson.auto_close_at || 0) || 0);
+    const { error } = await supa.from("lessons").update({ keep_open_until: new Date(from + 3 * 86400000).toISOString() }).eq("id", id);
+    if (error) alert(humanError(error).message);
+    else reload();
+  });
+  host.querySelector("[data-autoclose]")?.addEventListener("change", async (e) => {
+    const { error } = await supa.from("lessons").update({ auto_close: e.target.checked }).eq("id", id);
+    if (error) alert(humanError(error).message);
+    else reload();
+  });
   host.querySelector("#l-reveal-all")?.addEventListener("click", async () => {
     if (!confirm(isWork ? "Открыть ученикам результаты и разборы всех заданий?" : "Открыть разборы всех заданий для учеников?")) return;
     await supa.from("lesson_items").update({ revealed: true }).eq("lesson_id", id);
@@ -1652,7 +1688,7 @@ export async function myLessonsHtml({ today = false } = {}) {
 export async function myHomeData() {
   const { data: lessons } = await supa
     .from("lessons")
-    .select("id, title, status, kind, duration_minutes, starts_at, closes_at, lesson_items(id, due_at, kind)")
+    .select("id, title, status, kind, duration_minutes, starts_at, closes_at, auto_close_at, lesson_items(id, due_at, kind)")
     .order("starts_at", { ascending: false, nullsFirst: true })
     .limit(60);
   if (!lessons?.length) return { now: [], hw: [] };
@@ -1672,7 +1708,7 @@ export async function myHomeData() {
     const its = l.lesson_items || [];
     if (!its.length || l.status === "done") continue;
     const s = (sessions || []).find((x) => x.lesson_id === l.id);
-    const base = { id: l.id, title: l.title, kind: l.kind, minutes: l.duration_minutes || 0 };
+    const base = { id: l.id, title: l.title, kind: l.kind, minutes: l.duration_minutes || 0, closes: l.auto_close_at || null };
     if (l.duration_minutes) {
       const ends = s ? Date.parse(s.started_at) + l.duration_minutes * 60000 : 0;
       if (s && (s.finished_at || now > ends)) continue;
@@ -1770,7 +1806,7 @@ function todayLessonsHtml(lessons, done, sessions) {
 async function loadMyLesson(id) {
   const { data: lesson, error } = await supa
     .from("lessons")
-    .select("id, title, status, kind, exam_code, duration_minutes, starts_at, closes_at, show_results, notes")
+    .select("id, title, status, kind, exam_code, duration_minutes, starts_at, closes_at, show_results, notes, auto_close_at, closed_at")
     .eq("id", id)
     .maybeSingle();
   if (error) throw humanError(error);
@@ -1832,6 +1868,10 @@ export async function mountLesson(root, parts) {
     // Работа на время: старт → таймер → итог
     if (st.lesson.duration_minutes) {
       const state = await examState(id);
+      if (!state.started_at && st.lesson.status === "done") {
+        host.innerHTML = `<p class="crumbs"><a href="#/me">← Главная</a></p><h1>${escapeHtml(st.lesson.title)}</h1>${closedNoteHtml(st.lesson)}`;
+        return;
+      }
       if (!state.started_at) {
         host.innerHTML = introHtml(st.lesson, st.items.length);
         bindIntro(host, st.lesson, again);
@@ -1883,6 +1923,7 @@ function lessonOverview(host, { lesson, items }, att, works, timed) {
     <p class="crumbs"><a href="#/me">← Главная</a></p>
     <p class="eyebrow">${escapeHtml(KIND_LABEL[lesson.kind] || "Занятие")}${lesson.starts_at ? ` · ${fmtDT(lesson.starts_at)}` : ""}${lesson.status === "done" ? " · завершено" : ""}</p>
     <h1>${escapeHtml(lesson.title)}</h1>
+    ${lesson.status === "done" ? closedNoteHtml(lesson) : lesson.auto_close_at && Date.parse(lesson.auto_close_at) - Date.now() < 2 * 86400000 ? `<p class="l-closing">⏳ Занятие закроется ${escapeHtml(fmtDue(lesson.auto_close_at).replace(/^до /, "").replace(" до ", " в "))} — успей доделать задания.</p>` : ""}
     ${lesson.notes ? `<p class="lede">${escapeHtml(lesson.notes)}</p>` : ""}
     <div class="lit-list">${rows || '<p class="muted">Заданий пока нет — преподаватель добавит их.</p>'}</div>`;
 }
@@ -1921,6 +1962,7 @@ async function lessonTask(host, { lesson, items }, itemId, att, { mode = "normal
   const next = items[i + 1];
   const timed = mode === "timed";
   const over = mode === "over";
+  const closed = lesson.status === "done";
   const history =
     mine.length && !written
       ? timed || (hiddenTest && lesson.kind !== "lesson")
@@ -1930,15 +1972,16 @@ async function lessonTask(host, { lesson, items }, itemId, att, { mode = "normal
             .join(", ")}${it.attempts_limit ? ` · попыток ${mine.length} из ${it.attempts_limit}` : ""}</p>`
       : "";
   const lastOk = Boolean(mine.at(-1)?.is_correct);
-  const showCheck = !written && !over && !(solved && !hiddenTest && !timed) && !exhausted;
+  const showCheck = !written && !over && !closed && !(solved && !hiddenTest && !timed) && !exhausted;
   host.innerHTML = `
     <p class="crumbs">${single ? `<a href="#/me">← Главная</a>` : `<a href="#/lesson/${lesson.id}">← ${escapeHtml(lesson.title)}</a>`}</p>
     <article class="lit-problem">
+      ${closed ? closedNoteHtml(lesson) : ""}
       ${
         lesson.kind === "written"
           ? `<p class="eyebrow">Письменная работа${it.due_at ? ` · сдать до ${fmtDT(it.due_at)}` : ""}</p>
       <h1>${escapeHtml(lesson.title)}</h1>
-      ${it.due_at && new Date(it.due_at) < new Date() && !written_done ? `<p class="lit-result is-bad">Срок сдачи прошёл. Всё равно напиши и отправь — преподаватель увидит, что работа сдана позже.</p>` : ""}
+      ${it.due_at && new Date(it.due_at) < new Date() && !written_done && !closed ? `<p class="lit-result is-bad">Срок сдачи прошёл. Всё равно напиши и отправь — преподаватель увидит, что работа сдана позже.</p>` : ""}
       ${lesson.notes ? `<p class="l-note">${escapeHtml(lesson.notes)}</p>` : ""}`
           : `<p class="eyebrow">${lesson.kind === "lesson" ? escapeHtml(KIND[it.kind]) : escapeHtml(KIND_LABEL[lesson.kind])} · ${i + 1} из ${items.length}${it.due_at ? ` · сдать до ${fmtDT(it.due_at)}` : ""}</p>
       <h1>${escapeHtml(SOURCES[t.source]?.title || "")}, задание ${t.task_no ?? ""}</h1>`
@@ -1961,6 +2004,7 @@ async function lessonTask(host, { lesson, items }, itemId, att, { mode = "normal
       label: t.answer_mode === "essay" ? "Сочинение" : "Ваш ответ",
       noSubmit: timed,
       readOnly: over,
+      closed,
     });
     return;
   }
@@ -1981,7 +2025,7 @@ async function lessonTask(host, { lesson, items }, itemId, att, { mode = "normal
     const res = await showSolution(t.id, it.id);
     const verdict = over || lesson.kind !== "lesson"
       ? mine.length ? (lastOk ? "Верно." : "Неверно.") : "Ответа не было."
-      : solved ? "Решено верно." : "Попытки закончились.";
+      : solved ? "Решено верно." : closed && !exhausted ? (mine.length ? "Не решено — занятие закрыто." : "Ответа не было — занятие закрыто.") : "Попытки закончились.";
     const ok = over || lesson.kind !== "lesson" ? lastOk : solved;
     box.innerHTML = res.locked
       ? `<p class="lit-result">${escapeHtml(verdict)} ${escapeHtml(REVEAL_HINT_STUDENT[it.reveal] || "")}</p>`
@@ -1990,6 +2034,10 @@ async function lessonTask(host, { lesson, items }, itemId, att, { mode = "normal
   } catch (err) {
     box.innerHTML = `<p class="lit-result is-bad">${escapeHtml(err.message)}</p>`;
   }
+}
+
+function closedNoteHtml(lesson) {
+  return `<p class="l-closed">🔒 Занятие закрыто${lesson.closed_at ? ` ${escapeHtml(fmtDT(lesson.closed_at))}` : ""}: ответы больше не принимаются. Свои ответы и разборы можно смотреть. Если нужно доделать — напиши преподавателю.</p>`;
 }
 
 const REVEAL_HINT_STUDENT = {

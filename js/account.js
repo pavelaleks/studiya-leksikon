@@ -1,15 +1,15 @@
 /** Вход, регистрация и личный кабинет ученика (#/login, #/me). */
-import { itogDates } from "./itog-data.js?v=land198";
-import { bz, bzDayStart } from "./tz.js?v=land198";
+import { itogDates } from "./itog-data.js?v=land199";
+import { bz, bzDayStart } from "./tz.js?v=land199";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land198";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land198";
-import { movedHtml, myNextLessons } from "./calendar.js?v=land198";
-import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land198";
+import { isPseudoEmail, loginOf, loginToEmail } from "./pseudo.js?v=land199";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land199";
+import { movedHtml, myNextLessons } from "./calendar.js?v=land199";
+import { GRADES, SUBJECTS, TRACK_TITLE, courseLabel, currentTrack, setTrack, subjectsOf, tracksOf } from "./track.js?v=land199";
 import {
   badges, badgesHtml, bindSelfExam, examCodeOf, heroHtml, howPointsHtml, loadDashboard, mountDaily, selfExamHtml,
-} from "./dashboard.js?v=land198";
-import { checkedHomeHtml, workTaskHref } from "./work-view.js?v=land198";
+} from "./dashboard.js?v=land199";
+import { checkedHomeHtml, workTaskHref } from "./work-view.js?v=land199";
 import {
   accessState,
   currentProfile,
@@ -127,6 +127,10 @@ function hwHtml(home) {
         chip = `<span class="chip ${cls}">${escapeHtml((x.timed ? "начать " : "") + home.fmtDue(x.due))}</span>`;
       } else if (x.from) {
         chip = '<span class="chip">с занятия</span>';
+      }
+      // занятие скоро закроется само — после этого ответы не примутся
+      if (x.closes && Date.parse(x.closes) - now < 2 * 86400000 && (!x.due || Date.parse(x.due) < now)) {
+        chip = `<span class="chip is-late">закроется ${escapeHtml(home.fmtDue(x.closes).replace(/^до /, "").replace(" до ", " в "))}</span>`;
       }
       const sub = x.timed
         ? `${x.kind === "exam" ? "Пробный экзамен" : "Контрольная"} · ${x.minutes} мин`
@@ -406,7 +410,7 @@ export async function mountMe(root) {
   // Все запросы кабинета — одной волной.
   const [dash, lessonsHtml, stats, mistakes, works, myGroups] = await Promise.all([
     state === "student" ? loadDashboard().catch(() => null) : null,
-    import("./lessons.js?v=land198")
+    import("./lessons.js?v=land199")
       .then((m) => (isProfile ? m.myLessonsHtml() : m.myHomeData().then((d) => ({ ...d, fmtDue: m.fmtDue }))))
       .catch(() => (isProfile ? "" : null)),
     isProfile ? supa.from("task_stats").select("*").eq("student_id", user.id) : { data: [] },
@@ -484,7 +488,7 @@ export async function mountMe(root) {
     setHwBadge(home.hw.length + (dash?.works || []).filter((w) => (w.status === "graded" || w.status === "returned") && !w.seen_at).length);
     if (student) mountSchedule(host, home, groupNames);
     if (student && subjectsOf(p).lit)
-      import("./reading-list.js?v=land198")
+      import("./reading-list.js?v=land199")
         .then((m) => m.mountHomeCard(host.querySelector("#me-reading"), p))
         .catch((e) => console.warn(e));
     host.querySelectorAll("[data-guide-close]").forEach((b) =>

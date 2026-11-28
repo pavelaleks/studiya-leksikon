@@ -1,8 +1,8 @@
 import { BASE, STUDIO } from "./config.js";
-import { doneOgeIds, markOgeDone, pickOgeVariant, readOgeProgress, touchOge } from "./progress.js?v=land198";
+import { doneOgeIds, markOgeDone, pickOgeVariant, readOgeProgress, touchOge } from "./progress.js?v=land199";
 import { escapeHtml } from "./ui.js";
 import { accessState, bankList, bankProblem, clearBankCache } from "./supa.js";
-import { bindCheck, bindWritten, checkBlockHtml, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js?v=land198";
+import { bindCheck, bindWritten, checkBlockHtml, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js?v=land199";
 
 const SOURCE = "oge-rus";
 

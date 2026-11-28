@@ -5,13 +5,13 @@
  * #/cabinet/assign?add=<task id> — сразу положить задание в корзину (кнопка «Назначить» в банке).
  */
 import { escapeHtml } from "./ui.js";
-import { fromBzInput } from "./tz.js?v=land198";
+import { fromBzInput } from "./tz.js?v=land199";
 import { humanError, supa } from "./supa.js";
-import { taskHref } from "./account.js?v=land198";
-import { SOURCES } from "./teacher.js?v=land198";
+import { taskHref } from "./account.js?v=land199";
+import { SOURCES } from "./teacher.js?v=land199";
 import {
   KIND, MODE_LABEL, TEACHER_CHECKED, bindDuePresets, bindPicker, duePresetsHtml, insertItems, pickedStudents, shortSource, snippet, targetPickerHtml,
-} from "./lessons.js?v=land198";
+} from "./lessons.js?v=land199";
 
 const BASKET = "lx-assign-basket";
 const FIELDS = "id, source, bank_file, source_ref, task_no, topic, answer_mode, list_item, is_published, is_own, passage_id";

@@ -3,8 +3,8 @@
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
 import { accessState, bankFull, bankList } from "./supa.js";
-import { bindWritten, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js?v=land198";
-import { clip, decodeEntities, norm, ru, sanitizeHtml, workLine } from "./literature.js?v=land198";
+import { bindWritten, demoBannerHtml, gateHtml, writtenBlockHtml } from "./practice.js?v=land199";
+import { clip, decodeEntities, norm, ru, sanitizeHtml, workLine } from "./literature.js?v=land199";
 
 export const SOURCE = "oge-lit";
 const ROOT = "#/literature/oge";

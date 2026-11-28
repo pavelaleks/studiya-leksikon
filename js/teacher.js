@@ -1,21 +1,21 @@
 /** Кабинет преподавателя: #/cabinet/... */
-import { bzDayStart } from "./tz.js?v=land198";
-import { installRealNames, loadRealNames, realNameOf, saveRealName, toggleHtml } from "./realnames.js?v=land198";
+import { bzDayStart } from "./tz.js?v=land199";
+import { installRealNames, loadRealNames, realNameOf, saveRealName, toggleHtml } from "./realnames.js?v=land199";
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land198";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land199";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land198";
+import { taskHref } from "./account.js?v=land199";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land198";
-import { readingView } from "./teacher-reading.js?v=land198";
-import { optionsOf } from "./practice.js?v=land198";
-import { convertStudent, createEnterLink, createStudent, enterUrl, isPseudoEmail, isTakenPseudonym, loginOf, newPassword, newPseudonym, resetStudentPassword, suggestPseudonyms, takenPseudonyms } from "./pseudo.js?v=land198";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land198";
-import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land198";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land198";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land199";
+import { readingView } from "./teacher-reading.js?v=land199";
+import { optionsOf } from "./practice.js?v=land199";
+import { convertStudent, createEnterLink, createStudent, enterUrl, isPseudoEmail, isTakenPseudonym, loginOf, newPassword, newPseudonym, resetStudentPassword, suggestPseudonyms, takenPseudonyms } from "./pseudo.js?v=land199";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land199";
+import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land199";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land199";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land198";
+} from "./review.js?v=land199";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -309,12 +309,12 @@ export async function mountTeacher(root, parts) {
     if (tab === "students") return await studentsView(host, render);
     if (tab === "student" && arg === "report") {
       render(`<div id="t-report"></div>`);
-      const pg = await import("./progress-charts.js?v=land198");
+      const pg = await import("./progress-charts.js?v=land199");
       return await pg.mountReport(host.querySelector("#t-report"), sub, { back: `#/cabinet/student/${sub}`, base: `#/cabinet/student/${sub}/report` });
     }
     if (tab === "student" && arg === "reading") {
       render(`<div id="t-reading-list"></div>`);
-      const rl = await import("./reading-list.js?v=land198");
+      const rl = await import("./reading-list.js?v=land199");
       return await rl.mountReadingList(host.querySelector("#t-reading-list"), {
         studentId: sub,
         exam: parts[3] || null,
@@ -333,7 +333,7 @@ export async function mountTeacher(root, parts) {
         <section class="me-section" id="t-exam-dates"><h2>Даты экзаменов по литературе</h2><p class="muted">Загружаем…</p></section>
         <section class="me-section"><h2>Оформление</h2>${themeSwitchHtml()}</section>`);
       mountTg(host, "teacher");
-      const rl = await import("./reading-list.js?v=land198");
+      const rl = await import("./reading-list.js?v=land199");
       const box = host.querySelector("#t-exam-dates");
       const dates = await rl.examDates();
       box.innerHTML = `<h2>Даты экзаменов по литературе</h2>
@@ -355,7 +355,7 @@ export async function mountTeacher(root, parts) {
       return;
     }
     if (tab === "assign") {
-      const m = await import("./assign.js?v=land198");
+      const m = await import("./assign.js?v=land199");
       return await m.assignView(host, render);
     }
     if (tab === "bank") {
@@ -623,6 +623,48 @@ async function todayView(host, render) {
     })
     .catch((err) => console.warn(err));
   mountOverdue(host, people, name).catch((err) => console.warn(err));
+  mountClosedDigest(host).catch((err) => console.warn(err));
+}
+
+/** «Закрылись сами»: занятия, которые закрыл автомат, — кто не доделал; открыть снова или убрать из сводки. */
+async function mountClosedDigest(host) {
+  const { data, error } = await supa.rpc("closed_lessons_digest");
+  const box = host.querySelector("#tt-todo");
+  if (error || !box || !data?.length) return;
+  const html = data
+    .map((l) => {
+      const miss = l.missing || [];
+      const when = new Date(l.closed_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+      return `<div class="tt-row tt-row-static" data-closed-row="${l.id}">
+        <span class="tt-body"><strong>🔒 Закрылось само: <a href="#/cabinet/lesson/${l.id}">«${escapeHtml(l.title)}»</a></strong>
+          <span class="muted">${escapeHtml(when)} · сделали ${l.finished} из ${l.total}${miss.length ? ` · не доделали: ${escapeHtml(miss.slice(0, 5).join(", "))}${miss.length > 5 ? ` и ещё ${miss.length - 5}` : ""}` : " — все"}</span></span>
+        <span class="tt-row-btns">${miss.length ? `<button type="button" class="btn secondary tt-mini" data-reopen="${l.id}" title="Ещё 3 дня на выполнение">Открыть снова</button>` : ""}<button type="button" class="btn secondary tt-mini" data-ack="${l.id}">Понятно</button></span>
+      </div>`;
+    })
+    .join("");
+  box.insertAdjacentHTML("afterbegin", html);
+  host.querySelector("#tt-todo-empty")?.setAttribute("hidden", "");
+  const done = (b, text) => {
+    const r = b.closest(".tt-row");
+    r.querySelector(".tt-row-btns").innerHTML = `<span class="muted">${text}</span>`;
+    setTimeout(() => r.remove(), 2500);
+  };
+  box.querySelectorAll("[data-reopen]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      const { error: e } = await supa.from("lessons").update({ status: "live" }).eq("id", b.dataset.reopen);
+      if (e) return (b.disabled = false), alert(humanError(e).message);
+      done(b, "Открыто ещё на 3 дня");
+    })
+  );
+  box.querySelectorAll("[data-ack]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      const { error: e } = await supa.from("lessons").update({ close_ack: true }).eq("id", b.dataset.ack);
+      if (e) return (b.disabled = false), alert(humanError(e).message);
+      done(b, "Убрано из сводки");
+    })
+  );
 }
 
 /** «Не сдали в срок»: строки в «Нужно сделать» с кнопкой «напомнить» (в Telegram). */
