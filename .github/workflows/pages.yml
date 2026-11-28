@@ -43,7 +43,7 @@ jobs:
           ! grep -rlE --include='*.json' '"(solutionHtml|answerNorm)"' _site/js || (echo "В публикацию попали ответы" && exit 1)
           cp data/orthography.json data/punctuation.json data/stylistics.json data/exercises.json _site/data/
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
       - id: deployment
