@@ -1,21 +1,21 @@
 /** Кабинет преподавателя: #/cabinet/... */
-import { bzDayStart } from "./tz.js?v=land197";
-import { installRealNames, loadRealNames, realNameOf, saveRealName, toggleHtml } from "./realnames.js?v=land197";
+import { bzDayStart } from "./tz.js?v=land198";
+import { installRealNames, loadRealNames, realNameOf, saveRealName, toggleHtml } from "./realnames.js?v=land198";
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land197";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land198";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land197";
+import { taskHref } from "./account.js?v=land198";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land197";
-import { readingView } from "./teacher-reading.js?v=land197";
-import { optionsOf } from "./practice.js?v=land197";
-import { convertStudent, createEnterLink, createStudent, enterUrl, isPseudoEmail, isTakenPseudonym, loginOf, newPassword, newPseudonym, resetStudentPassword, suggestPseudonyms, takenPseudonyms } from "./pseudo.js?v=land197";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land197";
-import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land197";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land197";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land198";
+import { readingView } from "./teacher-reading.js?v=land198";
+import { optionsOf } from "./practice.js?v=land198";
+import { convertStudent, createEnterLink, createStudent, enterUrl, isPseudoEmail, isTakenPseudonym, loginOf, newPassword, newPseudonym, resetStudentPassword, suggestPseudonyms, takenPseudonyms } from "./pseudo.js?v=land198";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land198";
+import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land198";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land198";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land197";
+} from "./review.js?v=land198";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -242,6 +242,7 @@ const TABS = [
   ["lessons", "Занятия"],
   ["students", "Ученики"],
   ["works", "Проверка работ"],
+  ["assign", "Найти и назначить"],
   ["bank", "Банк заданий"],
   ["groups", "Группы"],
   ["reading", "Чтение"],
@@ -308,12 +309,12 @@ export async function mountTeacher(root, parts) {
     if (tab === "students") return await studentsView(host, render);
     if (tab === "student" && arg === "report") {
       render(`<div id="t-report"></div>`);
-      const pg = await import("./progress-charts.js?v=land197");
+      const pg = await import("./progress-charts.js?v=land198");
       return await pg.mountReport(host.querySelector("#t-report"), sub, { back: `#/cabinet/student/${sub}`, base: `#/cabinet/student/${sub}/report` });
     }
     if (tab === "student" && arg === "reading") {
       render(`<div id="t-reading-list"></div>`);
-      const rl = await import("./reading-list.js?v=land197");
+      const rl = await import("./reading-list.js?v=land198");
       return await rl.mountReadingList(host.querySelector("#t-reading-list"), {
         studentId: sub,
         exam: parts[3] || null,
@@ -332,7 +333,7 @@ export async function mountTeacher(root, parts) {
         <section class="me-section" id="t-exam-dates"><h2>Даты экзаменов по литературе</h2><p class="muted">Загружаем…</p></section>
         <section class="me-section"><h2>Оформление</h2>${themeSwitchHtml()}</section>`);
       mountTg(host, "teacher");
-      const rl = await import("./reading-list.js?v=land197");
+      const rl = await import("./reading-list.js?v=land198");
       const box = host.querySelector("#t-exam-dates");
       const dates = await rl.examDates();
       box.innerHTML = `<h2>Даты экзаменов по литературе</h2>
@@ -352,6 +353,10 @@ export async function mountTeacher(root, parts) {
         box.querySelector("#t-exam-status").textContent = err ? "Ошибка: " + err.message : "Сохранено";
       });
       return;
+    }
+    if (tab === "assign") {
+      const m = await import("./assign.js?v=land198");
+      return await m.assignView(host, render);
     }
     if (tab === "bank") {
       if (sub === "new" || sub === "edit") return await taskFormView(host, render, arg);
@@ -2073,7 +2078,7 @@ async function bankView(host, render) {
       <td>${escapeHtml((t.list_item?.questionText || "").slice(0, 140))}<br><small class="muted">${escapeHtml(t.topic || "")} · ${escapeHtml(MODE_LABEL[t.answer_mode] || t.answer_mode)}</small></td>
       <td><label class="t-inline"><input type="checkbox" data-f="is_published" ${t.is_published ? "checked" : ""}/> ученикам</label>
           <label class="t-inline"><input type="checkbox" data-f="is_demo" ${t.is_demo ? "checked" : ""}/> демо</label></td>
-      <td><a class="btn secondary" href="#/cabinet/bank/edit/${t.id}">Изменить</a></td>
+      <td><a class="btn secondary" href="#/cabinet/bank/edit/${t.id}">Изменить</a> <a class="btn" href="#/cabinet/assign?add=${t.id}">Назначить</a></td>
     </tr>`
     )
     .join("");

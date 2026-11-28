@@ -8,10 +8,10 @@
 // Никогда — в контрольных, занятиях, кабинете, во время написания сочинения и при вводе текста.
 import { escapeHtml } from "./ui.js";
 import { mark } from "./markup.js";
-import { allRules } from "./content.js?v=land197";
+import { allRules } from "./content.js?v=land198";
 import { BASE } from "./config.js";
 import { currentProfile } from "./supa.js";
-import { subjectsOf } from "./track.js?v=land197";
+import { subjectsOf } from "./track.js?v=land198";
 
 const KEY = "lx-robot";
 const IDLE_GAP = 6 * 60e3; // не чаще раза в 6 минут сам по себе
@@ -176,7 +176,7 @@ async function litTips() {
 async function itogTips() {
   if (cache.itog) return cache.itog;
   try {
-    const d = await import("./itog-data.js?v=land197");
+    const d = await import("./itog-data.js?v=land198");
     const t = (id, label, title, text, href) => ({ id: "itog:" + id, topic: "itog", kind: "itog", label, title, html: escapeHtml(text), href, go: TOPIC.itog.go });
     cache.itog = [
       ...(d.REQUIREMENTS || []).flatMap((r, i) => [
@@ -471,7 +471,7 @@ async function makeQuiz() {
       return { topic, q: "Какой термин подходит к определению?", sub: def, o: opts.map((t) => t.title), a: opts.indexOf(right), whyHtml: right.html, href: right.href, go: "В словарь", raw: true };
     }
   }
-  const { RULE_QUESTIONS } = await import("./quiz-rules.js?v=land197");
+  const { RULE_QUESTIONS } = await import("./quiz-rules.js?v=land198");
   const lvl = gradeLevel();
   const s = store.get();
   const pool = RULE_QUESTIONS.filter((x) => x.level <= lvl && x.q + x.o.join() !== s.lastQuiz);

@@ -2816,3 +2816,23 @@ body.is-sheet .lr-root, body.is-reading .lr-root { display: none; }
 .wv-done { margin-top: 26px; padding: 16px 18px; background: var(--ok-bg); }
 .wv-done p { margin: 0 0 10px; }
 .wv-done .actions { margin-bottom: 0; }
+
+/* Найти и назначить (#/cabinet/assign) */
+.as-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+@media (max-width: 900px) { .as-layout { grid-template-columns: 1fr; } .as-basket { order: -1; } }
+.as-search { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; }
+.as-search .as-q { flex: 1 1 260px; }
+.as-search .as-q input { width: 100%; }
+.as-list .lit-item { align-items: center; gap: 12px; }
+.as-list .lit-item.is-picked { background: color-mix(in srgb, var(--ok) 8%, transparent); }
+.as-list .lit-item .btn { white-space: nowrap; }
+.as-basket { position: sticky; top: 80px; padding: 16px; max-height: calc(100vh - 100px); overflow: auto; }
+.as-basket [hidden] { display: none !important; }
+.as-picked { margin: 0 0 14px; padding-left: 20px; font-size: 0.92rem; display: grid; gap: 4px; }
+.as-where { border: 0; padding: 0; margin: 0; display: flex; gap: 14px; flex-wrap: wrap; }
+.as-basket .stack { display: grid; gap: 10px; }
+.as-basket input[type="datetime-local"], .as-basket select, .as-basket input[name="title"] { width: 100%; }
+.as-facets { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.as-where label.t-inline { display: inline-flex; align-items: center; gap: 6px; width: auto; flex-direction: row; }
+.as-where label.t-inline input { width: auto; margin: 0; }
+.as-who { width: 100%; margin: 8px 0; }

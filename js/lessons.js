@@ -3,17 +3,17 @@
  *  Преподаватель: #/cabinet/lessons — список и создание; #/cabinet/lesson/:id — конструктор и живая таблица.
  *  Ученик: #/lesson/:id — задания урока; #/lesson/:id/:item — одно задание с проверкой по правилам урока.
  */
-import { bz, bzDayStart, fromBz, fromBzInput, toBzInput } from "./tz.js?v=land197";
+import { bz, bzDayStart, fromBz, fromBzInput, toBzInput } from "./tz.js?v=land198";
 import { BASE } from "./config.js";
 import { escapeHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land197";
-import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land197";
-import { SOURCES, bankFiles } from "./teacher.js?v=land197";
+import { taskHref } from "./account.js?v=land198";
+import { bindCheck, bindWritten, checkBlockHtml, writtenBlockHtml } from "./practice.js?v=land198";
+import { SOURCES, bankFiles } from "./teacher.js?v=land198";
 import { currentUser, humanError, showSolution, supa } from "./supa.js";
-import { nextLessonFor } from "./calendar.js?v=land197";
+import { nextLessonFor } from "./calendar.js?v=land198";
 import {
   EXAMS, alternativeTask, bindIntro, bindTimer, composeVariant, durationText, examState, finishExam, introHtml, resultsHtml, timerHtml,
-} from "./exams.js?v=land197";
+} from "./exams.js?v=land198";
 
 export const KIND = { classwork: "в классе", homework: "домашнее", test: "контрольная" };
 export const REVEAL = {
@@ -24,8 +24,8 @@ export const REVEAL = {
   manual: "когда я открою",
 };
 const LESSON_STATUS = { draft: "черновик — ученики не видят", live: "открыто ученикам", done: "завершено" };
-const TEACHER_CHECKED = new Set(["open", "essay"]);
-const MODE_LABEL = {
+export const TEACHER_CHECKED = new Set(["open", "essay"]);
+export const MODE_LABEL = {
   "digits-any": "Номера в любом порядке",
   "digits-fixed": "Цифры по порядку",
   numbers: "Номера в любом порядке",
@@ -40,9 +40,9 @@ const fmtDT = (d) => (d ? new Date(d).toLocaleString("ru-RU", { dateStyle: "shor
 // Поля даты и времени — по барнаульскому времени (tz.js), где бы ни был преподаватель.
 const toLocalInput = toBzInput;
 const fromLocalInput = fromBzInput;
-const shortSource = (s) => ({ "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Лит.", "oge-lit": "ОГЭ лит.", itog: "Итог. соч." }[s] || s);
+export const shortSource = (s) => ({ "ege-rus": "ЕГЭ", "oge-rus": "ОГЭ", "vpr-rus": "ВПР", "ege-lit": "Лит.", "oge-lit": "ОГЭ лит.", itog: "Итог. соч." }[s] || s);
 
-function snippet(task, n = 110) {
+export function snippet(task, n = 110) {
   const t = String(task?.list_item?.questionText || task?.data?.questionText || "").replace(/\s+/g, " ").trim();
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
 }
@@ -280,10 +280,10 @@ function dueFromPreset(key) {
   d.setHours(20, 0, 0, 0); // 20:00 по Барнаулу
   return fromBz(d);
 }
-function duePresetsHtml() {
+export function duePresetsHtml() {
   return `<span class="l-due-presets"><span data-due-next></span>${DUE_PRESETS.map(([k, v]) => `<button type="button" class="chip-btn" data-due="${k}">${v}</button>`).join("")}</span>`;
 }
-function bindDuePresets(form, input) {
+export function bindDuePresets(form, input) {
   form.querySelectorAll("[data-due]").forEach((b) =>
     b.addEventListener("click", () => {
       input.value = toLocalInput(dueFromPreset(b.dataset.due));
@@ -293,7 +293,7 @@ function bindDuePresets(form, input) {
 }
 const SHOW_RESULTS = { after_finish: "сразу после сдачи", manual: "когда я открою" };
 
-function targetPickerHtml(groups, students, { groupId = "", picked = new Set() } = {}) {
+export function targetPickerHtml(groups, students, { groupId = "", picked = new Set() } = {}) {
   return `
     <label>Группа<select name="group_id"><option value="">— без группы —</option>${(groups || [])
       .map((g) => `<option value="${g.id}" ${g.id === groupId ? "selected" : ""}>${escapeHtml(g.title)}</option>`)
@@ -308,7 +308,7 @@ function targetPickerHtml(groups, students, { groupId = "", picked = new Set() }
     </details>`;
 }
 
-function bindPicker(form) {
+export function bindPicker(form) {
   const count = form.querySelector("[data-pick-count]");
   form.querySelectorAll('input[name="student"]').forEach((cb) =>
     cb.addEventListener("change", () => {
@@ -318,7 +318,7 @@ function bindPicker(form) {
   );
 }
 
-const pickedStudents = (form) => [...form.querySelectorAll('input[name="student"]:checked')].map((c) => c.value);
+export const pickedStudents = (form) => [...form.querySelectorAll('input[name="student"]:checked')].map((c) => c.value);
 
 async function groupMemberIds(groupId) {
   if (!groupId) return [];
@@ -326,7 +326,7 @@ async function groupMemberIds(groupId) {
   return (data || []).map((r) => r.student_id);
 }
 
-async function insertItems(lessonId, tasks, opts, startPos = 0) {
+export async function insertItems(lessonId, tasks, opts, startPos = 0) {
   let pos = startPos;
   const rows = tasks.map((t) => ({
     lesson_id: lessonId,

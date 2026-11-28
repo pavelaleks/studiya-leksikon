@@ -6,7 +6,7 @@
  *  - блок «Проверено» на главной: всё, что ещё не убрано в архив.
  */
 import { escapeHtml } from "./ui.js";
-import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land197";
+import { downloadCanvas, markedTextHtml, marksListHtml, renderPhoto, studentReviewHtml } from "./review.js?v=land198";
 import { accessState, currentUser, humanError, signedFileUrl, supa } from "./supa.js";
 
 const SOURCE_TITLE = { "ege-rus": "ЕГЭ · русский", "oge-rus": "ОГЭ · русский", "vpr-rus": "ВПР · русский", "ege-lit": "ЕГЭ · литература", "oge-lit": "ОГЭ · литература", itog: "Итоговое сочинение" };
