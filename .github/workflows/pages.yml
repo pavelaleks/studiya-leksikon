@@ -46,5 +46,14 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
-      - id: deployment
+      # deploy-pages иногда не находит только что загруженный артефакт — ждём и пробуем ещё раз.
+      - id: deploy1
+        continue-on-error: true
         uses: actions/deploy-pages@v4
+      - if: steps.deploy1.outcome == 'failure'
+        run: sleep 45
+      - id: deploy2
+        if: steps.deploy1.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+      - id: deployment
+        run: echo "page_url=${{ steps.deploy1.outputs.page_url || steps.deploy2.outputs.page_url }}" >> "$GITHUB_OUTPUT"
