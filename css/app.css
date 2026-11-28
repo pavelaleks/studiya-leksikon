@@ -2790,3 +2790,28 @@ body.is-sheet .lr-root, body.is-reading .lr-root { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .lr-root *, .lr-root { animation: none !important; transition: none !important; }
 }
+
+/* Проверенные работы: блок на главной, плашка вверху страниц, страница #/me/work/<id> */
+.wv-home { margin-top: 18px; }
+.wv-home.has-new .me-rows { border: 2px solid var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.wv-home.has-new .me-label { color: var(--accent); font-size: 0.9rem; }
+.wv-home .me-row.is-new { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.wv-home .me-row.is-new strong { color: var(--accent); }
+.wv-new { display: inline-block; padding: 1px 7px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; vertical-align: 2px; }
+.wv-chip-score { background: var(--ok-bg); color: var(--ok); }
+.wv-home-more { margin: 8px 2px 0; font-size: 0.9rem; }
+.wv-note { display: flex; align-items: center; gap: 12px; margin: 0 0 18px; padding: 12px 16px; border-radius: 14px; border: 2px solid var(--accent); background: var(--accent-soft); color: var(--ink); text-decoration: none; }
+.wv-note:hover { background: color-mix(in srgb, var(--accent) 16%, var(--paper, #fff)); }
+.wv-note > span:nth-child(2) { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.wv-note strong { color: var(--accent); }
+.wv-note-icon { font-size: 1.5rem; }
+.wv-note-go { font-weight: 700; color: var(--accent); white-space: nowrap; }
+.wv-back { margin: 0 0 8px; }
+.wv-head h1 { margin: 2px 0 12px; }
+.wv-review { border-left: 4px solid var(--accent); }
+.wv-sub { margin: 14px 0 4px; font-weight: 700; }
+.wv-h2 { font-size: 1.15rem; margin: 26px 0 10px; }
+.pr-photo.wv-marked canvas { outline: 2px solid var(--accent); outline-offset: 2px; cursor: zoom-in; }
+.wv-done { margin-top: 26px; padding: 16px 18px; background: var(--ok-bg); }
+.wv-done p { margin: 0 0 10px; }
+.wv-done .actions { margin-bottom: 0; }

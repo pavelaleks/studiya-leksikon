@@ -1,6 +1,6 @@
 import { accessState, currentProfile } from "./supa.js";
 import { studioTelegram, studioWhatsApp } from "./config.js";
-import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land195";
+import { TRACK_HREF, currentTrack, subjectsOf } from "./track.js?v=land196";
 
 /* Значки нижнего меню: тонкая линия, как в мобильных приложениях. */
 const ICON = {
@@ -34,7 +34,7 @@ function hwBadge(prefix = "lx-hw-open") {
   try {
     n = Number(localStorage.getItem(`${prefix}-${currentProfile()?.id}`)) || 0;
   } catch {}
-  return n ? `<span class="tab-badge" aria-label="не сдано: ${n}">${n}</span>` : "";
+  return n ? `<span class="tab-badge" aria-label="ждёт внимания: ${n}">${n}</span>` : "";
 }
 
 function tabbar(active) {

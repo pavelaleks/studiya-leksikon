@@ -1,21 +1,21 @@
 /** Кабинет преподавателя: #/cabinet/... */
-import { bzDayStart } from "./tz.js?v=land195";
-import { installRealNames, loadRealNames, realNameOf, saveRealName, toggleHtml } from "./realnames.js?v=land195";
+import { bzDayStart } from "./tz.js?v=land196";
+import { installRealNames, loadRealNames, realNameOf, saveRealName, toggleHtml } from "./realnames.js?v=land196";
 import { BASE } from "./config.js";
-import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land195";
+import { GRADES, SUBJECTS, courseLabel } from "./track.js?v=land196";
 import { escapeHtml, themeSwitchHtml } from "./ui.js";
-import { taskHref } from "./account.js?v=land195";
+import { taskHref } from "./account.js?v=land196";
 import { clearBankCache, currentUser, humanError, isTeacher, resetPassword, signIn, signedFileUrl, supa } from "./supa.js";
-import { lessonEditView, lessonsListView } from "./lessons.js?v=land195";
-import { readingView } from "./teacher-reading.js?v=land195";
-import { optionsOf } from "./practice.js?v=land195";
-import { convertStudent, createEnterLink, createStudent, enterUrl, isPseudoEmail, isTakenPseudonym, loginOf, newPassword, newPseudonym, resetStudentPassword, suggestPseudonyms, takenPseudonyms } from "./pseudo.js?v=land195";
-import { mountTg, tgSlotHtml } from "./telegram.js?v=land195";
-import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land195";
-import { MARKS, RUBRICS } from "./rubrics.js?v=land195";
+import { lessonEditView, lessonsListView } from "./lessons.js?v=land196";
+import { readingView } from "./teacher-reading.js?v=land196";
+import { optionsOf } from "./practice.js?v=land196";
+import { convertStudent, createEnterLink, createStudent, enterUrl, isPseudoEmail, isTakenPseudonym, loginOf, newPassword, newPseudonym, resetStudentPassword, suggestPseudonyms, takenPseudonyms } from "./pseudo.js?v=land196";
+import { mountTg, tgSlotHtml } from "./telegram.js?v=land196";
+import { overdueWorks, scheduleTodayMount, todayTopMount, usualSlots, weekView } from "./calendar.js?v=land196";
+import { MARKS, RUBRICS } from "./rubrics.js?v=land196";
 import {
   countMarks, countWords, criteriaFormHtml, markedTextHtml, marksListHtml, openPhotoEditor, readCriteria, renderPhoto, rubricFor, textPageBlob,
-} from "./review.js?v=land195";
+} from "./review.js?v=land196";
 
 /* ------------------------------------------------------------------ */
 /* Справочники                                                          */
@@ -308,12 +308,12 @@ export async function mountTeacher(root, parts) {
     if (tab === "students") return await studentsView(host, render);
     if (tab === "student" && arg === "report") {
       render(`<div id="t-report"></div>`);
-      const pg = await import("./progress-charts.js?v=land195");
+      const pg = await import("./progress-charts.js?v=land196");
       return await pg.mountReport(host.querySelector("#t-report"), sub, { back: `#/cabinet/student/${sub}`, base: `#/cabinet/student/${sub}/report` });
     }
     if (tab === "student" && arg === "reading") {
       render(`<div id="t-reading-list"></div>`);
-      const rl = await import("./reading-list.js?v=land195");
+      const rl = await import("./reading-list.js?v=land196");
       return await rl.mountReadingList(host.querySelector("#t-reading-list"), {
         studentId: sub,
         exam: parts[3] || null,
@@ -332,7 +332,7 @@ export async function mountTeacher(root, parts) {
         <section class="me-section" id="t-exam-dates"><h2>Даты экзаменов по литературе</h2><p class="muted">Загружаем…</p></section>
         <section class="me-section"><h2>Оформление</h2>${themeSwitchHtml()}</section>`);
       mountTg(host, "teacher");
-      const rl = await import("./reading-list.js?v=land195");
+      const rl = await import("./reading-list.js?v=land196");
       const box = host.querySelector("#t-exam-dates");
       const dates = await rl.examDates();
       box.innerHTML = `<h2>Даты экзаменов по литературе</h2>
@@ -1447,7 +1447,7 @@ async function worksView(host, render, workId) {
   await Promise.all((timed || []).map((l) => supa.rpc("finalize_exam_works", { p_lesson: l.id })));
   const { data, error } = await supa
     .from("written_works")
-    .select("id, status, submitted_at, score, max_score, body, item_id, choice, profiles(full_name, email), tasks(source, task_no, source_ref, work:data->>work), lesson_items(due_at, lessons(title))")
+    .select("id, status, submitted_at, score, max_score, body, item_id, choice, seen_at, archived_at, profiles(full_name, email), tasks(source, task_no, source_ref, work:data->>work), lesson_items(due_at, lessons(title))")
     .in("status", ["submitted", "returned", "graded"])
     .order("submitted_at", { ascending: false })
     .limit(200);
@@ -1457,7 +1457,9 @@ async function worksView(host, render, workId) {
       <span class="lit-item-n">${w.tasks?.task_no ?? "·"}</span>
       <span class="lit-item-body">
         <strong>${escapeHtml(w.profiles?.full_name || w.profiles?.email || "ученик")} · ${escapeHtml(SOURCES[w.tasks?.source]?.title || "")} № ${w.tasks?.task_no ?? ""}${w.tasks?.work ? ` · «${escapeHtml(w.tasks.work)}»` : ""}${w.choice ? ` · вариант ${w.choice}` : ""}</strong>
-        <span>${w.item_id ? `из занятия «${escapeHtml(w.lesson_items?.lessons?.title || "…")}»` : "сам, по желанию"} · ${WORK_STATUS[w.status]} · ${fmtDateTime(w.submitted_at)}${w.lesson_items?.due_at && w.submitted_at && new Date(w.submitted_at) > new Date(w.lesson_items.due_at) ? " · <b class=\"t-late\">после срока</b>" : ""}${w.score != null ? ` · ${w.score}${w.max_score ? `/${w.max_score}` : ""}` : ""}</span>
+        <span>${w.item_id ? `из занятия «${escapeHtml(w.lesson_items?.lessons?.title || "…")}»` : "сам, по желанию"} · ${WORK_STATUS[w.status]} · ${fmtDateTime(w.submitted_at)}${w.lesson_items?.due_at && w.submitted_at && new Date(w.submitted_at) > new Date(w.lesson_items.due_at) ? " · <b class=\"t-late\">после срока</b>" : ""}${w.score != null ? ` · ${w.score}${w.max_score ? `/${w.max_score}` : ""}` : ""}${
+          w.status === "submitted" ? "" : w.archived_at ? " · 👁 посмотрел(а), в архиве" : w.seen_at ? " · 👁 посмотрел(а)" : " · <b class=\"t-late\">ещё не открывал(а)</b>"
+        }</span>
         <span class="muted">${escapeHtml((w.body || "фото").slice(0, 120))}</span>
       </span>
     </a>`;
@@ -1827,6 +1829,9 @@ async function workReview(host, render, id) {
     if (act !== "keep") {
       row.status = act;
       row.reviewed_at = new Date().toISOString();
+      // ученик снова увидит «Работа проверена» на главной и вверху страниц
+      row.seen_at = null;
+      row.archived_at = null;
     }
     const { error: err } = await supa.from("written_works").update(row).eq("id", id);
     const st = host.querySelector("#t-grade-status");
